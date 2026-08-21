@@ -1,5 +1,74 @@
 # Changelog
 
+## 1.1.0
+
+Design & UX (4 commit-uri incrementale, un singur rebuild).
+
+**P0 — bug-uri:**
+- **0.1 · Ţinta LG dispărea cu unitatea oprită.** Confirmat live: doar
+  `lg_thinq` raportează `temperature: null` la oprire (Vortex/Vivax/Fairland
+  păstrează valoarea). Acum ultima ţintă non-null a FIECĂREI entităţi climate e
+  memorată (sesiune + localStorage `hd.ha.lastTargets`), cu fallback unic din
+  istoricul HA (`history_during_period`, 7 zile) când nu există nimic salvat.
+  Valoarea memorată se afişează estompat (opacity 0.55) în dial, sidebar,
+  panoul de setări, modal şi cardul "Control climat"; fără nimic → "—".
+- **0.2 · Etichete trunchiate** (`swing_mo...`): valorile tehnice de sub
+  etichete au fost eliminate complet (vezi P1).
+- **0.3 · Glife −/+ necentrate optic:** înlocuite caracterele text cu iconuri
+  SVG `minus`/`plus` (viewBox simetric) în TOATE butoanele: dialurile
+  cardurilor, setpoints din acordeoane, modalul de device şi slider-ul din
+  "Control climat".
+- **0.4 · Controale TV active în standby:** `mute` şi `select_source` sunt
+  acum blocate (dezactivate vizual + funcţional, cu explicaţie în tooltip)
+  când media_player-ul e `off`/`standby` — comanda nu mai pleacă spre HA ca să
+  eşueze. Volumul era deja tratat în v1.0.7. Butonul de pornire rămâne activ.
+  AC-urile NU au fost gate-uite: `set_hvac_mode` pe unitate oprită e chiar
+  modul standard de pornire în HA; comportamentul fan/preset cu unitatea
+  oprită nu a fost testat prin comenzi reale (hardware real) — dacă apar
+  erori, acelaşi mecanism se extinde trivial.
+- **0.5 · Verificare `supported_features` (principiu general):** acţiunile
+  media verifică acum biţii reali (VOLUME_MUTE=8, VOLUME_SET=4,
+  SELECT_SOURCE=2048). Hisense (HomeKit, features=18817) nu are mute/volum
+  prin media_player: mute-ul lui e rutat prin switch-ul dedicat
+  (`switch...hisense_mute`, slot nou `media.etaj_hisense_mute`), iar dial-ul
+  de volum se ascunde singur (bloc de stare în loc). Per TV: Samsung/LG
+  (24509) au tot; Hisense are pornire/oprire, surse, play/pauză — fără volum.
+  Teste noi în suita de logică acoperă standby + feature-gating.
+- **0.6 · Zecimale:** formatare unificată după pas (`tempDecimals`): pas
+  întreg → fără zecimală ("19°"), pas 0.5 → o zecimală. Aplicat în dial,
+  setpoints, modal şi "Control climat" (fostul "Ţinta 19.0 °C").
+
+**P1 — descrieri:** dicţionar centralizat `src/model/descriptions.js` (~60 de
+intrări în română, concrete — ce face funcţia, nu ce valoare trimite), cheie
+`Context|Etichetă` cu fallback pe etichetă. Tooltip nou: colţuri 12px, fundal
+cu blur, animaţie de intrare 160ms (keyframes injectate), max-width 240px,
+text pe mai multe rânduri. Mobil: **long-press ≥450ms** pe orice buton arată
+descrierea şi suprimă activarea; tap-ul scurt comută normal — ales pentru că
+nu adaugă UI suplimentar şi nu intră în conflict cu tap-ul obişnuit. Fără
+săgeată către element şi fără repoziţionare inteligentă la marginea
+viewport-ului (limitare cunoscută, notată).
+
+**P2 — iconuri:** pachetul **Lucide** (licenţă ISC, lucide.dev) prin
+`lucide-react` — grilă 24px, stroke uniform (absoluteStrokeWidth), centrare
+optică garantată; în bundle intră doar iconurile importate. Mapări semantice
+corectate: Anti-mucegai → DropletOff (uscare, nu "interzis"), Health →
+HeartPulse, Mut → VolumeX, HDMI → Cable, Netflix → Clapperboard, Afişaj →
+Monitor. Iconurile compozite proprii designului (unităţile AC/clorinator/
+pompă/TV, barele de viteză, boost, swingOff) rămân cele originale.
+
+**P3 — responsive (parţial):** ţinte de tap ≥44px pe mobil (butoanele −/+ ale
+dialurilor, cercurile de acţiune, setpoints, modal), dial scalat la 116px pe
+telefon cu ticks şi knob proporţionale. **Nevalidat vizual pe cele 7
+breakpoint-uri** — vezi nota de mai jos.
+
+**Notă de onestitate:** verificarea vizuală breakpoint-cu-breakpoint (360→2560
+pe 8 pagini) şi auditul complet de coerenţă (P4: scală de spacing, contrast
+WCAG, ierarhie tipografică) NU au putut fi executate în această sesiune:
+aplicaţia cere autentificare cu token HA, pe care asistentul nu are voie să-l
+introducă, deci nu poate vedea dashboard-ul randat. Cele 44 de comparaţii de
+stil rămân verzi legitim: toate schimbările vizuale trăiesc în build/
+Dashboard/icons, nu în tokens.js (care păstrează fidelitatea cu mockup-ul).
+
 ## 1.0.7
 
 Bug-uri + normalizare controale numerice. Fără modificări de design major.
