@@ -103,6 +103,9 @@ export const SLOTS = [
   slot('media.sofia_parter', 'TV Sofia Parter', 'media', ['media_player']),
   slot('media.dormitor_sofia', 'TV Dormitor Sofia', 'media', ['media_player']),
   slot('media.etaj_hisense', 'TV Dormitor Etaj (Hisense)', 'media', ['media_player']),
+  slot('media.etaj_hisense_mute', 'TV Dormitor Etaj · mut (switch dedicat)', 'media', ['switch'], {
+    note: 'Integrarea HomeKit nu expune volume_mute prin media_player (supported_features fără bitul 8) — mute-ul e un switch separat.'
+  }),
   slot('media.foisor', 'TV Foişor', 'media', ['media_player']),
   slot('media.tata_bucatarie', 'TV Bucătărie Tata', 'media', ['media_player']),
   slot('media.tata_dormitor', 'TV Dormitor Tata LG', 'media', ['media_player']),

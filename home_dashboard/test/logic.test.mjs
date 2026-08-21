@@ -54,7 +54,11 @@ function makeE(states, map) {
     sourceList: (k) => E.attr(k, 'source_list') || [],
     currentSource: (k) => E.attr(k, 'source') || null,
     isMuted: (k) => !!E.attr(k, 'is_volume_muted'),
-    setMute: (k, v) => calls.push(['mute', k, v])
+    setMute: (k, v) => calls.push(['mute', k, v]),
+    supportsFeature: (k, bit) => {
+      const f = E.attr(k, 'supported_features');
+      return typeof f === 'number' && (f & bit) !== 0;
+    }
   };
   return E;
 }
@@ -79,10 +83,25 @@ const states = {
   'media_player.tv': {
     entity_id: 'media_player.tv',
     state: 'playing',
-    attributes: { source_list: ['HDMI 1', 'HDMI 2', 'Netflix'], source: 'HDMI 1', is_volume_muted: false }
+    // 24509 = setul real Samsung/LG (include VOLUME_SET=4, VOLUME_MUTE=8, SELECT_SOURCE=2048)
+    attributes: { source_list: ['HDMI 1', 'HDMI 2', 'Netflix'], source: 'HDMI 1', is_volume_muted: false, supported_features: 24509 }
+  },
+  'media_player.tv_standby': {
+    entity_id: 'media_player.tv_standby',
+    state: 'off',
+    attributes: { source_list: ['HDMI 1'], is_volume_muted: false, supported_features: 24509 }
+  },
+  'media_player.tv_hisense': {
+    entity_id: 'media_player.tv_hisense',
+    state: 'playing',
+    // 18817 = setul real Hisense/HomeKit (FĂRĂ VOLUME_SET şi VOLUME_MUTE)
+    attributes: { source_list: ['HDMI1'], source: 'HDMI1', supported_features: 18817 }
   }
 };
-const map = { 'climate.vortex': 'climate.ac_mansarda_vortex', 'number.clor_productie': 'number.clor', 'media.mansarda': 'media_player.tv' };
+const map = {
+  'climate.vortex': 'climate.ac_mansarda_vortex', 'number.clor_productie': 'number.clor',
+  'media.mansarda': 'media_player.tv', 'media.standby': 'media_player.tv_standby', 'media.hisense': 'media_player.tv_hisense'
+};
 const E = makeE(states, map);
 
 console.log('resolveAction:');
@@ -115,6 +134,15 @@ eq('sursa HDMI 1 activă', [r.supported, r.active], [true, true]);
 r = resolveAction(E, 'media.mansarda', { k: 'mute' });
 E.calls.length = 0; r.run();
 eq('mute trimite is_volume_muted=true', E.calls, [['mute', 'media.mansarda', true]]);
+
+r = resolveAction(E, 'media.standby', { k: 'mute' });
+eq('mute pe TV in standby -> nesuportat', r.supported, false);
+r = resolveAction(E, 'media.standby', { k: 'source', kw: ['hdmi 1'] });
+eq('sursa pe TV in standby -> nesuportat', r.supported, false);
+r = resolveAction(E, 'media.hisense', { k: 'mute' });
+eq('mute fara bitul VOLUME_MUTE (Hisense) -> nesuportat', r.supported, false);
+r = resolveAction(E, 'media.hisense', { k: 'source', kw: ['hdmi1'] });
+eq('sursa Hisense (are SELECT_SOURCE) -> suportat', r.supported, true);
 
 r = resolveAction(E, 'x', { k: 'numberFrac', slot: 'number.clor_productie', frac: 0.5 });
 eq('numberFrac 50% este activ', [r.supported, r.active], [true, true]);
@@ -217,7 +245,7 @@ eq('niciun control interzis nu e mapat (PoE, reboot, Aux1/Aux2)',
 eq('sloturile ramase au toate un motiv explicit',
    SLOTS.filter((x) => !SUGGESTED_MAP[x.key] && !UNMAPPED_REASONS[x.key]).map((x) => x.key), []);
 
-eq('total: 131 mapate din 131 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [131, 131]);
+eq('total: 132 mapate din 132 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [132, 132]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');

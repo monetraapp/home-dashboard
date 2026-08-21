@@ -142,6 +142,14 @@ export function resolveAction(E, cardSlot, action) {
   }
 
   if (action.k === 'source') {
+    // media_player: SELECT_SOURCE = bit 2048 din supported_features
+    if (!E.supportsFeature(cardSlot, 2048)) {
+      return Object.assign({}, noop, { reason: 'Televizorul nu expune schimbarea sursei prin media_player.' });
+    }
+    // TV oprit: comanda ar eşua garantat ("Device is off and cannot be controlled")
+    if (E.rawState(cardSlot) === 'off' || E.rawState(cardSlot) === 'standby') {
+      return Object.assign({}, noop, { reason: 'TV în standby — porneşte-l întâi.' });
+    }
     const list = E.sourceList(cardSlot);
     const m = E.matchOption(list, action.kw);
     if (!m) {
@@ -159,6 +167,14 @@ export function resolveAction(E, cardSlot, action) {
   }
 
   if (action.k === 'mute') {
+    // media_player: VOLUME_MUTE = bit 8. Hisense (HomeKit) NU îl are — acolo
+    // cardul foloseşte switch-ul dedicat de mute (A.slot), nu această acţiune.
+    if (!E.supportsFeature(cardSlot, 8)) {
+      return Object.assign({}, noop, { reason: 'Televizorul nu expune mute prin media_player.' });
+    }
+    if (E.rawState(cardSlot) === 'off' || E.rawState(cardSlot) === 'standby') {
+      return Object.assign({}, noop, { reason: 'TV în standby — porneşte-l întâi.' });
+    }
     const muted = E.isMuted(cardSlot);
     return {
       supported: true,

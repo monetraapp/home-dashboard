@@ -88,10 +88,11 @@ export function sliderRow(fraction, onMinus, onPlus) {
   }
   const btn = (key, label, fn) =>
     el('div', { key, onClick: fn, style: cssToObj('width:30px; height:30px; flex-shrink:0; border-radius:10px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:' + SANS + '; font-size:15px; font-weight:500; color:#cfc3b4;') }, label);
+  // glife SVG in loc de caractere text — centrare optica exacta (v1.1.0, bug 0.3)
   return el('div', { style: cssToObj('display:flex; align-items:center; gap:12px; margin-top:14px;') }, [
-    btn('minus', '−', onMinus),
+    btn('minus', ic('minus', { size: 15, sw: 2 }), onMinus),
     el('div', { key: 'tk', style: cssToObj('flex:1; display:flex; align-items:center; justify-content:space-between; height:14px;') }, ticks),
-    btn('plus', '+', onPlus)
+    btn('plus', ic('plus', { size: 15, sw: 2 }), onPlus)
   ]);
 }
 

@@ -325,15 +325,17 @@ export function buildBlock(E, ui, hist, b) {
 function setpointInfo(E, cardDef, sp) {
   if (sp.kind === 'climate') {
     const slot = cardDef.slot;
+    const step = Math.max(1, E.climateStep(slot));
     return {
       label: sp.label,
       unit: '°C',
       val: E.climateTarget(slot),
+      stale: E.climateTargetStale(slot),
       min: E.climateMin(slot),
       max: E.climateMax(slot),
       // acelaşi pas minim de 1° ca în dialInfo — vezi comentariul de acolo
-      step: Math.max(1, E.climateStep(slot)),
-      decimals: 1,
+      step,
+      decimals: E.tempDecimals(step),
       mapped: E.mapped(slot),
       writable: E.mapped(slot) && E.available(slot),
       set: (v) => E.setClimateTarget(slot, v)
@@ -403,7 +405,7 @@ export function buildAccordionItem(E, ui, u) {
         labelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:400; color:#bdb1a4;',
         hintStyle: 'font-family:' + SANS + '; font-size:10px; font-weight:300; color:' + (i.mapped ? TXT3 : ORANGE) + '; margin-top:2px;',
         hint: i.mapped ? 'pas ' + i.step + ' · ' + i.min + '–' + i.max + ' ' + i.unit : 'slot nemapat',
-        valStyle: 'font-family:' + DOTO + '; font-size:20px; font-weight:600; color:' + (shown === VERIFY ? ORANGE : ORANGE) + '; letter-spacing:0.02em;' + (shown === VERIFY ? ' font-size:13px;' : ''),
+        valStyle: 'font-family:' + DOTO + '; font-size:20px; font-weight:600; color:' + (shown === VERIFY ? ORANGE : ORANGE) + '; letter-spacing:0.02em;' + (shown === VERIFY ? ' font-size:13px;' : '') + (i.stale ? ' opacity:0.55;' : ''),
         val: shown,
         btnStyle: 'width:30px; height:30px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (i.writable ? 'pointer' : 'default') + '; opacity:' + (i.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
         onMinus: (e) => { stop(e); if (i.writable && i.val !== null) i.set(i.val - i.step); },
@@ -506,6 +508,7 @@ export function dialInfo(E, def) {
   const d = def.dial || {};
   if (d.kind === 'climate') {
     const val = E.climateTarget(def.slot);
+    const step = Math.max(1, E.climateStep(def.slot));
     return {
       val,
       unit: d.unit || '°',
@@ -514,8 +517,10 @@ export function dialInfo(E, def) {
       // Pas de UI de minim 1°: integrarea declară 0.5 (LG/Vortex/Vivax), dar
       // comenzile la granulaţie de 1° rămân valide (multiplu de 0.5). Dacă un
       // hardware ar declara un pas MAI MARE de 1°, acela e respectat.
-      step: Math.max(1, E.climateStep(def.slot)),
-      decimals: 0,
+      step,
+      decimals: E.tempDecimals(step),
+      // ţinta poate fi ultima valoare memorată (LG oprit) — se afişează estompat
+      stale: E.climateTargetStale(def.slot),
       writable: E.mapped(def.slot) && E.available(def.slot),
       mapped: E.mapped(def.slot),
       set: (v) => E.setClimateTarget(def.slot, v)
@@ -619,11 +624,14 @@ export function buildDeviceCard(E, ui, def) {
     // Carduri fără cadran (ex. pompa de filtrare, strict on/off): în locul
     // dial-ului se afişează un bloc de stare cu aceeaşi înălţime (132px),
     // ca layout-ul cardului să rămână identic cu al vecinilor.
-    hasDial: !!def.dial,
+    // Un dial de volum se ascunde şi când media_player-ul nu declară
+    // VOLUME_SET (bit 4) — ex. Hisense prin HomeKit.
+    hasDial: !!def.dial && !(def.dial.kind === 'volume' && E.mapped(def.slot) && !E.supportsFeature(def.slot, 4)),
     noDialWrapStyle: 'height:132px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; margin-top:2px;',
     noDialIconEl: ic(def.icon, { size: 34, color: a ? ORANGE : TXT3 }),
     noDialTextStyle: 'font-family:' + SANS + '; font-size:21px; font-weight:500; line-height:1; color:' + (a ? '#f7f1e9' : '#9d9186') + ';',
-    noDialText: !E.mapped(def.slot) ? VERIFY : !E.available(def.slot) ? NA : a ? 'Pornită' : 'Oprită',
+    noDialText: !E.mapped(def.slot) ? VERIFY : !E.available(def.slot) ? NA
+      : a ? (def.stateLabels ? def.stateLabels[0] : 'Pornit') : (def.stateLabels ? def.stateLabels[1] : 'Oprit'),
     cardStyle: 'padding:16px 16px 14px; border-radius:22px; background:' + CARD_BG + '; border:1px solid ' + CARD_BORDER + ';',
     headIconStyle: 'width:34px; height:34px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:' + (a ? '#2a1608' : TXT2) + '; background:' + (a ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(255,255,255,0.06)') + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)') + ';',
     headIconEl: ic(def.icon, { size: 18 }),
@@ -637,7 +645,7 @@ export function buildDeviceCard(E, ui, def) {
     dialWrapStyle: 'position:relative; width:132px; height:132px; flex-shrink:0; display:flex; align-items:center; justify-content:center;',
     dialTicksEl: dialTicks(frac, a),
     knobStyle: 'position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:74px; height:74px; border-radius:50%; display:flex; align-items:center; justify-content:center; gap:1px; background:radial-gradient(120% 120% at 30% 20%, #2e2620 0%, #17120f 70%); border:1px solid rgba(255,255,255,0.09); box-shadow:inset 0 2px 6px rgba(0,0,0,0.5), 0 10px 20px -10px rgba(0,0,0,0.8);',
-    knobValStyle: 'font-family:' + SANS + '; font-size:21px; font-weight:500; line-height:1; color:' + (a ? '#f7f1e9' : '#9d9186') + ';',
+    knobValStyle: 'font-family:' + SANS + '; font-size:21px; font-weight:500; line-height:1; color:' + (a ? '#f7f1e9' : '#9d9186') + ';' + (di.stale ? ' opacity:0.55;' : ''),
     knobUnitStyle: 'font-family:' + SANS + '; font-size:15px; font-weight:400; line-height:1; color:' + (a ? '#d8ccbe' : '#8c8177') + ';',
     dialVal,
     dialUnit: dialUnitShown,
@@ -711,9 +719,11 @@ export function buildSidebarDevice(E, ui, def) {
     cardStyle: 'display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:18px; cursor:pointer; background:' + CARD_BG + '; border:1px solid ' + (a ? 'rgba(240,138,44,0.22)' : CARD_BORDER) + ';',
     dialWrapStyle: 'position:relative; width:74px; height:74px; flex-shrink:0; display:flex; align-items:center; justify-content:center;',
     dialTicksEl: dialTicks(frac, a, 74),
-    dialValStyle: 'position:absolute; font-family:' + SANS + '; font-size:15px; font-weight:500; color:' + (a ? '#f7f1e9' : '#9d9186') + ';',
+    dialValStyle: 'position:absolute; font-family:' + SANS + '; font-size:15px; font-weight:500; color:' + (a ? '#f7f1e9' : '#9d9186') + ';' + (di.stale ? ' opacity:0.55;' : ''),
     // fără cadran: inelul mic arată starea; TV în standby: "Standby" în loc de "—%"
-    dialVal: !def.dial ? (a ? 'Pornită' : 'Oprită') : di.standby ? 'Standby' : dialVal + (di.val === null ? '' : di.unit),
+    dialVal: !def.dial
+      ? (a ? (def.stateLabels ? def.stateLabels[0] : 'Pornit') : (def.stateLabels ? def.stateLabels[1] : 'Oprit'))
+      : di.standby ? 'Standby' : dialVal + (di.val === null ? '' : di.unit),
     nameStyle: 'font-family:' + SANS + '; font-size:13.5px; font-weight:500; color:' + TXT + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
     metaStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT3 + '; margin-top:2px;',
     ambientStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + (ambientText(E, def) === VERIFY ? ORANGE : a ? '#c8a173' : TXT3) + '; margin-top:6px;',
@@ -784,10 +794,10 @@ export function buildModal(E, ui) {
     targetHint: di.mapped
       ? 'pas ' + di.step + ' · interval ' + di.min + '–' + di.max
       : 'VERIFY · nu ai mapat încă entitatea pentru această valoare',
-    targetVal: di.val === null ? NA : (di.unit === '%' ? String(Math.round(di.val)) : di.val.toFixed(1)),
+    targetVal: di.val === null ? NA : (di.unit === '%' || !di.decimals ? String(Math.round(di.val)) : di.val.toFixed(di.decimals)),
     targetWrapStyle: 'margin-top:18px; padding:16px; border-radius:18px; text-align:center; background:rgba(240,138,44,0.07); border:1px solid rgba(240,138,44,0.2);',
     targetCapStyle: 'font-family:' + SANS + '; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:' + ORANGE + ';',
-    targetValStyle: 'font-family:' + DOTO + '; font-size:44px; font-weight:400; color:#f7f1e9; line-height:1;',
+    targetValStyle: 'font-family:' + DOTO + '; font-size:44px; font-weight:400; color:#f7f1e9; line-height:1;' + (di.stale ? ' opacity:0.55;' : ''),
     targetUnitStyle: 'font-family:' + SANS + '; font-size:13px; color:' + TXT2 + ';',
     targetHintStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + (di.mapped ? TXT3 : ORANGE) + '; margin-top:10px;',
     stepBtnStyle: 'width:40px; height:40px; border-radius:13px; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:19px; font-weight:400; color:#e2d6c7; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);',

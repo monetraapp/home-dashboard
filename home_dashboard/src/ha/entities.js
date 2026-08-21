@@ -68,7 +68,7 @@ const FALLBACK = {};
 
 export function useEntities() {
   const ha = useHa();
-  const { states, entityMap, callService, markPending, pending } = ha;
+  const { states, entityMap, callService, markPending, pending, lastTargets } = ha;
 
   return useMemo(() => {
     /** entity_id-ul mapat direct pentru un slot (fără fallback). */
@@ -191,7 +191,33 @@ export function useEntities() {
       const pKey = 'target:' + st.entity_id;
       if (pending[pKey] !== undefined) return pending[pKey];
       const v = parseFloat(st.attributes && st.attributes.temperature);
-      return Number.isFinite(v) ? v : null;
+      if (Number.isFinite(v)) return v;
+      // integrarea nu raportează ţinta acum (ex. LG ThinQ cu unitatea oprită):
+      // folosim ultima valoare cunoscută (sesiune + localStorage + istoric HA)
+      const cached = lastTargets && lastTargets[st.entity_id];
+      return Number.isFinite(cached) ? cached : null;
+    }
+
+    /** true când ţinta afişată e o valoare memorată, nu raportată acum. */
+    function climateTargetStale(slotKey) {
+      const st = ent(slotKey);
+      if (!st) return false;
+      if (pending['target:' + st.entity_id] !== undefined) return false;
+      const v = parseFloat(st.attributes && st.attributes.temperature);
+      return !Number.isFinite(v) && Number.isFinite(lastTargets && lastTargets[st.entity_id]);
+    }
+
+    /** Verifică un bit din supported_features al entităţii unui slot. */
+    function supportsFeature(slotKey, bit) {
+      const st = ent(slotKey);
+      if (!st) return false;
+      const f = st.attributes && st.attributes.supported_features;
+      return typeof f === 'number' && (f & bit) !== 0;
+    }
+
+    /** Zecimale pentru temperaturi: 0 când pasul e întreg, 1 altfel. */
+    function tempDecimals(step) {
+      return Number.isFinite(step) && step % 1 !== 0 ? 1 : 0;
     }
 
     function climateCurrent(slotKey) {
@@ -350,11 +376,12 @@ export function useEntities() {
     return {
       ha, states, entityMap,
       idOf, ent, mapped, available, attr, rawState, num, fmt, isVerify, isOn, toggle,
-      climateTarget, climateCurrent, climateStep, climateMin, climateMax,
+      climateTarget, climateTargetStale, supportsFeature, tempDecimals,
+      climateCurrent, climateStep, climateMin, climateMax,
       setClimateTarget, bumpClimate, setHvacMode, setFanMode, setSwingMode, setPresetMode,
       numberValue, numberBounds, numberWritable, setNumber,
       volume, setVolume, isMuted, setMute, selectSource, mediaCommand, sourceList, currentSource,
       friendlyName, matchOption
     };
-  }, [ha, states, entityMap, callService, markPending, pending]);
+  }, [ha, states, entityMap, callService, markPending, pending, lastTargets]);
 }

@@ -24,6 +24,77 @@ export function HaProvider({ children }) {
   const connRef = useRef(null);
   const seededRef = useRef(false);
 
+  // Ultima temperatură-ţintă non-null văzută pentru fiecare entitate climate.
+  // Unele integrări (LG ThinQ) raportează temperature:null cât timp unitatea e
+  // oprită; păstrăm ultima valoare cunoscută (persistată în localStorage) şi o
+  // afişăm estompat. Dacă nu avem nimic în sesiune/localStorage, încercăm o
+  // singură dată istoricul HA (history_during_period).
+  const [lastTargets, setLastTargets] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('hd.ha.lastTargets')) || {};
+    } catch {
+      return {};
+    }
+  });
+  const historyTriedRef = useRef({});
+  useEffect(() => {
+    const next = {};
+    let changed = false;
+    Object.keys(states).forEach((id) => {
+      if (id.indexOf('climate.') !== 0) return;
+      const t = parseFloat(states[id].attributes && states[id].attributes.temperature);
+      if (Number.isFinite(t) && lastTargets[id] !== t) {
+        next[id] = t;
+        changed = true;
+      }
+    });
+    if (!changed) return;
+    const merged = Object.assign({}, lastTargets, next);
+    setLastTargets(merged);
+    try {
+      localStorage.setItem('hd.ha.lastTargets', JSON.stringify(merged));
+    } catch {
+      /* ignore */
+    }
+  }, [states, lastTargets]);
+  useEffect(() => {
+    const conn = connRef.current;
+    if (!conn || status !== 'connected') return;
+    Object.keys(states).forEach((id) => {
+      if (id.indexOf('climate.') !== 0) return;
+      const t = parseFloat(states[id].attributes && states[id].attributes.temperature);
+      if (Number.isFinite(t) || lastTargets[id] !== undefined || historyTriedRef.current[id]) return;
+      historyTriedRef.current[id] = true;
+      const end = new Date();
+      const start = new Date(end.getTime() - 7 * 24 * 3600 * 1000);
+      conn
+        .sendMessagePromise({
+          type: 'history/history_during_period',
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+          entity_ids: [id],
+          significant_changes_only: false,
+          minimal_response: false,
+          no_attributes: false
+        })
+        .then((res) => {
+          const rows = (res && res[id]) || [];
+          for (let i = rows.length - 1; i >= 0; i--) {
+            const v = parseFloat(rows[i].a && rows[i].a.temperature);
+            if (Number.isFinite(v)) {
+              setLastTargets((prev) => {
+                const m = Object.assign({}, prev, { [id]: v });
+                try { localStorage.setItem('hd.ha.lastTargets', JSON.stringify(m)); } catch { /* ignore */ }
+                return m;
+              });
+              return;
+            }
+          }
+        })
+        .catch(() => { /* fără istoric — rămâne "—" */ });
+    });
+  }, [states, status, lastTargets]);
+
   // valori "optimiste" pentru comenzi trimise dar neconfirmate încă de HA
   const [pending, setPending] = useState({});
   const pendingTimers = useRef({});
@@ -211,6 +282,7 @@ export function HaProvider({ children }) {
       connected: status === 'connected',
       error,
       states,
+      lastTargets,
       entityMap,
       setEntityMap,
       callService,
@@ -222,7 +294,7 @@ export function HaProvider({ children }) {
       clearCallError: () => setLastCallError(null)
     }),
     [
-      config, setConfig, resetConfig, retry, status, error, states, entityMap,
+      config, setConfig, resetConfig, retry, status, error, states, lastTargets, entityMap,
       setEntityMap, callService, sendMessagePromise, subscribeMessage, pending, markPending, lastCallError
     ]
   );

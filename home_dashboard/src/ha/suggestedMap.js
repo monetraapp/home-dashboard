@@ -63,6 +63,7 @@ export const SUGGESTED_MAP = {
   'media.sofia_parter': 'media_player.parter_televizor_sofia_parter_samsung',
   'media.dormitor_sofia': 'media_player.etaj_televizor_dormitor_sofia_etaj_samsung',
   'media.etaj_hisense': 'media_player.etaj_televizor_dormitor_etaj_hisense_television',
+  'media.etaj_hisense_mute': 'switch.etaj_televizor_dormitor_etaj_hisense_mute',
   'media.foisor': 'media_player.foisor_televizor_foisor_samsung',
   'media.tata_bucatarie': 'media_player.casa_tata_televizor_tata_bucatarie_samsung',
   'media.tata_dormitor': 'media_player.casa_tata_televizor_tata_dormitor_lg_2',

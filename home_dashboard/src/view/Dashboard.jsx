@@ -93,6 +93,8 @@ export default function Dashboard({ onOpenMapping }) {
   const acUnit = acUnits[acIndex % acUnits.length];
   const acOn = acUnit ? E.mapped(acUnit.slot) && E.isOn(acUnit.slot) : false;
   const acTarget = acUnit ? E.climateTarget(acUnit.slot) : null;
+  const acStale = acUnit ? E.climateTargetStale(acUnit.slot) : false;
+  const acDecimals = acUnit ? E.tempDecimals(Math.max(1, E.climateStep(acUnit.slot))) : 0;
   const acMin = acUnit ? E.climateMin(acUnit.slot) : 16;
   const acMax = acUnit ? E.climateMax(acUnit.slot) : 30;
   const acFrac = acTarget === null ? 0 : (acTarget - acMin) / ((acMax - acMin) || 1);
@@ -330,8 +332,8 @@ export default function Dashboard({ onOpenMapping }) {
 
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 10, marginTop: -6 }}>
                     <span style={s('font-family:' + SANS + '; font-size:12px; font-weight:300; color:' + TXT2 + ';')}>Ţintă</span>
-                    <span style={s('font-family:' + DOTO + '; font-size:34px; font-weight:400; color:#f7ede2; letter-spacing:0.02em;')}>
-                      {acTarget === null ? NA : acTarget.toFixed(1)}
+                    <span style={s('font-family:' + DOTO + '; font-size:34px; font-weight:400; color:#f7ede2; letter-spacing:0.02em;' + (acStale ? ' opacity:0.55;' : ''))}>
+                      {acTarget === null ? NA : acDecimals ? acTarget.toFixed(acDecimals) : String(Math.round(acTarget))}
                     </span>
                     <span style={s('font-family:' + SANS + '; font-size:12px; color:' + TXT2 + ';')}>°C</span>
                   </div>
@@ -727,7 +729,7 @@ function DeviceCard({ c }) {
            butoane: ţinta dubla valoarea din centrul cadranului, iar pasul e
            comunicat prin tooltip-ul butoanelor (title). */
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 2 }}>
-          <div style={s(c.roundBtnStyle)} onClick={c.onMinus} title={c.stepTitle}>−</div>
+          <div style={s(c.roundBtnStyle)} onClick={c.onMinus} title={c.stepTitle}>{ic('minus', { size: 16, sw: 2 })}</div>
           <div style={s(c.dialWrapStyle)}>
             {c.dialTicksEl}
             <div style={s(c.knobStyle)}>
@@ -735,7 +737,7 @@ function DeviceCard({ c }) {
               <span style={s(c.knobUnitStyle)}>{c.dialUnit}</span>
             </div>
           </div>
-          <div style={s(c.roundBtnStyle)} onClick={c.onPlus} title={c.stepTitle}>+</div>
+          <div style={s(c.roundBtnStyle)} onClick={c.onPlus} title={c.stepTitle}>{ic('plus', { size: 16, sw: 2 })}</div>
         </div>
       ) : (
         <div style={s(c.noDialWrapStyle)}>
@@ -963,9 +965,9 @@ function Block({ b }) {
                             <div style={s(sp.hintStyle)}>{sp.hint}</div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
-                            <div style={s(sp.btnStyle)} onClick={sp.onMinus}>−</div>
+                            <div style={s(sp.btnStyle)} onClick={sp.onMinus}>{ic('minus', { size: 15, sw: 2 })}</div>
                             <div style={s(sp.valStyle)}>{sp.val}</div>
-                            <div style={s(sp.btnStyle)} onClick={sp.onPlus}>+</div>
+                            <div style={s(sp.btnStyle)} onClick={sp.onPlus}>{ic('plus', { size: 15, sw: 2 })}</div>
                           </div>
                         </div>
                       ))}
@@ -1151,12 +1153,12 @@ function Modal({ m, onClose }) {
           <div style={s(m.targetWrapStyle)}>
             <div style={s(m.targetCapStyle)}>{m.targetLabel}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 8 }}>
-              <div style={s(m.stepBtnStyle)} onClick={m.onMinus}>−</div>
+              <div style={s(m.stepBtnStyle)} onClick={m.onMinus}>{ic('minus', { size: 18, sw: 2 })}</div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 <span style={s(m.targetValStyle)}>{m.targetVal}</span>
                 <span style={s(m.targetUnitStyle)}>{m.targetUnit}</span>
               </div>
-              <div style={s(m.stepBtnStyle)} onClick={m.onPlus}>+</div>
+              <div style={s(m.stepBtnStyle)} onClick={m.onPlus}>{ic('plus', { size: 18, sw: 2 })}</div>
             </div>
             <div style={s(m.targetHintStyle)}>{m.targetHint}</div>
           </div>

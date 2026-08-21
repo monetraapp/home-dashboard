@@ -104,6 +104,10 @@ export function ic(name, opts) {
     case 'bell': kids = [el('path', { key: 1, d: 'M6 10a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 14 6 10Z' }), el('path', { key: 2, d: 'M10 18a2 2 0 0 0 4 0' })]; break;
     case 'chat': kids = [el('path', { key: 1, d: 'M20 12a7 7 0 0 1-7 7H9l-4 2 1-3.5A7 7 0 1 1 20 12Z' })]; break;
     case 'close': kids = [el('path', { key: 1, d: 'M7 7l10 10M17 7 7 17' })]; break;
+    // minus/plus ca SVG (viewBox simetric) — glifele de font stau pe linia de
+    // bază şi nu se centrează optic în butoanele rotunde (bug 0.3, v1.1.0)
+    case 'minus': kids = [el('path', { key: 1, d: 'M5 12h14' })]; break;
+    case 'plus': kids = [el('path', { key: 1, d: 'M12 5v14M5 12h14' })]; break;
     case 'check': kids = [el('polyline', { key: 1, points: '6,12.6 10.2,16.6 18,7.8' })]; break;
     case 'plus': kids = [el('path', { key: 1, d: 'M12 6v12M6 12h12' })]; break;
     case 'sliders': kids = [el('path', { key: 1, d: 'M4 8h11M18.5 8H20M4 16h5M12.5 16H20' }), el('circle', { key: 2, cx: 16.6, cy: 8, r: 2 }), el('circle', { key: 3, cx: 10.6, cy: 16, r: 2 })]; break;

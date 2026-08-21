@@ -107,6 +107,7 @@ export const DEVICE_CARDS = [
     // afişează în loc un bloc de stare Pornită/Oprită (vezi hasDial în build).
     ambient: { kind: 'compose', parts: [['sensor.apa_temp', 'Apă ', ' °C']] },
     dial: null,
+    stateLabels: ['Pornită', 'Oprită'],
     minis: [],
     circles: []
   },
@@ -199,13 +200,16 @@ export const DEVICE_CARDS = [
   ...mediaCard('media-bucatarie', 'media.bucatarie', 'TV Bucătărie', 'Parter', 'Parter'),
   ...mediaCard('media-sofia-parter', 'media.sofia_parter', 'TV Sofia Parter', 'Parter', 'Parter'),
   ...mediaCard('media-dormitor-sofia', 'media.dormitor_sofia', 'TV Dormitor Sofia', 'Etaj', 'Etaj'),
-  ...mediaCard('media-etaj-hisense', 'media.etaj_hisense', 'TV Dormitor Etaj', 'Hisense', 'Etaj'),
+  // Hisense (HomeKit): mute e un switch dedicat (media_player-ul nu are bitul
+  // VOLUME_MUTE); volumul lipseşte complet (fără VOLUME_SET) — dial-ul se
+  // ascunde singur prin verificarea de supported_features din build.
+  ...mediaCard('media-etaj-hisense', 'media.etaj_hisense', 'TV Dormitor Etaj', 'Hisense', 'Etaj', A.slot('media.etaj_hisense_mute')),
   ...mediaCard('media-foisor', 'media.foisor', 'TV Foişor', 'Exterior', 'Mansardă şi Foişor'),
   ...mediaCard('media-tata-buc', 'media.tata_bucatarie', 'TV Bucătărie Tata', 'Casa Tata', 'Casa Tata'),
   ...mediaCard('media-tata-dormitor', 'media.tata_dormitor', 'TV Dormitor Tata', 'Casa Tata · LG', 'Casa Tata')
 ];
 
-function mediaCard(id, slot, label, model, zone) {
+function mediaCard(id, slot, label, model, zone, muteAction) {
   return [
     {
       id,
@@ -223,7 +227,7 @@ function mediaCard(id, slot, label, model, zone) {
       // source_list e doar [TV, HDMI] cât timp TV-ul e stins, dar se
       // repopulează cu aplicaţii când TV-ul e pornit — se activează singure.
       minis: [
-        { id: id + '-mute', icon: 'ban', label: 'Mut', action: A.mute() }
+        { id: id + '-mute', icon: 'ban', label: 'Mut', action: muteAction || A.mute() }
       ],
       circles: [
         { id: id + '-c-h1', icon: 'monitor', label: 'HDMI 1', action: A.source('hdmi 1', 'hdmi1', 'hdmi') },
