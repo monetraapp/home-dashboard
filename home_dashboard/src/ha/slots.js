@@ -31,6 +31,15 @@ export const SLOTS = [
   slot('sensor.temp_exterior', 'Temperatură exterior', 'climat', ['sensor', 'weather'], {
     note: 'Opţional — dacă lipseşte, se ia din entitatea weather.'
   }),
+  slot('sensor.lg_pornire_min', 'AC Etaj LG · pornire peste (min)', 'climat', ['sensor'], {
+    note: 'Decalaj în minute faţă de acum, nu o oră fixă — confirmat manual în appul LG ThinQ. Mapat pe sensor.* (device_class duration, unitate min corectă), nu pe number.* (acelaşi număr brut, dar unitate h greşită pe acea entitate).'
+  }),
+  slot('sensor.lg_oprire_min', 'AC Etaj LG · oprire peste (min)', 'climat', ['sensor'], {
+    note: 'Decalaj în minute, nu oră fixă — confirmat manual. Mapat pe sensor.* pentru acelaşi motiv ca mai sus.'
+  }),
+  slot('sensor.lg_somn_min', 'AC Etaj LG · temporizator somn (min)', 'climat', ['sensor'], {
+    note: 'Countdown în minute — mapat pe sensor.* (unitate min corectă).'
+  }),
 
   // -------------------------------------------------------------- PISCINĂ
   slot('switch.pompa_filtrare', 'Pompă filtrare piscină', 'piscina', ['switch', 'input_boolean', 'fan'], {

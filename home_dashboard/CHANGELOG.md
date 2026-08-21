@@ -1,5 +1,54 @@
 # Changelog
 
+## 1.0.4
+
+Șapte corecții de etichetă/mapare, toate verificate manual în aplicațiile
+native ale producătorilor (nu doar deduse din atributele HA):
+
+1. **AC Etaj LG — Programare pornire/oprire.** Confirmat: decalaje în minute
+   de-acum, nu ore fixe. Etichete schimbate din "Programare pornire" /
+   "Programare oprire" în "Pornire peste (min)" / "Oprire peste (min)",
+   remapate pe `sensor.etaj_aer_conditionat_lg_etaj_schedule_turn_on` /
+   `_turn_off` (nu `number.*` — sensor-ul are `device_class: duration` și
+   unitatea corectă `min`; number-ul avea `h`, greșit, pentru aceeași
+   valoare brută). Rândurile au trecut din secțiunea "Funcții" (butoane
+   dezactivate cu explicație "HA nu expune temporizatoarele") într-o
+   secțiune nouă "Cronometre", ca valori citite real din HA.
+2. **AC Etaj LG — Sleep timer.** Aceeași corecție de unitate, remapat pe
+   `sensor.etaj_aer_conditionat_lg_etaj_sleep_timer` (min).
+3. **AC Mansardă Vortex — High vs Turbo.** Confirmat corect așa cum era:
+   trepte distincte în appul AUX Cloud nativ. Nicio schimbare de cod.
+4. **AC Mansardă Vivax — treapta "full".** Nu s-a putut confirma
+   corespondența exactă cu eticheta "Maxim" (appul Midea nativ arată doar
+   un slider continuu, fără etichete separate). Eticheta a rămas
+   neschimbată; adăugat un comentariu TODO în `accordions.js` lângă acest
+   buton, documentând ambiguitatea pentru verificare ulterioară — butonul
+   rămâne VERIFY, nu ghicim maparea.
+5. **Pompă căldură Fairland — preset_modes.** Confirmat din appul Tuya
+   nativ: Silențios / Smart / Turbo (nu Silențios / Eco / Turbo cum arăta
+   design-ul). Eticheta "Eco" → "Smart" peste tot unde apărea (mini-buton
+   pe cardul principal + panoul de Funcții din acordeon). În plus, butonul
+   "Turbo" avea un bug real, independent de etichetă: lista lui de
+   cuvinte-cheie (`boost`/`turbo`/`powerful`) nu conținea niciodată
+   `quick` — valoarea reală din `preset_modes` — deci butonul nu se activa
+   niciodată. Adăugat `quick` în lista de cuvinte-cheie; acum funcționează.
+6. **Pompă căldură — "Debit apă".** `binary_sensor.pompa_caldura_piscina_water_flow`
+   are `device_class: problem`, deci e un flag binar de eroare, nu o rată
+   de debit. Etichetă schimbată din "Debit apă" în "Problemă debit apă",
+   afișare Da/Nu (nu mai Pornit/Oprit), în toate cele 3 locuri unde apărea
+   (pagina Piscină, cardul pompei de filtrare, cardul pompei de căldură).
+7. **Event AC Etaj — Notification.** `event_types` conține o singură
+   valoare posibilă (`water_is_full`). Nu există niciun slot/rând în design
+   pentru acest event momentan, deci nu era nimic de reetichetat — notat
+   aici pentru referință, în caz că se adaugă un rând pentru el mai târziu
+   (ar trebui să se numească explicit "Alertă: rezervor plin", nu
+   "Notificare" generică).
+
+Catalogul de sloturi a crescut de la 108 la 111 (cele 3 sloturi noi pentru
+cronometrele LG, punctele 1-2 de mai sus), iar cele mapate din audit de la
+104 la 107 — cele 4 sloturi VERIFY rămase sunt neschimbate (fără
+corespondent real în HA, vezi `UNMAPPED_REASONS`).
+
 ## 1.0.3
 
 Maparea din audit (`SUGGESTED_MAP`, aceeaşi din spatele butonului "Aplică

@@ -115,7 +115,7 @@ export const PAGES = {
           monitor('Măsurători', [
             r('Temperatură apă', 'sensor.apa_temp', { unit: C }),
             r('Consum pompă căldură', 'sensor.pc_consum'),
-            r('Debit apă', 'binary_sensor.pc_debit', { map: { on: 'Pornit', off: 'Oprit' } }),
+            r('Problemă debit apă', 'binary_sensor.pc_debit', { map: { on: 'Da', off: 'Nu' } }),
             r('Flag problemă', 'binary_sensor.pc_problema', { map: { on: 'Da', off: 'Nu' } })
           ])
         ]

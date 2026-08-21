@@ -91,11 +91,13 @@ export const CLIMAT_ACCORDION = [
         act('ban', 'Oprit', A.swing(...SWING.off)),
         act('updown', 'Pornit', A.swing(...SWING.on))
       ]),
-      sec('Funcţii', 4, [
-        act('leaf', 'Economie', A.preset('eco', 'energy', 'economy')),
-        act('moon', 'Temporizator somn', A.none(NO_TIMER)),
-        act('calDown', 'Programare pornire', A.none(NO_TIMER)),
-        act('calUp', 'Programare oprire', A.none(NO_TIMER))
+      sec('Funcţii', 1, [
+        act('leaf', 'Economie', A.preset('eco', 'energy', 'economy'))
+      ]),
+      sec('Cronometre', 3, [
+        ro('moon', 'Temporizator somn (min)', 'sensor.lg_somn_min', { unit: 'min', decimals: 0 }),
+        ro('calDown', 'Pornire peste (min)', 'sensor.lg_pornire_min', { unit: 'min', decimals: 0 }),
+        ro('calUp', 'Oprire peste (min)', 'sensor.lg_oprire_min', { unit: 'min', decimals: 0 })
       ]),
       sec('Consum', 4, [
         ro('bolt', 'Azi', 'energy.ac_etaj_azi'),
@@ -116,6 +118,12 @@ export const CLIMAT_ACCORDION = [
         act('bars2', 'Scăzut', A.fan(...FAN.low)),
         act('bars3', 'Mediu', A.fan(...FAN.mid)),
         act('fan2', 'Ridicat', A.fan(...FAN.high)),
+        // TODO necesită verificare ulterioară: fan_modes al acestui AC (Midea)
+        // conţine atât 'high' cât şi 'full', tratate ca trepte distincte de HA.
+        // Appul nativ Midea nu are o listă separată de trepte (doar un slider
+        // continuu), deci corespondenţa exactă 'full' ↔ eticheta „Maxim" nu a
+        // putut fi confirmată. FAN.turbo nu conţine 'full' printre cuvintele
+        // cheie, deci acest buton rămâne VERIFY până se confirmă — nu ghicim.
         act('fan', 'Maxim', A.fan(...FAN.turbo))
       ]),
       sec('Baleiaj', 4, [
@@ -153,7 +161,7 @@ export const PISCINA_ACCORDION = [
       ]),
       sec('Diagnostic', 4, [
         ro('bolt', 'Consum', 'sensor.pompa_consum'),
-        ro('waves', 'Debit apă', 'binary_sensor.pc_debit', { map: { on: 'Pornit', off: 'Oprit' } }),
+        ro('waves', 'Problemă debit apă', 'binary_sensor.pc_debit', { map: { on: 'Da', off: 'Nu' } }),
         ro('gauge', 'Temperatură apă', 'sensor.apa_temp', { unit: C }),
         ro('alertCircle', 'Flag problemă', 'binary_sensor.pc_problema', { map: { on: 'Da', off: 'Nu' } })
       ])
@@ -169,15 +177,17 @@ export const PISCINA_ACCORDION = [
         act('auto', 'Auto', A.hvac('auto')),
         act('fan2', 'Doar ventilator', A.hvac('fan_only'))
       ]),
+      // Cele 3 presetModes reale ale pompei (quiet/smart/quick) confirmate manual
+      // în appul Tuya nativ: Silenţios / Smart / Turbo, exact în această ordine.
       sec('Funcţii', 4, [
         act('moon', 'Silenţios', A.preset('silent', 'quiet', 'silentios')),
-        act('leaf', 'Eco', A.preset('eco', 'economy', 'smart')),
-        act('boost', 'Turbo', A.preset('boost', 'turbo', 'powerful')),
+        act('sparkle', 'Smart', A.preset('smart')),
+        act('boost', 'Turbo', A.preset('boost', 'turbo', 'powerful', 'quick')),
         act('clock', 'Temporizator', A.none(NO_TIMER))
       ]),
       sec('Diagnostic', 4, [
         ro('bolt', 'Consum', 'sensor.pc_consum'),
-        ro('waves', 'Debit apă', 'binary_sensor.pc_debit', { map: { on: 'Pornit', off: 'Oprit' } }),
+        ro('waves', 'Problemă debit apă', 'binary_sensor.pc_debit', { map: { on: 'Da', off: 'Nu' } }),
         ro('gauge', 'Temperatură apă', 'sensor.apa_temp', { unit: C }),
         ro('alertCircle', 'Flag problemă', 'binary_sensor.pc_problema', { map: { on: 'Da', off: 'Nu' } })
       ])

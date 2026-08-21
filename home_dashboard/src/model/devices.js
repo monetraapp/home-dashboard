@@ -59,7 +59,7 @@ export const DEVICE_CARDS = [
     dial: { kind: 'climate', unit: '°' },
     minis: [
       { id: 'hp-silent', icon: 'moon', label: 'Silenţios', action: A.preset('silent', 'quiet', 'silentios') },
-      { id: 'hp-eco', icon: 'leaf', label: 'Eco', action: A.preset('eco', 'economy', 'smart') }
+      { id: 'hp-smart', icon: 'sparkle', label: 'Smart', action: A.preset('smart') }
     ],
     circles: [
       { id: 'hp-c-heat', icon: 'flame', label: 'Încălzire apă', action: A.hvac('heat') },

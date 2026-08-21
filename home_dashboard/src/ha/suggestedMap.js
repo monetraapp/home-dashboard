@@ -15,6 +15,12 @@ export const SUGGESTED_MAP = {
   'climate.vortex': 'climate.aux_cloud_ec0baeae4fb7_ac',
   'climate.etaj': 'climate.etaj_aer_conditionat_lg_etaj',
   'climate.vivax': 'climate.mansarda_aer_conditionat_vivax_mansarda',
+  // Confirmate manual în appul LG ThinQ (2026-08-21): decalaje în minute, nu ore
+  // fixe. Mapate pe sensor.* — singurul cu unitatea corectă (min); number.* are
+  // aceeaşi valoare brută dar unitate declarată greşit (h).
+  'sensor.lg_pornire_min': 'sensor.etaj_aer_conditionat_lg_etaj_schedule_turn_on',
+  'sensor.lg_oprire_min': 'sensor.etaj_aer_conditionat_lg_etaj_schedule_turn_off',
+  'sensor.lg_somn_min': 'sensor.etaj_aer_conditionat_lg_etaj_sleep_timer',
 
   // -------------------------------------------------------------- PISCINĂ
   'switch.pompa_filtrare': 'switch.filter_pump',
