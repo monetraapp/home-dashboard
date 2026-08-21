@@ -1,0 +1,11 @@
+node_modules
+dist
+test
+rootfs
+Dockerfile
+.dockerignore
+config.yaml
+build.yaml
+translations
+*.md
+entities-binary-update.json

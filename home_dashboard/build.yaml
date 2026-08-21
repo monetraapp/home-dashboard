@@ -1,0 +1,5 @@
+# https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
+# Fixăm imaginile de bază, ca build-ul să fie reproductibil pe ambele arhitecturi.
+build_from:
+  aarch64: ghcr.io/home-assistant/aarch64-base:3.23
+  amd64: ghcr.io/home-assistant/amd64-base:3.23

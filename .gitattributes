@@ -1,0 +1,10 @@
+# Proiectul se construieşte şi rulează în container Linux. Scripturile de
+# pornire trebuie să aibă obligatoriu terminaţii LF: un shebang cu CRLF
+# ("#!/usr/bin/with-contenv bashio\r") face kernelul să nu găsească interpretorul
+# şi add-on-ul nu porneşte, cu o eroare greu de diagnosticat.
+* text=auto eol=lf
+
+# Binare — nu le atinge
+*.webp binary
+*.png  binary
+*.zip  binary

@@ -1,6 +1,6 @@
 # dependinţe şi build
-app/node_modules/
-app/dist/
+home_dashboard/node_modules/
+home_dashboard/dist/
 node_modules/
 
 # arhive exportate din Claude Design (43 MB) — designul e deja despachetat în design-updatev1/
@@ -17,7 +17,7 @@ Thumbs.db
 .thumbnail
 
 # datele de conectare la Home Assistant NU ajung niciodată în fişiere —
-# adresa şi token-ul stau doar în localStorage-ul browserului (vezi src/ha/store.js).
+# adresa şi token-ul stau doar în localStorage-ul browserului (vezi home_dashboard/src/ha/store.js).
 # Liniile de mai jos sunt o plasă de siguranţă în caz că adaugi vreodată un .env.
 .env
 .env.*

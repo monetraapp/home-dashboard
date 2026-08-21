@@ -1,0 +1,14 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Porneşte nginx, care serveşte dashboard-ul compilat pe portul de ingress
+# ==============================================================================
+
+bashio::log.level "$(bashio::config 'log_level')"
+
+bashio::log.info "Home Dashboard: pornesc nginx pe portul de ingress 8099"
+
+if ! bashio::fs.directory_exists '/var/www'; then
+    bashio::exit.nok "Lipsesc fişierele compilate din /var/www — build-ul imaginii a eşuat."
+fi
+
+exec nginx -c /etc/nginx/nginx.conf

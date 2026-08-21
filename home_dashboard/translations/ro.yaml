@@ -1,0 +1,6 @@
+configuration:
+  log_level:
+    name: Nivel de log
+    description: >-
+      Cât de detaliat scrie add-on-ul în jurnal. Lasă-l pe „info", în afară de
+      cazul în care depanezi o problemă de pornire.

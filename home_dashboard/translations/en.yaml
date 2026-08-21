@@ -1,0 +1,6 @@
+configuration:
+  log_level:
+    name: Log level
+    description: >-
+      How verbose the add-on log should be. Leave it on "info" unless you are
+      debugging a startup problem.

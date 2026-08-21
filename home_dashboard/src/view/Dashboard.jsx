@@ -490,7 +490,7 @@ export default function Dashboard({ onOpenMapping }) {
           <div style={s(rightColStyle)}>
             <div style={s('position:relative; flex:0 0 ' + (mob ? '300px' : tab ? '400px' : '520px') + '; height:' + (mob ? '300px' : tab ? '400px' : '520px') + '; overflow:hidden;')}>
               <img
-                src="/hero-house.webp"
+                src={import.meta.env.BASE_URL + 'hero-house.webp'}
                 alt=""
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
               />
