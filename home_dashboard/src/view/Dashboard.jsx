@@ -192,7 +192,10 @@ export default function Dashboard({ onOpenMapping }) {
   const cardTitleStyle = 'font-family:' + SANS + '; font-size:14.5px; font-weight:500; color:' + TXT + ';';
   const cardSubStyle = 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + TXT3 + '; margin-top:2px;';
   const circleBtnStyle = 'width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center; color:#b8ab9b; cursor:pointer;';
-  const energyDialWrapStyle = 'position:relative; width:118px; height:118px; margin:auto; flex:1; display:flex; align-items:center; justify-content:center;';
+  // flex:1 + height fixă intrau în conflict (flex-basis bătea height în
+  // coloană) şi inelul de 118px ieşea din cardul de 190px. Wrap-ul umple acum
+  // spaţiul rămas, iar inelul e dimensionat să încapă (104px).
+  const energyDialWrapStyle = 'position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;';
   const dialCenterStyle = 'position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center;';
   const dialNumStyle = 'font-family:' + DOTO + '; font-size:30px; font-weight:400; color:#f7ede2; line-height:1;';
   const dialUnitStyle = 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT2 + '; margin-top:3px;';
@@ -367,10 +370,10 @@ export default function Dashboard({ onOpenMapping }) {
                 {/* două cadrane mici */}
                 <div style={s('display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px;')}>
                   <div style={s(glassCard() + ' height:190px; display:flex; flex-direction:column;')}>
-                    <div style={s(cardTitleStyle)}>Consum energie · AC Etaj</div>
-                    <div style={s(cardSubStyle)}>{'Luna curentă · ' + monthPct + '% scursă'}</div>
+                    <div style={s(cardTitleStyle)}>AC Etaj · consum luna curentă</div>
+                    <div style={s(cardSubStyle)}>{now.getDate() + ' din ' + daysInMonth + ' zile'}</div>
                     <div style={s(energyDialWrapStyle)}>
-                      {ribbonRing(118, monthPct)}
+                      {ribbonRing(104, monthPct)}
                       <div style={s(dialCenterStyle)}>
                         <div style={s(dialNumStyle + (energyValue === VERIFY ? ' font-size:15px; color:' + ORANGE + ';' : ''))}>{energyValue}</div>
                         <div style={s(dialUnitStyle)}>{energyUnit}</div>
@@ -381,7 +384,7 @@ export default function Dashboard({ onOpenMapping }) {
                     <div style={s(cardTitleStyle)}>Dispozitive</div>
                     <div style={s(cardSubStyle)}>{onCount + '/' + trackedCards.length + ' active acum'}</div>
                     <div style={s(energyDialWrapStyle)}>
-                      {segmentRing(118, Math.max(1, trackedCards.length), onCount)}
+                      {segmentRing(104, Math.max(1, trackedCards.length), onCount)}
                       <div style={s(dialCenterStyle)}>
                         <div style={s(dialNumStyle)}>{trackedCards.length}</div>
                       </div>
@@ -718,9 +721,13 @@ function DeviceCard({ c }) {
       <div style={s(c.ambientStyle)}>{c.ambient}</div>
 
       {c.hasDial ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 2 }}>
-          <div style={s(c.roundBtnStyle)} onClick={c.onMinus}>−</div>
-          <div style={s(c.stepLabelStyle)}>{c.stepLabel}</div>
+        /* − şi + flanchează cadranul direct: simetrice stânga/dreapta, la
+           aceeaşi distanţă de marginea lui, centrate vertical pe mijlocul
+           cercului. Valorile laterale (pasul şi ţinta) au fost scoase dintre
+           butoane: ţinta dubla valoarea din centrul cadranului, iar pasul e
+           comunicat prin tooltip-ul butoanelor (title). */
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 2 }}>
+          <div style={s(c.roundBtnStyle)} onClick={c.onMinus} title={c.stepTitle}>−</div>
           <div style={s(c.dialWrapStyle)}>
             {c.dialTicksEl}
             <div style={s(c.knobStyle)}>
@@ -728,8 +735,7 @@ function DeviceCard({ c }) {
               <span style={s(c.knobUnitStyle)}>{c.dialUnit}</span>
             </div>
           </div>
-          <div style={s(c.targetLabelStyle)}>{c.targetLabel}</div>
-          <div style={s(c.roundBtnStyle)} onClick={c.onPlus}>+</div>
+          <div style={s(c.roundBtnStyle)} onClick={c.onPlus} title={c.stepTitle}>+</div>
         </div>
       ) : (
         <div style={s(c.noDialWrapStyle)}>

@@ -120,7 +120,7 @@ export const DEVICE_CARDS = [
     kind: 'media',
     zone: 'Mansardă şi Foişor',
     ambient: { kind: 'mediaState' },
-    dial: { kind: 'volume', unit: '%', min: 0, max: 100, step: 5 },
+    dial: { kind: 'volume', unit: '%', min: 0, max: 100, step: 1 },
     // "Redare" (buton inert) ELIMINAT şi "Plex" înlocuit cu "TV" (2026-08-22):
     // Plex nu apare în source_list-ul niciunui televizor din casă.
     minis: [
@@ -217,7 +217,7 @@ function mediaCard(id, slot, label, model, zone) {
       kind: 'media',
       zone,
       ambient: { kind: 'mediaState' },
-      dial: { kind: 'volume', unit: '%', min: 0, max: 100, step: 5 },
+      dial: { kind: 'volume', unit: '%', min: 0, max: 100, step: 1 },
       // "Redare" (inert) eliminat; "Plex" → "TV" — vezi nota de pe cardul
       // TV Mansardă. Chip-urile YouTube/Netflix rămân: pe Samsung-uri
       // source_list e doar [TV, HDMI] cât timp TV-ul e stins, dar se

@@ -1,5 +1,72 @@
 # Changelog
 
+## 1.0.7
+
+Bug-uri + normalizare controale numerice. Fără modificări de design major.
+
+**0.1 · "Regresia" Vortex — diagnostic.** Codul v1.0.6 NU poate afişa VERIFY pe
+chip-urile Vortex: referinţele vechi (preset-uri, `sensor.pompa_consum`,
+dial-ul pompei) nu mai există în surse şi nici în bundle-ul compilat (verificat
+cu grep pe `dist/` după build). Elementele din capturi provin de la un client
+vechi: un tab deschis de dinainte de 1.0.5 (SPA-ul păstrează JS-ul vechi în
+memorie şi vorbeşte direct cu HA prin WebSocket, deci "merge" la nesfârşit cu
+cod vechi chiar dacă add-on-ul a fost reconstruit) sau serverul de dev local pe
+un checkout vechi. nginx-ul add-on-ului avea DEJA `no-cache` pe index.html şi
+cache imutabil doar pe asset-urile cu hash, deci HTTP caching între versiuni
+era exclus. Remediu: un refresh al tabului. Ca prevenţie de clasă s-a
+implementat oricum punctul următor.
+
+**0.1 · Versionarea schemei de mapare (prevenţie).** localStorage nu mai ţine
+snapshot-uri complete ale mapării (sursa reală a "îngheţării" default-urilor —
+ex. cronometrele LG blocate pe `sensor.*` la cine apăsase "Aplică din audit" pe
+v1.0.4). Formatul devine `{ __v: 2, map: {doar diferenţele} }`; la încărcare,
+o mapare veche e migrată automat: cheile sloturilor eliminate se curăţă,
+valorile egale cu default-uri vechi se aduc la cele noi
+(`LEGACY_VALUE_MIGRATIONS`), snapshot-urile se reduc la diferenţe, iar golirile
+explicite moştenite primesc o amnistie unică. Sloturile noi primesc automat
+default-ul din cod. Utilizatorul nu mai atinge niciodată localStorage manual.
+
+**0.2 · Unitate dublată** ("Apă 32.0 °C °C"): `ambientText`/compose lăsa `fmt`
+să adauge unitatea entităţii şi apoi adăuga şi sufixul propriu. `fmt` primeşte
+acum `unit:''`, sufixul definiţiei fiind singura unitate. Acelaşi tipar exista
+şi pe cardurile Clorinator (ORP " mV" dublat) — acoperit de aceeaşi corecţie.
+
+**0.3 / 0.4-pompă:** deja rezolvate în 1.0.5/1.0.6; vezi diagnosticul 0.1 —
+apariţiile din capturi sunt ale clientului vechi, imposibile în bundle-ul curent.
+
+**0.4 · TV în standby:** dial-ul de volum nu mai arată "—%": centrul afişează
+"—" fără unitate, butoanele −/+ devin inactive, iar starea "Standby" e vizibilă
+în rândul de stare al cardului şi în inelul mic din sidebar ("Standby" în loc de
+valoare). Se aplică automat tuturor celor 8 televizoare.
+
+**0.5 · Cardul de energie:** titlu "AC Etaj · consum luna curentă", linia
+secundară "N din M zile" (procentul scurs din lună nu mai poate fi confundat cu
+consumul; arcul inelului îl reprezintă în continuare vizual). Overflow-ul
+inelului reparat: `flex:1` şi `height:118px` intrau în conflict (în coloană
+flex-basis bate height), inelul depăşind cardul de 190px — wrap-ul umple acum
+corect spaţiul, iar inelele au 104px ca să încapă (şi cel din "Dispozitive",
+pentru consistenţă).
+
+**1.1 + 1.3 · Butoanele −/+ şi valorile laterale:** − şi + flanchează acum
+cadranul direct — simetrice, aceeaşi distanţă faţă de margine, centrate
+vertical pe mijlocul cercului, pe toate cardurile. Valorile laterale ambigue au
+fost scoase: ţinta din dreapta dubla exact valoarea din centrul cadranului
+(redundantă), iar pasul din stânga e comunicat acum prin tooltip-ul butoanelor
+("pas 1°"). Stilul butoanelor e neschimbat.
+
+**1.2 · Paşi de incrementare** (verificaţi întâi în HA, pe atributele reale):
+- AC Vortex / LG / Vivax: `target_temp_step: 0.5` vine de la integrări, dar
+  0.5 e granularitatea minimă acceptată, nu una impusă — comenzile în paşi de
+  1° sunt valide (multipli de 0.5). UI-ul foloseşte acum `max(1, step)` în dial
+  şi în valorile ţintă din acordeon; un hardware care ar declara pas >1° ar fi
+  respectat.
+- Volum TV: 5 → 1 (ambele definiţii de card).
+- Fairland: pas nativ 1° — neatins.
+- Producţie clor: rămâne pe 5, read-only — slotul e mapat pe un senzor
+  (`sensor.piscina_productie_clor`), nu pe o entitate reglabilă.
+- Limită putere Vortex şi cronometrele LG: pas nativ 1 (citit din entitate) —
+  neschimbate.
+
 ## 1.0.6
 
 Patru schimbări, un singur release:

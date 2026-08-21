@@ -331,7 +331,8 @@ function setpointInfo(E, cardDef, sp) {
       val: E.climateTarget(slot),
       min: E.climateMin(slot),
       max: E.climateMax(slot),
-      step: E.climateStep(slot),
+      // acelaşi pas minim de 1° ca în dialInfo — vezi comentariul de acolo
+      step: Math.max(1, E.climateStep(slot)),
       decimals: 1,
       mapped: E.mapped(slot),
       writable: E.mapped(slot) && E.available(slot),
@@ -510,7 +511,10 @@ export function dialInfo(E, def) {
       unit: d.unit || '°',
       min: E.climateMin(def.slot),
       max: E.climateMax(def.slot),
-      step: E.climateStep(def.slot),
+      // Pas de UI de minim 1°: integrarea declară 0.5 (LG/Vortex/Vivax), dar
+      // comenzile la granulaţie de 1° rămân valide (multiplu de 0.5). Dacă un
+      // hardware ar declara un pas MAI MARE de 1°, acela e respectat.
+      step: Math.max(1, E.climateStep(def.slot)),
       decimals: 0,
       writable: E.mapped(def.slot) && E.available(def.slot),
       mapped: E.mapped(def.slot),
@@ -532,6 +536,9 @@ export function dialInfo(E, def) {
     };
   }
   if (d.kind === 'volume') {
+    // TV oprit (standby): volumul nu există — dial-ul devine read-only şi
+    // starea se comunică prin textul "Standby" (ambient + inelul din sidebar).
+    const standby = E.mapped(def.slot) && E.available(def.slot) && E.rawState(def.slot) === 'off';
     return {
       val: E.volume(def.slot),
       unit: d.unit || '%',
@@ -539,7 +546,8 @@ export function dialInfo(E, def) {
       max: 100,
       step: d.step || 5,
       decimals: 0,
-      writable: E.mapped(def.slot) && E.available(def.slot),
+      standby,
+      writable: E.mapped(def.slot) && E.available(def.slot) && !standby,
       mapped: E.mapped(def.slot),
       set: (v) => E.setVolume(def.slot, v)
     };
@@ -559,8 +567,10 @@ function ambientText(E, def) {
   if (a.kind === 'compose') {
     return a.parts
       .map((p) => {
-        const v = E.fmt(p[0], { unit: p[2] === '' ? '' : undefined });
-        // fără sufix de unitate când valoarea lipseşte
+        // Unitatea vine EXCLUSIV din sufixul p[2] al definiţiei — fmt primeşte
+        // unit:'' ca să nu adauge şi unit_of_measurement al entităţii (altfel
+        // apărea dublat: "Apă 32.0 °C °C"). Fără sufix când valoarea lipseşte.
+        const v = E.fmt(p[0], { unit: '' });
         return p[1] + v + (v === VERIFY || v === NA ? '' : p[2] || '');
       })
       .join('');
@@ -597,7 +607,9 @@ export function buildDeviceCard(E, ui, def) {
   const canToggle = E.mapped(def.slot) && E.available(def.slot);
 
   const dialVal = di.val === null ? NA : (di.decimals ? di.val.toFixed(di.decimals) : String(Math.round(di.val)));
-  const targetLabel = !di.mapped ? VERIFY : di.val === null ? NA : dialVal + di.unit;
+  // fără unitate lângă valoarea lipsă ("—", nu "—%")
+  const dialUnitShown = di.val === null ? '' : di.unit;
+  const targetLabel = di.standby ? 'Standby' : !di.mapped ? VERIFY : di.val === null ? NA : dialVal + di.unit;
 
   return {
     id: def.id,
@@ -628,7 +640,10 @@ export function buildDeviceCard(E, ui, def) {
     knobValStyle: 'font-family:' + SANS + '; font-size:21px; font-weight:500; line-height:1; color:' + (a ? '#f7f1e9' : '#9d9186') + ';',
     knobUnitStyle: 'font-family:' + SANS + '; font-size:15px; font-weight:400; line-height:1; color:' + (a ? '#d8ccbe' : '#8c8177') + ';',
     dialVal,
-    dialUnit: di.unit,
+    dialUnit: dialUnitShown,
+    // titlu pe butoanele −/+ (pasul e comunicat aici, nu printr-o valoare
+    // laterală ambiguă — vezi CHANGELOG 1.0.7 punctul 1.3)
+    stepTitle: 'pas ' + (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
     roundBtnStyle: 'width:30px; height:30px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
     stepLabelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT2 + '; white-space:nowrap;',
     stepLabel: (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
@@ -697,8 +712,8 @@ export function buildSidebarDevice(E, ui, def) {
     dialWrapStyle: 'position:relative; width:74px; height:74px; flex-shrink:0; display:flex; align-items:center; justify-content:center;',
     dialTicksEl: dialTicks(frac, a, 74),
     dialValStyle: 'position:absolute; font-family:' + SANS + '; font-size:15px; font-weight:500; color:' + (a ? '#f7f1e9' : '#9d9186') + ';',
-    // fără cadran: inelul mic din sidebar arată starea în loc de valoare
-    dialVal: def.dial ? dialVal + di.unit : (a ? 'Pornită' : 'Oprită'),
+    // fără cadran: inelul mic arată starea; TV în standby: "Standby" în loc de "—%"
+    dialVal: !def.dial ? (a ? 'Pornită' : 'Oprită') : di.standby ? 'Standby' : dialVal + (di.val === null ? '' : di.unit),
     nameStyle: 'font-family:' + SANS + '; font-size:13.5px; font-weight:500; color:' + TXT + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
     metaStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT3 + '; margin-top:2px;',
     ambientStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + (ambientText(E, def) === VERIFY ? ORANGE : a ? '#c8a173' : TXT3) + '; margin-top:6px;',
