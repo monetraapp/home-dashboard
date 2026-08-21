@@ -125,13 +125,13 @@ export const DEVICE_CARDS = [
     // "Redare" (buton inert) ELIMINAT şi "Plex" înlocuit cu "TV" (2026-08-22):
     // Plex nu apare în source_list-ul niciunui televizor din casă.
     minis: [
-      { id: 'tv-mute', icon: 'ban', label: 'Mut', action: A.mute() }
+      { id: 'tv-mute', icon: 'volumeX', label: 'Mut', action: A.mute() }
     ],
     circles: [
-      { id: 'tv-c-h1', icon: 'monitor', label: 'HDMI 1', action: A.source('hdmi 1', 'hdmi1', 'hdmi') },
+      { id: 'tv-c-h1', icon: 'cable', label: 'HDMI 1', action: A.source('hdmi 1', 'hdmi1', 'hdmi') },
       { id: 'tv-c-tv', icon: 'tv', label: 'TV', action: A.source('live tv', 'tv') },
       { id: 'tv-c-yt', icon: 'playCircle', label: 'YouTube', action: A.source('youtube') },
-      { id: 'tv-c-nf', icon: 'sparkle', label: 'Netflix', action: A.source('netflix') }
+      { id: 'tv-c-nf', icon: 'clapperboard', label: 'Netflix', action: A.source('netflix') }
     ]
   },
   {
@@ -227,13 +227,13 @@ function mediaCard(id, slot, label, model, zone, muteAction) {
       // source_list e doar [TV, HDMI] cât timp TV-ul e stins, dar se
       // repopulează cu aplicaţii când TV-ul e pornit — se activează singure.
       minis: [
-        { id: id + '-mute', icon: 'ban', label: 'Mut', action: muteAction || A.mute() }
+        { id: id + '-mute', icon: 'volumeX', label: 'Mut', action: muteAction || A.mute() }
       ],
       circles: [
-        { id: id + '-c-h1', icon: 'monitor', label: 'HDMI 1', action: A.source('hdmi 1', 'hdmi1', 'hdmi') },
+        { id: id + '-c-h1', icon: 'cable', label: 'HDMI 1', action: A.source('hdmi 1', 'hdmi1', 'hdmi') },
         { id: id + '-c-tv', icon: 'tv', label: 'TV', action: A.source('live tv', 'tv') },
         { id: id + '-c-yt', icon: 'playCircle', label: 'YouTube', action: A.source('youtube') },
-        { id: id + '-c-nf', icon: 'sparkle', label: 'Netflix', action: A.source('netflix') }
+        { id: id + '-c-nf', icon: 'clapperboard', label: 'Netflix', action: A.source('netflix') }
       ]
     }
   ];

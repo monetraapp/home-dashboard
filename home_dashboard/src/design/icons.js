@@ -1,5 +1,41 @@
-// Setul de iconuri SVG copiat 1:1 din "Home Dashboard.dc.html" (funcţia ic()).
+// Iconuri (v1.1.0): pachetul Lucide (licenţă ISC, https://lucide.dev) pentru
+// toate iconurile semantice — stroke uniform 24px-grid, centrare optică
+// garantată de viewBox simetric. Iconurile compozite specifice designului
+// (unităţile AC/clorinator/pompă/TV, barele de viteză, boost, swingOff, tag)
+// rămân cele desenate manual, copiate 1:1 din "Home Dashboard.dc.html".
 import React from 'react';
+import {
+  House, TriangleAlert, CircleAlert, BarChart3, Power, Snowflake, Flame,
+  RotateCw, Sun, Wind, Fan, Droplet, Moon, Leaf, Gauge, Clock, PlayCircle,
+  SlidersHorizontal, X, Tv, Monitor, Server, Sparkles, RefreshCw, Lock,
+  Shield, ShieldCheck, Ban, ArrowUpDown, ArrowLeftRight, Move, Waves,
+  FlaskConical, Zap, Plug, Camera, Bell, ShoppingCart, MessageCircle, Check,
+  ChevronLeft, ChevronRight, ChevronDown, Cloud, CloudSun, Download,
+  GripVertical, BatteryMedium, Thermometer, Rocket, Wifi, Wrench, Archive,
+  Armchair, CalendarMinus, CalendarPlus, Minus, Plus, DropletOff, HeartPulse,
+  Cable, VolumeX, Clapperboard
+} from 'lucide-react';
+
+// nume istoric -> componenta Lucide (maparea semantică, nu aproximativă)
+const LUCIDE = {
+  home: House, alertTri: TriangleAlert, alertCircle: CircleAlert,
+  barChart: BarChart3, power: Power, snow: Snowflake, flame: Flame,
+  auto: RotateCw, sun: Sun, wind: Wind, fan: Fan, fan2: Fan,
+  droplet: Droplet, moon: Moon, leaf: Leaf, gauge: Gauge, clock: Clock,
+  playCircle: PlayCircle, sliders: SlidersHorizontal, close: X, tv: Tv,
+  monitor: Monitor, server: Server, sparkle: Sparkles, refresh: RefreshCw,
+  lock: Lock, shield: Shield, shieldDot: ShieldCheck, ban: Ban,
+  updown: ArrowUpDown, leftright: ArrowLeftRight, move: Move, waves: Waves,
+  beaker: FlaskConical, bolt: Zap, plug: Plug, camera: Camera, bell: Bell,
+  cart: ShoppingCart, chat: MessageCircle, check: Check,
+  chevLeft: ChevronLeft, chevRight: ChevronRight, chevronDown: ChevronDown,
+  cloud: Cloud, cloudSun: CloudSun, download: Download, grip: GripVertical,
+  phoneBattery: BatteryMedium, radiator: Thermometer, rocket: Rocket,
+  wifi: Wifi, wrench: Wrench, archive: Archive, sofa: Armchair,
+  calDown: CalendarMinus, calUp: CalendarPlus, minus: Minus, plus: Plus,
+  dropletOff: DropletOff, heartPulse: HeartPulse, cable: Cable,
+  volumeX: VolumeX, clapperboard: Clapperboard
+};
 
 export function el(tag, props, children) {
   return React.createElement(tag, props, children);
@@ -10,6 +46,11 @@ export function ic(name, opts) {
   const size = opts.size || 16;
   const color = opts.color || 'currentColor';
   const sw = opts.sw || 1.9;
+  const L = LUCIDE[name];
+  if (L) {
+    // absoluteStrokeWidth: grosimea liniei ramane constanta indiferent de size
+    return React.createElement(L, { size, color, strokeWidth: sw, absoluteStrokeWidth: true });
+  }
   const SCALE = {
     snow: 0.92, sun: 0.9, wind: 1.06, fan: 1.3, fan2: 1.3, boost: 1.32, bars1: 1.2, bars2: 1.2, bars3: 1.2,
     flame: 1.14, droplet: 1.06, moon: 1.06, leaf: 1.02, gauge: 1.06, auto: 1.06, clock: 1.04, playCircle: 1.04,

@@ -62,11 +62,11 @@ export const CLIMAT_ACCORDION = [
       sec('Funcţii', 4, [
         act('leaf', 'Eco', A.slot('switch.vx_eco')),
         act('moon', 'Noapte', A.slot('switch.vx_noapte')),
-        act('shield', 'Health', A.slot('switch.vx_health')),
+        act('heartPulse', 'Health', A.slot('switch.vx_health')),
         act('wind', 'Comfort Wind', A.slot('switch.vx_comfwind')),
-        act('ban', 'Anti-mucegai', A.slot('switch.vx_antimucegai')),
+        act('dropletOff', 'Anti-mucegai', A.slot('switch.vx_antimucegai')),
         act('lock', 'Blocare copii', A.slot('switch.vx_blocare')),
-        act('sparkle', 'Afişaj', A.slot('switch.vx_afisaj')),
+        act('monitor', 'Afişaj', A.slot('switch.vx_afisaj')),
         act('refresh', 'Auto-curăţare', A.slot('switch.vx_autocuratare'))
       ]),
       sec('Diagnostic', 3, [
