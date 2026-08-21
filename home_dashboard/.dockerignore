@@ -1,11 +1,21 @@
+# ATENŢIE: .dockerignore se aplică întregului build context, pentru toate
+# etapele. Orice cale de aici devine invizibilă pentru COPY, inclusiv în etapa
+# finală. NU adăuga `rootfs` — Dockerfile face `COPY rootfs /` şi build-ul
+# eşuează cu "no source files were specified".
+
+# dependinţe şi rezultate de build — se regenerează în etapa de build
 node_modules
 dist
+
+# nu ajung în imagine: testele şi metadatele add-on-ului sunt citite de
+# Supervisor direct din repo, nu din container
 test
-rootfs
-Dockerfile
-.dockerignore
 config.yaml
 build.yaml
 translations
 *.md
 entities-binary-update.json
+
+# nu sunt copiate niciodată
+Dockerfile
+.dockerignore
