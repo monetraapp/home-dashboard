@@ -3,7 +3,13 @@
 # Porneşte nginx, care serveşte dashboard-ul compilat pe portul de ingress
 # ==============================================================================
 
-bashio::log.level "$(bashio::config 'log_level')"
+# Nivelul de log e o preferinţă, nu o dependenţă: dacă nu poate fi citit,
+# continuăm cu valoarea implicită în loc să oprim serviciul. Fără garda asta,
+# bashio::log.level primeşte string gol şi apelează exit.nok, deci nginx nu
+# mai porneşte deloc — un dashboard căzut din cauza unei setări de jurnal.
+if bashio::config.has_value 'log_level'; then
+    bashio::log.level "$(bashio::config 'log_level')"
+fi
 
 bashio::log.info "Home Dashboard: pornesc nginx pe portul de ingress 8099"
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.2
+
+Nivelul de log nu mai poate împiedica pornirea serviciului. `bashio::config
+'log_level'` interoghează API-ul Supervisor; dacă răspunsul lipseşte sau e gol,
+`bashio::log.level` trata valoarea ca invalidă şi apela `exit.nok`, aşa că
+scriptul murea înainte de `exec nginx` — dashboard-ul cădea din cauza unei
+simple preferinţe de jurnalizare. Citirea e acum protejată cu
+`bashio::config.has_value`, iar la lipsa valorii se continuă cu implicitul.
+
+Prima versiune verificată prin build Docker local complet: imaginea se
+construieşte (73 MB), containerul rămâne pornit sub s6, nginx ascultă pe 8099,
+serveşte index.html, bundle-ul, imaginea hero şi fallback-ul SPA, iar accesul
+din afara reţelei Supervisor primeşte 403, conform configuraţiei.
+
 ## 1.0.1
 
 Reparare build: `.dockerignore` excludea `rootfs/` din build context, iar
