@@ -42,6 +42,13 @@ export const SLOTS = [
   slot('sensor.lg_somn_min', 'AC Etaj LG · temporizator somn (min)', 'climat', ['number', 'sensor'], {
     note: 'Countdown în minute — mapat pe number.* pentru control.'
   }),
+  // Serii pentru graficele de istoric (doar citire). Recorder-ul HA nu poate
+  // reda ISTORICUL unui atribut (fetch-ul foloseşte no_attributes:true), deci
+  // graficele au nevoie de senzori dedicaţi cu istoricul în STAREA lor.
+  slot('sensor.mans_ambient', 'Istoric · ambient mansardă', 'climat', ['sensor']),
+  slot('sensor.mans_setpoint', 'Istoric · setpoint Vortex', 'climat', ['sensor']),
+  slot('sensor.lg_ambient', 'Istoric · ambient etaj (LG)', 'climat', ['sensor']),
+  slot('sensor.vv_ambient', 'Istoric · ambient Vivax', 'climat', ['sensor']),
   slot('switch.lg_economie', 'AC Etaj LG · economie energie', 'climat', ['switch'], {
     note: 'Funcţia Economie e un switch separat în LG ThinQ, nu un preset al entităţii climate.'
   }),

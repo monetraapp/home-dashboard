@@ -50,7 +50,7 @@ function verifyValueStyle(active, value) {
 const TOOLTIP =
   'position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); z-index:60; padding:8px 12px; border-radius:12px; max-width:240px; width:max-content; text-align:center; pointer-events:none; font-family:' + SANS + '; font-size:11.5px; font-weight:400; line-height:1.45; color:#f4ece2; background:rgba(28,22,17,0.92); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.14); box-shadow:0 12px 28px -12px rgba(0,0,0,0.9); animation:hdTipIn .16s ease-out;';
 
-export function buildItem(E, ui, d) {
+export function buildItem(E, ui, d, keyCtx) {
   const slot = d.slot;
   const mapped = slot ? E.mapped(slot) : true;
   const avail = slot ? E.available(slot) : true;
@@ -73,7 +73,10 @@ export function buildItem(E, ui, d) {
     value = E.fmt(slot, d.opts);
   }
 
-  const key = 'tile:' + (slot || d.label);
+  // keyCtx previne cheile duplicate cand acelasi slot apare de doua ori pe o
+  // pagina (ex. binary_sensor.pc_debit pe ambele carduri de piscina) — altfel
+  // doua tooltip-uri se afisau simultan (bug 1.2, v1.1.1)
+  const key = 'tile:' + (keyCtx || '') + ':' + (slot || d.label);
   let tip;
   if (!mapped && slot) tip = 'VERIFY · slotul „' + slot + '" nu are entitate mapată — deschide „Mapare entităţi".';
   else if (!avail && slot) tip = d.label + ' · entitate indisponibilă în HA';
@@ -124,7 +127,7 @@ export function buildBlock(E, ui, hist, b) {
   }
 
   if (b.type === 'grid') {
-    return { isGrid: true, cols: b.cols, items: b.items.map((d) => buildItem(E, ui, d)) };
+    return { isGrid: true, cols: b.cols, items: b.items.map((d, di) => buildItem(E, ui, d, 'grid' + di)) };
   }
 
   if (b.type === 'monitor') {
@@ -347,7 +350,9 @@ function setpointInfo(E, cardDef, sp) {
       set: (v) => E.setClimateTarget(slot, v)
     };
   }
-  const b = E.numberBounds(sp.slot, 0, 100, 1);
+  // limitele entitatii au prioritate; bounds din definitie doar ca fallback
+  const fb = sp.bounds || {};
+  const b = E.numberBounds(sp.slot, fb.min !== undefined ? fb.min : 0, fb.max !== undefined ? fb.max : 100, fb.step || 1);
   return {
     label: sp.label,
     unit: sp.unit === undefined ? E.attr(sp.slot, 'unit_of_measurement') || '' : sp.unit,
@@ -423,7 +428,7 @@ export function buildAccordionItem(E, ui, u) {
       headerStyle: 'font-family:' + SANS + '; font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + '; margin:15px 0 8px; padding-top:13px; border-top:1px solid rgba(255,255,255,0.05);',
       gridStyle: 'display:grid; grid-template-columns:repeat(' + accCols(ui, section.cols) + ',minmax(0,1fr)); gap:8px;',
       items: section.items.map((item) =>
-        item.action ? buildActionTile(E, ui, def, item, u.card, section.title) : buildItem(E, ui, item)
+        item.action ? buildActionTile(E, ui, def, item, u.card, section.title) : buildItem(E, ui, item, u.card + ':' + section.title)
       )
     })),
     onExpand: () => ui.setOpenAcc(open ? null : u.card),

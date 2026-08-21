@@ -1,5 +1,64 @@
 # Changelog
 
+## 1.1.1
+
+Corecţii găsite la turul vizual al utilizatorului după v1.1.0.
+
+**P1 · Tooltip-uri — rescrise pe portal.** Soluţie: `createPortal` în `<body>`
++ poziţionare calculată manual cu `getBoundingClientRect` (fără dependinţe noi
+— Floating UI ar fi fost overkill pentru un singur tip de element). Rezolvă
+toate cele 5 defecte dintr-o mişcare:
+- 1.1 nu mai poate fi tăiat de viewport: shift pe X până încape complet,
+  niciodată trunchiere;
+- 1.2 două tooltip-uri simultan — cauza reală: chei duplicate (`'tile:' +
+  slot`) când acelaşi slot apărea de două ori pe o pagină (ex.
+  `binary_sensor.pc_debit` pe cardul pompei de filtrare ŞI al pompei de
+  căldură) — ambele elemente credeau că sunt hovered. Cheile includ acum
+  contextul (card+secţiune / poziţie în grilă);
+- 1.3 nu mai acoperă butoane: `pointer-events:none` + offset 10px + portal
+  (nu mai e în fluxul cardului);
+- 1.4 săgeată către element, orientată corect după plasarea finală
+  (sus/jos), aliniată pe centrul elementului şi limitată la corpul bulei;
+- 1.5 regulă fixă de poziţionare: implicit DEDESUBT; flip deasupra doar dacă
+  nu încape jos; consecvent peste tot.
+
+**P2.1 · Producţie clor — cele 4 butoane VERIFY eliminate.** Investigat:
+iAqualink nu expune NICIO entitate reglabilă de producţie — doar switch-urile
+`production`/`low`/`boost` şi senzorii `swc` (50) / `swc_low` (10). Treptele
+25/50/75/100% nu pot fi comandate din HA; reglajul fin se face doar din appul
+iAqualink, iar regimurile reale (Redus/Normal/Boost) există deja pe card.
+Eliminate şi dublurile: cercurile "Producţie 25–100%" de pe ambele carduri de
+clorinator şi setpoint-ul "Producţie clor" (valoarea e deja în centrul
+cadranului, care rămâne afişaj read-only al senzorului).
+
+**P2.2 · "Evoluţie temperaturi" gol — cauză diagnosticată şi reparată.**
+Seriile erau definite pe ATRIBUTE (`climate.vortex` + `attr:
+current_temperature`), dar fetch-ul de istoric foloseşte `no_attributes:true`
+(by design, eficient) — deci atributele nu pot avea istoric, indiferent de
+mapare. Recorder-ul ARE datele pe senzorii dedicaţi (verificat live:
+envtemp 1305 puncte/3 zile, setpoint Vortex 145, ac_etaj_ambient 37,
+vivax_ambient 201). 4 sloturi noi de serie (`sensor.mans_ambient`,
+`sensor.mans_setpoint`, `sensor.lg_ambient`, `sensor.vv_ambient`) mapate pe
+ei; ambele grafice Climat funcţionează acum. Notă: istoricul setpoint-ului
+Vortex conţine scurte căderi reale la 0.0 (raportate de integrare) — apar în
+grafic pentru că sunt în date. Acelaşi diagnostic a curăţat şi Piscina: seria
+"Ţintă pompă căldură" (atribut, fără senzor-sursă) a fost eliminată din
+graficul de temperatură apă — ar fi rămas permanent goală.
+
+**P3 · Intervale corectate (pagina Piscină).** Ţintele pH/ORP sunt senzori
+read-only fără `min`/`max`/`step` declarate (verificat în entităţi), deci
+default-ul generic 0–100 pas 1 era fals — ORP-ul real (730 mV) ieşea din
+interval. `spNumber` acceptă acum limite de rezervă folosite DOAR când
+entitatea nu declară nimic: pH 6.8–8.0 pas 0.1 (afişează 7.3, nu 7), ORP
+600–850 mV pas 10. Verificare generală: toate celelalte controale numerice au
+valoarea curentă în interval (producţie clor 50 în 0–100, volum 0–100,
+temperaturi în min/max din entităţi, cronometre LG 0–100 nativ) — singurul
+out-of-range era ORP.
+
+Sloturi: 136 total, 136 mapate. Nemapat vizual rămâne DOAR chip-ul Vivax
+"Maxim" (fan `full`) — intenţionat, în aşteptarea confirmării fizice
+(decizia utilizatorului, neatinsă).
+
 ## 1.1.0
 
 Design & UX (4 commit-uri incrementale, un singur rebuild).

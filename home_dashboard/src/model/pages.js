@@ -72,13 +72,13 @@ export const PAGES = {
         order: 8,
         blocks: [
           chart('Mansardă · ambient vs setare', 'ultimele 7 zile', [
-            { name: 'Ambient mansardă', color: ORANGE_SERIES, slot: 'climate.vortex', attr: 'current_temperature' },
-            { name: 'Setare', color: SAND_SERIES, dashed: true, slot: 'climate.vortex', attr: 'temperature' }
+            { name: 'Ambient mansardă', color: ORANGE_SERIES, slot: 'sensor.mans_ambient' },
+            { name: 'Setare', color: SAND_SERIES, dashed: true, slot: 'sensor.mans_setpoint' }
           ], C),
           chart('Ambient pe unităţi', 'toate cele trei unităţi', [
-            { name: 'Mansardă Vortex', color: ORANGE_SERIES, slot: 'climate.vortex', attr: 'current_temperature' },
-            { name: 'Etaj LG', color: SAND_SERIES, slot: 'climate.etaj', attr: 'current_temperature' },
-            { name: 'Mansardă Vivax', color: BLUE_SERIES, slot: 'climate.vivax', attr: 'current_temperature' }
+            { name: 'Mansardă Vortex', color: ORANGE_SERIES, slot: 'sensor.mans_ambient' },
+            { name: 'Etaj LG', color: SAND_SERIES, slot: 'sensor.lg_ambient' },
+            { name: 'Mansardă Vivax', color: BLUE_SERIES, slot: 'sensor.vv_ambient' }
           ], C),
           timeline('Stare unităţi', 'ultimele 7 zile', [
             { label: 'Mansardă Vortex', slot: 'climate.vortex' },
@@ -163,9 +163,11 @@ export const PAGES = {
         wide: true,
         order: 8,
         blocks: [
+          // Seria "Ţintă pompă căldură" ELIMINATĂ (v1.1.1): istoricul se citeşte
+          // cu no_attributes:true, iar pentru ţinta Fairland nu există un senzor
+          // dedicat cu istoric în stare — seria ar fi rămas permanent goală.
           chart('Temperatură apă', 'ultimele 7 zile', [
-            { name: 'Apă', color: ORANGE_SERIES, slot: 'sensor.apa_temp' },
-            { name: 'Ţintă pompă căldură', color: SAND_SERIES, dashed: true, slot: 'climate.pompa_caldura', attr: 'temperature' }
+            { name: 'Apă', color: ORANGE_SERIES, slot: 'sensor.apa_temp' }
           ], C),
           chart('ORP şi pH', 'ORP măsurat vs ţintă', [
             { name: 'ORP', color: ORANGE_SERIES, slot: 'sensor.orp' },

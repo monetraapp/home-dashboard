@@ -197,10 +197,15 @@ export const PISCINA_ACCORDION = [
   },
   {
     card: 'clorinator-redus',
+    // Ţintele pH/ORP sunt senzori read-only (setarea se face doar din appul
+    // iAqualink) — limitele nu vin din entitate, deci folosim domeniile utile
+    // pentru piscine: pH 6.8–8.0 pas 0.1, ORP 600–850 mV pas 10 (v1.1.1;
+    // vechiul default generic 0–100 pas 1 era absurd: ORP real 730 ieşea din
+    // interval). Setpoint-ul "Producţie clor" a fost scos: valoarea (50%) e
+    // deja în centrul cadranului cardului, iar entitatea e doar senzor.
     setpoints: [
-      spNumber('number.ph_tinta', 'pH ţintă', ''),
-      spNumber('number.orp_tinta', 'ORP ţintă', 'mV'),
-      spNumber('number.clor_productie', 'Producţie clor', PCT)
+      spNumber('number.ph_tinta', 'pH ţintă', '', { min: 6.8, max: 8, step: 0.1 }),
+      spNumber('number.orp_tinta', 'ORP ţintă', 'mV', { min: 600, max: 850, step: 10 })
     ],
     sections: [
       // "Oprit" ELIMINAT (2026-08-22): era un buton inert cu tooltip; oprirea
@@ -210,12 +215,11 @@ export const PISCINA_ACCORDION = [
         act('waves', 'Normal', A.slot('switch.clorinator')),
         act('boost', 'Boost', A.slot('switch.clorinator_boost'))
       ]),
-      sec('Producţie clor', 4, [
-        act('gauge', '25 %', A.numberFrac('number.clor_productie', 0.25)),
-        act('gauge', '50 %', A.numberFrac('number.clor_productie', 0.5)),
-        act('gauge', '75 %', A.numberFrac('number.clor_productie', 0.75)),
-        act('gauge', '100 %', A.numberFrac('number.clor_productie', 1))
-      ]),
+      // Secţiunea "Producţie clor" (25/50/75/100%) ELIMINATĂ (v1.1.1):
+      // iAqualink nu expune NICIO entitate reglabilă de producţie (doar
+      // switch-urile production/low/boost + senzorii swc/swc_low) — toate
+      // cele 4 butoane erau permanent VERIFY. Treptele se schimbă efectiv
+      // prin regimurile Redus/Normal/Boost, care există deja pe card.
       sec('Chimie · măsurat', 4, [
         ro('beaker', 'pH curent', 'sensor.ph', { unit: '' }),
         ro('gauge', 'ORP curent', 'sensor.orp', { unit: 'mV' }),
@@ -232,7 +236,8 @@ export const PISCINA_ACCORDION = [
   },
   {
     card: 'clorinator-main',
-    setpoints: [spNumber('number.clor_productie', 'Producţie clor', PCT)],
+    // setpoint "Producţie clor" scos (v1.1.1) — vezi nota de la clorinator-redus
+    setpoints: [],
     sections: [
       // "Auto după ORP" ELIMINAT (2026-08-22): nu există entitate, buton inert.
       sec('Regim', 3, [

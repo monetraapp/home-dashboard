@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   s, SANS, SERIF, DOTO, ORANGE, ORANGE_HI, TXT, TXT2, TXT3,
   glassCard, navItemStyle, navIconBox, navLabel, togglePill, toggleKnob, toggleText,
@@ -209,7 +210,7 @@ export default function Dashboard({ onOpenMapping }) {
 
   const greeting = now.getHours() < 12 ? 'Bună dimineaţa,' : now.getHours() < 18 ? 'Bună ziua,' : 'Bună seara,';
 
-  const tipKeyframes = '@keyframes hdTipIn{from{opacity:0; transform:translateX(-50%) translateY(4px);}to{opacity:1; transform:translateX(-50%) translateY(0);}}';
+  const tipKeyframes = '@keyframes hdTipIn{from{opacity:0; transform:translateY(4px);}to{opacity:1; transform:translateY(0);}}';
 
   return (
     <div style={s(deskStyle)}>
@@ -707,6 +708,61 @@ function OfflineBanner() {
 }
 
 
+// Tooltip v1.1.1: randat prin portal in <body>, pozitionat cu
+// getBoundingClientRect (fara dependinte noi). Regula fixa: implicit SUB
+// element (+10px); flip DEASUPRA doar daca nu incape jos; shift pe X pana
+// intra complet in viewport (niciodata trunchiat). pointer-events:none, deci
+// nu blocheaza butoanele vecine. Sageata isi urmeaza plasarea finala.
+function Tip({ text }) {
+  const holderRef = useRef(null);
+  const bubbleRef = useRef(null);
+  const [box, setBox] = useState(null);
+  useLayoutEffect(() => {
+    const holder = holderRef.current;
+    const bubble = bubbleRef.current;
+    const anchor = holder && holder.parentElement;
+    if (!holder || !bubble || !anchor) return;
+    const a = anchor.getBoundingClientRect();
+    const b = bubble.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight, pad = 8, gap = 10;
+    let top = a.bottom + gap, place = 'below';
+    if (top + b.height > vh - pad && a.top - gap - b.height >= pad) {
+      top = a.top - gap - b.height;
+      place = 'above';
+    }
+    let left = a.left + a.width / 2 - b.width / 2;
+    left = Math.max(pad, Math.min(left, vw - pad - b.width));
+    const arrowX = Math.max(10, Math.min(a.left + a.width / 2 - left, b.width - 10));
+    setBox({ top, left, place, arrowX });
+  }, [text]);
+  const base =
+    'position:fixed; z-index:200; pointer-events:none; padding:8px 12px; border-radius:12px; max-width:260px; width:max-content; text-align:center; font-family:' + SANS +
+    '; font-size:11.5px; font-weight:400; line-height:1.45; color:#f4ece2; background:rgba(28,22,17,0.95); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.14); box-shadow:0 12px 28px -12px rgba(0,0,0,0.9);';
+  const style = box
+    ? s(base + ' top:' + box.top + 'px; left:' + box.left + 'px; animation:hdTipIn .16s ease-out;')
+    : s(base + ' top:0; left:0; visibility:hidden;');
+  const arrow = box
+    ? s(
+        'position:absolute; width:9px; height:9px; transform:rotate(45deg); background:rgba(28,22,17,0.95); left:' + (box.arrowX - 4.5) + 'px; ' +
+          (box.place === 'below'
+            ? 'top:-5px; border-left:1px solid rgba(255,255,255,0.14); border-top:1px solid rgba(255,255,255,0.14);'
+            : 'bottom:-5px; border-right:1px solid rgba(255,255,255,0.14); border-bottom:1px solid rgba(255,255,255,0.14);')
+      )
+    : null;
+  return (
+    <>
+      <span ref={holderRef} style={{ display: 'none' }} />
+      {createPortal(
+        <div ref={bubbleRef} style={style}>
+          {box ? <div style={arrow} /> : null}
+          {text}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
 // Long-press pe mobil: >=450ms arata tooltip-ul cu descrierea (echivalentul
 // hover-ului) si suprima activarea; tap-ul scurt comuta normal. Ales in locul
 // unei iconite de "mod explicatii" pentru ca nu adauga UI si nu intra in
@@ -775,7 +831,7 @@ function DeviceCard({ c }) {
             <div style={s(mt.trackStyle)} {...pressProps(mt.onEnter, mt.onLeave, mt.onToggle)}>
               <div style={s(mt.knobStyle)} />
             </div>
-            {mt.showTip ? <div style={s(mt.tipStyle)}>{mt.tipText}</div> : null}
+            {mt.showTip ? <Tip text={mt.tipText} /> : null}
           </div>
         ))}
       </div>
@@ -784,7 +840,7 @@ function DeviceCard({ c }) {
         {c.circles.map((cb, i) => (
           <div key={i} style={s(cb.wrapStyle)} onMouseEnter={cb.onEnter} onMouseLeave={cb.onLeave}>
             <div style={s(cb.style)} {...pressProps(cb.onEnter, cb.onLeave, cb.onToggle)}>{cb.iconEl}</div>
-            {cb.showTip ? <div style={s(cb.tipStyle)}>{cb.label}</div> : null}
+            {cb.showTip ? <Tip text={cb.label} /> : null}
           </div>
         ))}
       </div>
@@ -823,7 +879,7 @@ function Block({ b }) {
                 <div style={s(item.valueStyle)}>{item.value}</div>
               </div>
             </div>
-            {item.showTip ? <div style={s(item.tipStyle)}>{item.tipText}</div> : null}
+            {item.showTip ? <Tip text={item.tipText} /> : null}
           </div>
         ))}
       </div>
@@ -1006,7 +1062,7 @@ function Block({ b }) {
                               <div style={s(item.valueStyle)}>{item.value}</div>
                             </div>
                           </div>
-                          {item.showTip ? <div style={s(item.tipStyle)}>{item.tipText}</div> : null}
+                          {item.showTip ? <Tip text={item.tipText} /> : null}
                         </div>
                       ))}
                     </div>

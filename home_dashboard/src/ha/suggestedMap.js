@@ -24,6 +24,12 @@ export const SUGGESTED_MAP = {
   'sensor.lg_oprire_min': 'number.etaj_aer_conditionat_lg_etaj_schedule_turn_off',
   'sensor.lg_somn_min': 'number.etaj_aer_conditionat_lg_etaj_sleep_timer',
   'switch.lg_economie': 'switch.etaj_aer_conditionat_lg_etaj_energy_saving',
+  // Serii de istoric (senzori cu recorder confirmat: envtemp 1305 pct/3 zile,
+  // setpoint 145, ac_etaj_ambient 37, vivax_ambient 201 — verificat 2026-08-22)
+  'sensor.mans_ambient': 'sensor.aux_cloud_ec0baeae4fb7_envtemp',
+  'sensor.mans_setpoint': 'sensor.aux_cloud_ec0baeae4fb7_temp',
+  'sensor.lg_ambient': 'sensor.ac_etaj_ambient',
+  'sensor.vv_ambient': 'sensor.vivax_ambient',
   // Funcţiile Vortex — switch-uri AUX Cloud dedicate (entitatea climate nu are
   // preset_modes, deci vechea potrivire pe preset nu putea funcţiona niciodată).
   'switch.vx_eco': 'switch.aux_cloud_ec0baeae4fb7_ecomode',

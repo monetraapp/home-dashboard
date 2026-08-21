@@ -84,10 +84,10 @@ export const DEVICE_CARDS = [
       { id: 'cl-boost', icon: 'rocket', label: 'Boost', action: A.slot('switch.clorinator_boost') }
     ],
     circles: [
+      // Cercurile "Producţie 50/100%" ELIMINATE (v1.1.1): producţia nu e
+      // reglabilă din HA (entitatea e doar senzor) — erau permanent VERIFY.
       { id: 'cl-c-low', icon: 'droplet', label: 'Regim redus', action: A.slot('switch.clorinator_redus') },
-      { id: 'cl-c-boost', icon: 'boost', label: 'Boost 100%', action: A.slot('switch.clorinator_boost') },
-      { id: 'cl-c-50', icon: 'auto', label: 'Producţie 50%', action: A.numberFrac('number.clor_productie', 0.5) },
-      { id: 'cl-c-100', icon: 'beaker', label: 'Producţie 100%', action: A.numberFrac('number.clor_productie', 1) }
+      { id: 'cl-c-boost', icon: 'boost', label: 'Boost 100%', action: A.slot('switch.clorinator_boost') }
     ]
   },
   {
@@ -190,12 +190,8 @@ export const DEVICE_CARDS = [
       { id: 'clm-low', icon: 'droplet', label: 'Redus', action: A.slot('switch.clorinator_redus') },
       { id: 'clm-boost', icon: 'boost', label: 'Boost', action: A.slot('switch.clorinator_boost') }
     ],
-    circles: [
-      { id: 'clm-c-25', icon: 'droplet', label: 'Producţie 25%', action: A.numberFrac('number.clor_productie', 0.25) },
-      { id: 'clm-c-50', icon: 'waves', label: 'Producţie 50%', action: A.numberFrac('number.clor_productie', 0.5) },
-      { id: 'clm-c-75', icon: 'boost', label: 'Producţie 75%', action: A.numberFrac('number.clor_productie', 0.75) },
-      { id: 'clm-c-100', icon: 'auto', label: 'Producţie 100%', action: A.numberFrac('number.clor_productie', 1) }
-    ]
+    // Cercurile de producţie (25–100%) ELIMINATE (v1.1.1) — vezi nota de mai sus.
+    circles: []
   },
   ...mediaCard('media-bucatarie', 'media.bucatarie', 'TV Bucătărie', 'Parter', 'Parter'),
   ...mediaCard('media-sofia-parter', 'media.sofia_parter', 'TV Sofia Parter', 'Parter', 'Parter'),

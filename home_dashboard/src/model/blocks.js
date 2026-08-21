@@ -28,5 +28,7 @@ export const act = (icon, label, action) => ({ icon, label, action, toggleable: 
 /** Valoare ţintă: temperatura entităţii climate a rândului. */
 export const spClimate = (label) => ({ kind: 'climate', label });
 /** Valoare ţintă: o entitate number / input_number. */
-export const spNumber = (slot, label, unit) => ({ kind: 'number', slot, label, unit });
+/** Valoare ţintă numerică. `bounds` = {min,max,step} folosite DOAR când
+ * entitatea nu îşi declară propriile limite (ex. senzori read-only). */
+export const spNumber = (slot, label, unit, bounds) => ({ kind: 'number', slot, label, unit, bounds });
 
