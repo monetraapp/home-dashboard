@@ -413,7 +413,7 @@ export function buildAccordionItem(E, ui, u) {
         hint: i.mapped ? 'pas ' + i.step + ' · ' + i.min + '–' + i.max + ' ' + i.unit : 'slot nemapat',
         valStyle: 'font-family:' + DOTO + '; font-size:20px; font-weight:600; color:' + (shown === VERIFY ? ORANGE : ORANGE) + '; letter-spacing:0.02em;' + (shown === VERIFY ? ' font-size:13px;' : '') + (i.stale ? ' opacity:0.55;' : ''),
         val: shown,
-        btnStyle: 'width:30px; height:30px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (i.writable ? 'pointer' : 'default') + '; opacity:' + (i.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
+        btnStyle: 'width:' + (bpOf(ui).mob ? 44 : 30) + 'px; height:' + (bpOf(ui).mob ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (i.writable ? 'pointer' : 'default') + '; opacity:' + (i.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
         onMinus: (e) => { stop(e); if (i.writable && i.val !== null) i.set(i.val - i.step); },
         onPlus: (e) => { stop(e); if (i.writable) i.set((i.val === null ? i.min : i.val) + i.step); }
       };
@@ -613,6 +613,7 @@ function buildToggleAction(E, ui, def, item, size) {
 }
 
 export function buildDeviceCard(E, ui, def) {
+  const mob = bpOf(ui).mob;
   const a = E.mapped(def.slot) && E.isOn(def.slot);
   const di = dialInfo(E, def);
   const frac = di.val === null ? 0 : (di.val - di.min) / ((di.max - di.min) || 1);
@@ -650,9 +651,9 @@ export function buildDeviceCard(E, ui, def) {
     toggleIconEl: ic('power', { size: 12.5, color: a ? '#C4600F' : '#cfc4b8', sw: 2.2 }),
     toggleTitle: canToggle ? 'Pornit / oprit' : 'VERIFY · entitate nemapată sau indisponibilă',
     ambientStyle: 'font-family:' + SANS + '; font-size:12px; font-weight:300; color:' + (ambientText(E, def) === VERIFY ? ORANGE : TXT2) + '; text-align:center; margin:14px 0 4px;',
-    dialWrapStyle: 'position:relative; width:132px; height:132px; flex-shrink:0; display:flex; align-items:center; justify-content:center;',
-    dialTicksEl: dialTicks(frac, a),
-    knobStyle: 'position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:74px; height:74px; border-radius:50%; display:flex; align-items:center; justify-content:center; gap:1px; background:radial-gradient(120% 120% at 30% 20%, #2e2620 0%, #17120f 70%); border:1px solid rgba(255,255,255,0.09); box-shadow:inset 0 2px 6px rgba(0,0,0,0.5), 0 10px 20px -10px rgba(0,0,0,0.8);',
+    dialWrapStyle: 'position:relative; width:' + (mob ? 116 : 132) + 'px; height:' + (mob ? 116 : 132) + 'px; flex-shrink:0; display:flex; align-items:center; justify-content:center;',
+    dialTicksEl: dialTicks(frac, a, mob ? 116 : 132),
+    knobStyle: 'position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:' + (mob ? 64 : 74) + 'px; height:' + (mob ? 64 : 74) + 'px; border-radius:50%; display:flex; align-items:center; justify-content:center; gap:1px; background:radial-gradient(120% 120% at 30% 20%, #2e2620 0%, #17120f 70%); border:1px solid rgba(255,255,255,0.09); box-shadow:inset 0 2px 6px rgba(0,0,0,0.5), 0 10px 20px -10px rgba(0,0,0,0.8);',
     knobValStyle: 'font-family:' + SANS + '; font-size:21px; font-weight:500; line-height:1; color:' + (a ? '#f7f1e9' : '#9d9186') + ';' + (di.stale ? ' opacity:0.55;' : ''),
     knobUnitStyle: 'font-family:' + SANS + '; font-size:15px; font-weight:400; line-height:1; color:' + (a ? '#d8ccbe' : '#8c8177') + ';',
     dialVal,
@@ -660,7 +661,7 @@ export function buildDeviceCard(E, ui, def) {
     // titlu pe butoanele −/+ (pasul e comunicat aici, nu printr-o valoare
     // laterală ambiguă — vezi CHANGELOG 1.0.7 punctul 1.3)
     stepTitle: 'pas ' + (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
-    roundBtnStyle: 'width:30px; height:30px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
+    roundBtnStyle: 'width:' + (mob ? 44 : 30) + 'px; height:' + (mob ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
     stepLabelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT2 + '; white-space:nowrap;',
     stepLabel: (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
     targetLabelStyle: 'font-family:' + SANS + '; font-size:13px; font-weight:' + (targetLabel === VERIFY ? 600 : 500) + '; color:' + (targetLabel === VERIFY ? ORANGE : a ? ORANGE : TXT3) + '; white-space:nowrap;',
@@ -695,7 +696,7 @@ export function buildDeviceCard(E, ui, def) {
         iconEl: ic(cb.icon, { size: 18, color: on ? '#2a1608' : '#b3a89c' }),
         label: b.tip,
         wrapStyle: 'position:relative; display:flex; align-items:center; justify-content:center;',
-        style: 'width:' + (bpOf(ui).mob ? 40 : 44) + 'px; height:' + (bpOf(ui).mob ? 40 : 44) + 'px; flex:0 0 ' + (bpOf(ui).mob ? 40 : 44) + 'px; aspect-ratio:1; box-sizing:border-box; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (b.res.supported ? 'pointer' : 'default') + '; opacity:' + (b.res.supported ? 1 : 0.45) + '; background:' + (on ? PILL_ON : 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 100%)') + '; border:1px solid ' + (on ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.085)') + '; ' + (on ? 'box-shadow:0 8px 18px -9px rgba(226,121,58,0.7), inset 0 1px 0 rgba(255,255,255,0.45);' : 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);'),
+        style: 'width:44px; height:44px; flex:0 0 44px; aspect-ratio:1; box-sizing:border-box; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (b.res.supported ? 'pointer' : 'default') + '; opacity:' + (b.res.supported ? 1 : 0.45) + '; background:' + (on ? PILL_ON : 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 100%)') + '; border:1px solid ' + (on ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.085)') + '; ' + (on ? 'box-shadow:0 8px 18px -9px rgba(226,121,58,0.7), inset 0 1px 0 rgba(255,255,255,0.45);' : 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);'),
         showTip: b.showTip,
         tipStyle: TOOLTIP,
         onEnter: b.onEnter,
@@ -808,7 +809,7 @@ export function buildModal(E, ui) {
     targetValStyle: 'font-family:' + DOTO + '; font-size:44px; font-weight:400; color:#f7f1e9; line-height:1;' + (di.stale ? ' opacity:0.55;' : ''),
     targetUnitStyle: 'font-family:' + SANS + '; font-size:13px; color:' + TXT2 + ';',
     targetHintStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + (di.mapped ? TXT3 : ORANGE) + '; margin-top:10px;',
-    stepBtnStyle: 'width:40px; height:40px; border-radius:13px; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:19px; font-weight:400; color:#e2d6c7; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);',
+    stepBtnStyle: 'width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:19px; font-weight:400; color:#e2d6c7; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);',
     onMinus: () => { if (di.writable && di.val !== null) di.set(di.val - di.step); },
     onPlus: () => { if (di.writable) di.set((di.val === null ? di.min : di.val) + di.step); },
     bodyStyle: 'margin-top:18px; max-height:44vh; overflow-y:auto; padding-right:4px;',
