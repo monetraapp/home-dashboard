@@ -1,0 +1,50 @@
+{
+  "_meta": {
+    "source": "rezultate MCP brute din transcriptul sesiunii de audit (proiectul C--HomeAssistant-AI, sesiunea 98f5ee04), nu dintr-o interogare live",
+    "snapshot": "2026-08-21",
+    "warning": "entity_id-urile si friendly_name-urile sunt verbatim din raspunsurile Home Assistant. Starile sunt un instantaneu din 2026-08-21 si se pot fi schimbat intre timp.",
+    "matched": "10 din 10 binary sensors cerute, 18 din 18 update"
+  },
+
+  "binary_sensor": [
+    { "entity_id": "binary_sensor.gateway_principal_port_1_internet_link", "friendly_name": "Internet", "state": "on" },
+    { "entity_id": "binary_sensor.gateway_principal_port_1_online_detection", "friendly_name": "Conectivitate", "state": "on" },
+    { "entity_id": "binary_sensor.gateway_principal_port_2_lan_status", "friendly_name": "Gateway Principal Port 2 LAN status", "state": "on" },
+    { "entity_id": "binary_sensor.gateway_principal_port_3_lan_status", "friendly_name": "Gateway Principal Port 3 LAN status", "state": "on" },
+    { "entity_id": "binary_sensor.gateway_principal_port_4_lan_status", "friendly_name": "Gateway Principal Port 4 LAN status", "state": "off" },
+    { "entity_id": "binary_sensor.gateway_principal_port_5_lan_status", "friendly_name": "Gateway Principal Port 5 LAN status", "state": "off" },
+    { "entity_id": "binary_sensor.gateway_principal_port_6_lan_status", "friendly_name": "Gateway Principal Port 6 LAN status", "state": "off" },
+    { "entity_id": "binary_sensor.gateway_principal_port_7_lan_status", "friendly_name": "Gateway Principal Port 7 LAN status", "state": "off" },
+    { "entity_id": "binary_sensor.pompa_caldura_piscina_water_flow", "friendly_name": "Pompa Caldura Piscina Water flow", "state": "off" },
+    { "entity_id": "binary_sensor.pompa_caldura_piscina_problem", "friendly_name": "Pompa Caldura Piscina Problem", "state": "off" }
+  ],
+
+  "update": [
+    { "entity_id": "update.home_assistant_core_update", "friendly_name": "Home Assistant Core Update", "state": "off" },
+    { "entity_id": "update.home_assistant_operating_system_update", "friendly_name": "Home Assistant Operating System Update", "state": "off" },
+    { "entity_id": "update.home_assistant_supervisor_update", "friendly_name": "Home Assistant Supervisor Update", "state": "off" },
+    { "entity_id": "update.matter_server_update", "friendly_name": "Matter Server Update", "state": "off" },
+    { "entity_id": "update.hacs_update", "friendly_name": "HACS Update", "state": "off" },
+    { "entity_id": "update.get_hacs_update", "friendly_name": "Get HACS Update", "state": "off" },
+    { "entity_id": "update.gateway_principal_firmware", "friendly_name": "Firmware Gateway", "state": "off" },
+    { "entity_id": "update.switch_principal_firmware", "friendly_name": "Firmware Switch", "state": "off" },
+    { "entity_id": "update.eap_parter_firmware", "friendly_name": "EAP Parter Firmware", "state": "off" },
+    { "entity_id": "update.eap_etaj_firmware", "friendly_name": "EAP Etaj Firmware", "state": "off" },
+    { "entity_id": "update.eap_mansarda_firmware", "friendly_name": "EAP Mansarda Firmware", "state": "off" },
+    { "entity_id": "update.eap_foisor_firmware", "friendly_name": "EAP Foisor Firmware", "state": "off" },
+    { "entity_id": "update.eap_casa_fata_firmware", "friendly_name": "EAP Casa Fata Firmware", "state": "off" },
+    { "entity_id": "update.aux_cloud_update", "friendly_name": "AUX Cloud Update", "state": "off" },
+    { "entity_id": "update.tuya_local_update", "friendly_name": "Tuya Local Update", "state": "off" },
+    { "entity_id": "update.ha_mcp_server_update", "friendly_name": "HA-MCP Server Update", "state": "off" },
+    { "entity_id": "update.ha_mcp_custom_component_update", "friendly_name": "HA-MCP Custom Component Update", "state": "off" },
+    { "entity_id": "update.fusion_update", "friendly_name": "Fusion Update", "state": "off" }
+  ],
+
+  "_notes": {
+    "internet_conectivitate": "Ambele apartin gateway-ului, portul 1 WAN: 'Internet' = ..._internet_link, 'Conectivitate' = ..._online_detection. Niciunul nu se numeste binary_sensor.internet / binary_sensor.conectivitate.",
+    "port_8_lan": "Nu exista binary_sensor pentru portul 8 — gateway-ul expune LAN status doar pentru porturile 2-7.",
+    "firmware_redenumite": "update.gateway_principal_firmware si update.switch_principal_firmware apareau pe 2026-08-19 ca 'Gateway Principal Firmware' / 'Switch Principal Firmware'; pe 2026-08-21 friendly_name-ul era 'Firmware Gateway' / 'Firmware Switch'. Aici e varianta din 2026-08-21.",
+    "toate_off": "Toate cele 18 entitati update erau 'off' pe 2026-08-21, adica nicio actualizare disponibila.",
+    "update_fara_slot": "6 entitati update nu au slot in design: get_hacs, aux_cloud, tuya_local, ha_mcp_server, ha_mcp_custom_component, fusion."
+  }
+}
