@@ -209,8 +209,11 @@ export default function Dashboard({ onOpenMapping }) {
 
   const greeting = now.getHours() < 12 ? 'Bună dimineaţa,' : now.getHours() < 18 ? 'Bună ziua,' : 'Bună seara,';
 
+  const tipKeyframes = '@keyframes hdTipIn{from{opacity:0; transform:translateX(-50%) translateY(4px);}to{opacity:1; transform:translateX(-50%) translateY(0);}}';
+
   return (
     <div style={s(deskStyle)}>
+      <style>{tipKeyframes}</style>
       <OfflineBanner />
       <div style={s(panelStyle)}>
         {/* ------------------------------------------------------------- nav */}
@@ -703,6 +706,22 @@ function OfflineBanner() {
   );
 }
 
+
+// Long-press pe mobil: >=450ms arata tooltip-ul cu descrierea (echivalentul
+// hover-ului) si suprima activarea; tap-ul scurt comuta normal. Ales in locul
+// unei iconite de "mod explicatii" pentru ca nu adauga UI si nu intra in
+// conflict cu tap-ul obisnuit.
+const press = { t: null, fired: false };
+function pressProps(show, hide, toggle) {
+  return {
+    onTouchStart: () => { press.fired = false; clearTimeout(press.t); press.t = setTimeout(() => { press.fired = true; show(); }, 450); },
+    onTouchMove: () => clearTimeout(press.t),
+    onTouchEnd: (e) => { clearTimeout(press.t); if (press.fired) { if (e && e.cancelable) e.preventDefault(); hide(); } },
+    onContextMenu: (e) => { if (press.fired) e.preventDefault(); },
+    onClick: (e) => { if (press.fired) { press.fired = false; return; } toggle(e); }
+  };
+}
+
 // -------------------------------------------------------------- card device
 function DeviceCard({ c }) {
   return (
@@ -753,7 +772,7 @@ function DeviceCard({ c }) {
               <span style={s(mt.iconStyle)}>{mt.iconEl}</span>
               {mt.label}
             </div>
-            <div style={s(mt.trackStyle)} onClick={mt.onToggle}>
+            <div style={s(mt.trackStyle)} {...pressProps(mt.onEnter, mt.onLeave, mt.onToggle)}>
               <div style={s(mt.knobStyle)} />
             </div>
             {mt.showTip ? <div style={s(mt.tipStyle)}>{mt.tipText}</div> : null}
@@ -764,7 +783,7 @@ function DeviceCard({ c }) {
       <div style={s(c.circleRowStyle)}>
         {c.circles.map((cb, i) => (
           <div key={i} style={s(cb.wrapStyle)} onMouseEnter={cb.onEnter} onMouseLeave={cb.onLeave}>
-            <div style={s(cb.style)} onClick={cb.onToggle}>{cb.iconEl}</div>
+            <div style={s(cb.style)} {...pressProps(cb.onEnter, cb.onLeave, cb.onToggle)}>{cb.iconEl}</div>
             {cb.showTip ? <div style={s(cb.tipStyle)}>{cb.label}</div> : null}
           </div>
         ))}
@@ -797,7 +816,7 @@ function Block({ b }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + b.cols + ',minmax(0,1fr))', gap: 8, marginBottom: 14 }}>
         {b.items.map((item, i) => (
           <div key={i} style={s(item.wrapStyle)} onMouseEnter={item.onEnter} onMouseLeave={item.onLeave}>
-            <div style={s(item.tileStyle)} onClick={item.onToggle}>
+            <div style={s(item.tileStyle)} {...pressProps(item.onEnter, item.onLeave, item.onToggle)}>
               <div style={s(item.iconWrapStyle)}>{item.iconEl}</div>
               <div style={{ minWidth: 0 }}>
                 <div style={s(item.labelStyle)}>{item.label}</div>
@@ -980,7 +999,7 @@ function Block({ b }) {
                     <div style={s(sec.gridStyle)}>
                       {sec.items.map((item, ii) => (
                         <div key={ii} style={s(item.wrapStyle)} onMouseEnter={item.onEnter} onMouseLeave={item.onLeave}>
-                          <div style={s(item.tileStyle)} onClick={item.onToggle}>
+                          <div style={s(item.tileStyle)} {...pressProps(item.onEnter, item.onLeave, item.onToggle)}>
                             <div style={s(item.iconWrapStyle)}>{item.iconEl}</div>
                             <div style={{ minWidth: 0 }}>
                               <div style={s(item.labelStyle)}>{item.label}</div>

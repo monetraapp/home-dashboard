@@ -9,6 +9,7 @@ import {
 } from '../design/tokens.js';
 import { dialTicks, lineChart, barChart } from '../design/graphics.js';
 import { VERIFY, NA, HVAC_SHORT } from '../ha/entities.js';
+import { describe } from '../model/descriptions.js';
 import { resolveAction } from '../model/actions.js';
 import { dailyAverage, dailyLast, fillGaps, timelineSegments, lastDayLabels } from '../ha/history.js';
 
@@ -44,6 +45,11 @@ function verifyValueStyle(active, value) {
 }
 
 // --------------------------------------------------------------------- tiles
+// Tooltip v1.1.0: colturi rotunjite, blur, animatie de intrare (keyframes
+// hdTipIn injectate in Dashboard). Pozitionat central deasupra elementului.
+const TOOLTIP =
+  'position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); z-index:60; padding:8px 12px; border-radius:12px; max-width:240px; width:max-content; text-align:center; pointer-events:none; font-family:' + SANS + '; font-size:11.5px; font-weight:400; line-height:1.45; color:#f4ece2; background:rgba(28,22,17,0.92); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.14); box-shadow:0 12px 28px -12px rgba(0,0,0,0.9); animation:hdTipIn .16s ease-out;';
+
 export function buildItem(E, ui, d) {
   const slot = d.slot;
   const mapped = slot ? E.mapped(slot) : true;
@@ -87,7 +93,7 @@ export function buildItem(E, ui, d) {
     wrapStyle: 'position:relative; display:flex; min-width:0;',
     tipText: tip,
     showTip: ui.hoverKey === key,
-    tipStyle: TIP_STYLE,
+    tipStyle: TOOLTIP,
     onEnter: () => ui.setHoverKey(key),
     onLeave: () => ui.setHoverKey(null),
     onToggle: canToggle ? () => E.toggle(slot) : noop
@@ -417,7 +423,7 @@ export function buildAccordionItem(E, ui, u) {
       headerStyle: 'font-family:' + SANS + '; font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + '; margin:15px 0 8px; padding-top:13px; border-top:1px solid rgba(255,255,255,0.05);',
       gridStyle: 'display:grid; grid-template-columns:repeat(' + accCols(ui, section.cols) + ',minmax(0,1fr)); gap:8px;',
       items: section.items.map((item) =>
-        item.action ? buildActionTile(E, ui, def, item, u.card) : buildItem(E, ui, item)
+        item.action ? buildActionTile(E, ui, def, item, u.card, section.title) : buildItem(E, ui, item)
       )
     })),
     onExpand: () => ui.setOpenAcc(open ? null : u.card),
@@ -426,11 +432,13 @@ export function buildAccordionItem(E, ui, u) {
 }
 
 /** Tile dintr-o secţiune de acordeon, legat de o acţiune reală pe entitate. */
-function buildActionTile(E, ui, def, item, cardId) {
+function buildActionTile(E, ui, def, item, cardId, context) {
   const res = resolveAction(E, def ? def.slot : null, item.action);
   const on = res.active;
   const key = 'acc:' + cardId + ':' + item.label;
-  const value = res.supported ? res.hint || '' : VERIFY;
+  // v1.1.0: valorile tehnice (fan_mode: turbo etc.) nu se mai afiseaza sub
+  // eticheta; explicatia umana traieste in tooltip (dictionarul descriptions).
+  const value = res.supported ? '' : VERIFY;
   return {
     iconEl: ic(item.icon, { size: 16, color: on ? '#2a1608' : TXT2 }),
     label: item.label,
@@ -440,9 +448,9 @@ function buildActionTile(E, ui, def, item, cardId) {
     labelStyle: labelFor(on),
     valueStyle: verifyValueStyle(on, value),
     wrapStyle: 'position:relative; display:flex; min-width:0;',
-    tipText: res.supported ? item.label + (res.hint ? ' · ' + res.hint : '') : item.label + ' · ' + res.reason,
+    tipText: res.supported ? (describe(context, item.label) || item.label) : item.label + ' · ' + res.reason,
     showTip: ui.hoverKey === key,
-    tipStyle: TIP_STYLE,
+    tipStyle: TOOLTIP,
     onEnter: () => ui.setHoverKey(key),
     onLeave: () => ui.setHoverKey(null),
     onToggle: (e) => { if (e && e.stopPropagation) e.stopPropagation(); if (res.supported) res.run(); }
@@ -597,7 +605,7 @@ function buildToggleAction(E, ui, def, item, size) {
   return {
     res,
     key,
-    tip: res.supported ? item.label + (res.hint ? ' · ' + res.hint : '') : item.label + ' · ' + res.reason,
+    tip: res.supported ? (describe(null, item.label) || item.label) : item.label + ' · ' + res.reason,
     showTip: ui.hoverKey === key,
     onEnter: () => ui.setHoverKey(key),
     onLeave: () => ui.setHoverKey(null)
@@ -673,7 +681,7 @@ export function buildDeviceCard(E, ui, def) {
         knobStyle: 'width:19px; height:19px; border-radius:50%; background:' + (on ? KNOB_ON : KNOB_OFF) + '; ' + KNOB_SHADOW + ' transition:transform .18s cubic-bezier(.4,1.3,.5,1); transform:translateX(' + (on ? '21px' : '0') + ');',
         tipText: b.tip,
         showTip: b.showTip,
-        tipStyle: TIP_STYLE,
+        tipStyle: TOOLTIP,
         onEnter: b.onEnter,
         onLeave: b.onLeave,
         onToggle: (e) => { stop(e); if (b.res.supported) b.res.run(); }
@@ -689,7 +697,7 @@ export function buildDeviceCard(E, ui, def) {
         wrapStyle: 'position:relative; display:flex; align-items:center; justify-content:center;',
         style: 'width:' + (bpOf(ui).mob ? 40 : 44) + 'px; height:' + (bpOf(ui).mob ? 40 : 44) + 'px; flex:0 0 ' + (bpOf(ui).mob ? 40 : 44) + 'px; aspect-ratio:1; box-sizing:border-box; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (b.res.supported ? 'pointer' : 'default') + '; opacity:' + (b.res.supported ? 1 : 0.45) + '; background:' + (on ? PILL_ON : 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 100%)') + '; border:1px solid ' + (on ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.085)') + '; ' + (on ? 'box-shadow:0 8px 18px -9px rgba(226,121,58,0.7), inset 0 1px 0 rgba(255,255,255,0.45);' : 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);'),
         showTip: b.showTip,
-        tipStyle: 'position:absolute; bottom:52px; left:50%; transform:translateX(-50%); z-index:40; padding:7px 11px; border-radius:10px; max-width:230px; text-align:center; pointer-events:none; font-family:' + SANS + '; font-size:11.5px; font-weight:400; line-height:1.4; color:#f4ece2; background:#241c16; border:1px solid rgba(255,255,255,0.12); box-shadow:0 12px 26px -12px rgba(0,0,0,0.9);',
+        tipStyle: TOOLTIP,
         onEnter: b.onEnter,
         onLeave: b.onLeave,
         onToggle: (e) => { stop(e); if (b.res.supported) b.res.run(); }
@@ -811,12 +819,13 @@ export function buildModal(E, ui) {
       items: sec.items.map((item) => {
         const res = resolveAction(E, def.slot, item.action);
         const on = res.active;
-        const val = res.supported ? (res.hint || '') : VERIFY;
+        // v1.1.0: fara valori tehnice sub etichete (bug 0.2 — 'swing_mo...')
+        const val = res.supported ? '' : VERIFY;
         return {
           iconEl: ic(item.icon, { size: 16, color: on ? '#2a1608' : TXT2 }),
           label: item.label,
           value: val,
-          title: res.supported ? item.label + (res.hint ? ' · ' + res.hint : '') : res.reason,
+          title: res.supported ? (describe(sec.title, item.label) || item.label) : res.reason,
           tileStyle: tileStyleFor(on, res.supported) + (res.supported ? '' : ' opacity:0.55;'),
           iconWrapStyle: iconWrapFor(on),
           labelStyle: labelFor(on),
