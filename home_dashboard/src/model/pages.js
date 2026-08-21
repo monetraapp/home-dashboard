@@ -394,7 +394,9 @@ export const PAGES = {
             r('Luna curentă', 'energy.ac_etaj_luna'),
             r('Luna trecută', 'energy.ac_etaj_luna_trecuta')
           ]),
-          monitor('Total casă', [r('Consum luna curentă', 'energy.total_luna')])
+          // Nu există contor general al casei — singura energie măsurată e AC
+          // Etaj LG, iar eticheta o spune explicit ca să nu mintă.
+          monitor('Total măsurat', [r('Doar AC Etaj · luna curentă', 'energy.total_luna')])
         ]
       },
       {

@@ -16,11 +16,24 @@ export const SUGGESTED_MAP = {
   'climate.etaj': 'climate.etaj_aer_conditionat_lg_etaj',
   'climate.vivax': 'climate.mansarda_aer_conditionat_vivax_mansarda',
   // Confirmate manual în appul LG ThinQ (2026-08-21): decalaje în minute, nu ore
-  // fixe. Mapate pe sensor.* — singurul cu unitatea corectă (min); number.* are
-  // aceeaşi valoare brută dar unitate declarată greşit (h).
-  'sensor.lg_pornire_min': 'sensor.etaj_aer_conditionat_lg_etaj_schedule_turn_on',
-  'sensor.lg_oprire_min': 'sensor.etaj_aer_conditionat_lg_etaj_schedule_turn_off',
-  'sensor.lg_somn_min': 'sensor.etaj_aer_conditionat_lg_etaj_sleep_timer',
+  // fixe. Remapate 2026-08-22 de pe sensor.* pe number.* la cererea explicită a
+  // utilizatorului: number.* e controlabil (number.set_value), sensor.* e doar
+  // oglinda read-only. Unitatea declarată de number ('h') e greşită — etichetele
+  // noastre spun explicit "(min)", valoarea brută fiind aceeaşi pe ambele.
+  'sensor.lg_pornire_min': 'number.etaj_aer_conditionat_lg_etaj_schedule_turn_on',
+  'sensor.lg_oprire_min': 'number.etaj_aer_conditionat_lg_etaj_schedule_turn_off',
+  'sensor.lg_somn_min': 'number.etaj_aer_conditionat_lg_etaj_sleep_timer',
+  'switch.lg_economie': 'switch.etaj_aer_conditionat_lg_etaj_energy_saving',
+  // Funcţiile Vortex — switch-uri AUX Cloud dedicate (entitatea climate nu are
+  // preset_modes, deci vechea potrivire pe preset nu putea funcţiona niciodată).
+  'switch.vx_eco': 'switch.aux_cloud_ec0baeae4fb7_ecomode',
+  'switch.vx_noapte': 'switch.aux_cloud_ec0baeae4fb7_ac_slp',
+  'switch.vx_health': 'switch.aux_cloud_ec0baeae4fb7_ac_health',
+  'switch.vx_comfwind': 'switch.aux_cloud_ec0baeae4fb7_comfwind',
+  'switch.vx_antimucegai': 'switch.aux_cloud_ec0baeae4fb7_mldprf',
+  'switch.vx_blocare': 'switch.aux_cloud_ec0baeae4fb7_childlock',
+  'switch.vx_afisaj': 'switch.aux_cloud_ec0baeae4fb7_scrdisp',
+  'switch.vx_autocuratare': 'switch.aux_cloud_ec0baeae4fb7_ac_clean',
 
   // -------------------------------------------------------------- PISCINĂ
   'switch.pompa_filtrare': 'switch.filter_pump',
@@ -108,6 +121,10 @@ export const SUGGESTED_MAP = {
   'energy.ac_etaj_ieri': 'sensor.etaj_aer_conditionat_lg_etaj_energy_yesterday',
   'energy.ac_etaj_luna': 'sensor.etaj_aer_conditionat_lg_etaj_energy_this_month',
   'energy.ac_etaj_luna_trecuta': 'sensor.etaj_aer_conditionat_lg_etaj_energy_last_month',
+  // Nu există contor general al casei; singura energie măsurată e AC Etaj LG.
+  // Inelul de pe Acasă e mapat pe ea, iar etichetele UI spun explicit "AC Etaj",
+  // ca să nu pretindă că e totalul casei. De înlocuit când apare Growatt/contor.
+  'energy.total_luna': 'sensor.etaj_aer_conditionat_lg_etaj_energy_this_month',
 
   // ---------------------------------------------------------- MENTENANŢĂ
   'upd.ha_core': 'update.home_assistant_core_update',
@@ -149,9 +166,7 @@ export const UNMAPPED_REASONS = {
   'number.pompa_debit':
     'Pompa de filtrare are doar pornit/oprit (switch.filter_pump). Nu există entitate de debit/viteză reglabilă.',
   'sensor.pompa_consum':
-    'Nu există senzor de consum pentru pompa de filtrare (sensor.pompa_caldura_piscina_power e al pompei de căldură).',
-  'energy.total_luna':
-    'Nu există contor general de consum al casei. Singurul consum măsurat e cel al AC Etaj LG.'
+    'Nu există senzor de consum pentru pompa de filtrare (sensor.pompa_caldura_piscina_power e al pompei de căldură).'
 };
 
 /**

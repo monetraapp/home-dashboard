@@ -367,7 +367,7 @@ export default function Dashboard({ onOpenMapping }) {
                 {/* două cadrane mici */}
                 <div style={s('display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px;')}>
                   <div style={s(glassCard() + ' height:190px; display:flex; flex-direction:column;')}>
-                    <div style={s(cardTitleStyle)}>Consum energie</div>
+                    <div style={s(cardTitleStyle)}>Consum energie · AC Etaj</div>
                     <div style={s(cardSubStyle)}>{'Luna curentă · ' + monthPct + '% scursă'}</div>
                     <div style={s(energyDialWrapStyle)}>
                       {ribbonRing(118, monthPct)}

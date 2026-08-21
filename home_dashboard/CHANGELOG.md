@@ -1,5 +1,62 @@
 # Changelog
 
+## 1.0.5
+
+Audit "zero elemente nefuncţionale": tot ce e vizibil pe dashboard trebuie să
+funcţioneze, altfel se elimină sau se documentează explicit ca imposibil.
+
+**Cauza reală a VERIFY-urilor de pe cardul Vortex** (raportate şi în v1.0.0):
+cele 8 "Funcţii" încercau potrivirea pe `preset_modes` al entităţii
+`climate.aux_cloud_ec0baeae4fb7_ac` — care NU are `preset_modes` deloc. În
+realitate funcţiile sunt switch-uri AUX Cloud separate. Au fost adăugate 8
+sloturi noi (`switch.vx_*`) mapate direct pe ele; chip-urile folosesc acum
+`A.slot(...)` şi comută/reflectă starea reală.
+
+Acelaşi tipar la **AC Etaj LG · Economie**: era `A.preset` pe un climate fără
+preset_modes; acum e slotul `switch.lg_economie` →
+`switch.etaj_aer_conditionat_lg_etaj_energy_saving`.
+
+**Cronometrele LG** remapate de pe `sensor.*` (read-only) pe `number.*`
+(controlabile prin `number.set_value`), la cererea explicită a utilizatorului,
+şi expuse şi ca valori ţintă editabile în panoul acordeonului. Cheile de slot
+rămân neschimbate ca să nu orfanizeze mapările din localStorage. "—" în
+rândurile Cronometre e comportament corect (LG raportează unknown până setezi
+un temporizator), documentat în cod.
+
+**Eliminate (butoane/elemente care nu puteau face nimic, cu entitate
+inexistentă):**
+- Pompă filtrare: secţiunile "Viteză" şi "Program", setpoint-ul "Debit pompă",
+  rândul "Consum", minis "Auto"/"Programat", cele 4 circles — pompa e strict
+  on/off, nu există entităţi de viteză/program/consum. Ambient-ul cardului
+  arată acum temperatura apei (reală) în loc de "Consum VERIFY".
+- Pompă căldură: chip-ul "Doar ventilator" (fan_only nu există în hvac_modes
+  [off, auto, cool, heat]) şi butonul inert "Temporizator".
+- Clorinator: butoanele inerte "Oprit" şi "Auto după ORP".
+- TV-uri: butonul inert "Redare" (toate cele 8 carduri); chip-ul "Plex"
+  (inexistent în orice source_list) înlocuit cu "TV" (`live tv` pe LG, `TV` pe
+  Samsung).
+
+**Raportat ca imposibil, păstrat intenţionat:** dial-ul cardului Pompă filtrare
+(element structural al designului; nu există nicio entitate numerică a pompei)
+— afişează VERIFY ca marker onest. Chip-ul "Maxim" (Vivax, fan "full") rămâne
+în aşteptarea confirmării fizice (TODO existent din v1.0.4).
+
+**Energie:** inelul de pe Acasă şi rândul de pe pagina Energie nu mai afişează
+"Energie VERIFY": `energy.total_luna` e mapat pe singurul contor real
+(`sensor.etaj_aer_conditionat_lg_etaj_energy_this_month`), iar etichetele spun
+explicit "AC Etaj" ca să nu pretindă că e totalul casei. Secţiunea "Rezervat
+pentru extindere" (Grid/PV Growatt/APX/THOR) rămâne — e deja marcată onest ca
+rezervată.
+
+**Test corectat:** regula "niciun control interzis" folosea `^switch\.aux_`,
+care ar fi blocat şi switch-urile legitime `switch.aux_cloud_*` (Vortex);
+ancorat pe `^switch\.aux_\d+$` ca să interzică exact `switch.aux_1/2`
+(ieşirile necunoscute ale clorinatorului).
+
+Bilanţ sloturi: 120 total (111 + 8 Vortex + 1 Economie LG), 117 mapate,
+3 rămase VERIFY cu motiv (temp exterior — se ia din weather; debit pompă şi
+consum pompă filtrare — hardware fără astfel de entităţi).
+
 ## 1.0.4
 
 Șapte corecții de etichetă/mapare, toate verificate manual în aplicațiile

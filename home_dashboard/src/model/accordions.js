@@ -10,8 +10,6 @@ import { ro, sec, act, spClimate, spNumber } from './blocks.js';
 const C = '°C';
 const PCT = '%';
 
-const NO_TIMER = 'Home Assistant nu expune temporizatoarele interne ale unităţii ca entitate.';
-
 // ---------------------------------------------------------------- vocabular
 // Liste de cuvinte-cheie pentru potrivirea treptelor de ventilator / baleiaj /
 // presetări. Potrivirea e mai întâi exactă, apoi parţială (vezi matchOption).
@@ -59,15 +57,17 @@ export const CLIMAT_ACCORDION = [
         act('leftright', 'Orizontal', A.swing(...SWING.horizontal)),
         act('move', 'Ambele', A.swing(...SWING.both))
       ]),
+      // Funcţiile Vortex sunt switch-uri AUX Cloud dedicate; entitatea climate
+      // NU are preset_modes, deci potrivirea pe preset nu putea funcţiona.
       sec('Funcţii', 4, [
-        act('leaf', 'Eco', A.preset('eco', 'economy')),
-        act('moon', 'Noapte', A.preset('sleep', 'night', 'somn', 'noapte')),
-        act('shield', 'Health', A.preset('health', 'ionizer')),
-        act('wind', 'Comfort Wind', A.preset('comfort', 'wind')),
-        act('ban', 'Anti-mucegai', A.preset('mold', 'mildew')),
-        act('lock', 'Blocare copii', A.preset('lock', 'child')),
-        act('sparkle', 'Afişaj', A.preset('display', 'led', 'light')),
-        act('refresh', 'Auto-curăţare', A.preset('clean', 'self'))
+        act('leaf', 'Eco', A.slot('switch.vx_eco')),
+        act('moon', 'Noapte', A.slot('switch.vx_noapte')),
+        act('shield', 'Health', A.slot('switch.vx_health')),
+        act('wind', 'Comfort Wind', A.slot('switch.vx_comfwind')),
+        act('ban', 'Anti-mucegai', A.slot('switch.vx_antimucegai')),
+        act('lock', 'Blocare copii', A.slot('switch.vx_blocare')),
+        act('sparkle', 'Afişaj', A.slot('switch.vx_afisaj')),
+        act('refresh', 'Auto-curăţare', A.slot('switch.vx_autocuratare'))
       ]),
       sec('Diagnostic', 3, [
         ro('gauge', 'Limită putere', 'diag.vortex_limita_putere', { unit: PCT, decimals: 0 }),
@@ -78,7 +78,13 @@ export const CLIMAT_ACCORDION = [
   },
   {
     card: 'ac-etaj',
-    setpoints: [spClimate('Temperatură ţintă')],
+    setpoints: [
+      spClimate('Temperatură ţintă'),
+      // Cronometrele LG sunt entităţi number controlabile (valoare = minute).
+      spNumber('sensor.lg_somn_min', 'Somn peste', 'min'),
+      spNumber('sensor.lg_pornire_min', 'Pornire peste', 'min'),
+      spNumber('sensor.lg_oprire_min', 'Oprire peste', 'min')
+    ],
     sections: [
       MODE_SECTION,
       sec('Ventilator', 4, [
@@ -92,9 +98,12 @@ export const CLIMAT_ACCORDION = [
         act('updown', 'Pornit', A.swing(...SWING.on))
       ]),
       sec('Funcţii', 1, [
-        act('leaf', 'Economie', A.preset('eco', 'energy', 'economy'))
+        // Economie e un switch LG ThinQ separat, nu un preset al climate-ului.
+        act('leaf', 'Economie', A.slot('switch.lg_economie'))
       ]),
       sec('Cronometre', 3, [
+        // "—" aici e corect: LG raportează unknown cât timp niciun temporizator
+        // nu e setat; valorile apar imediat ce setezi ceva (aici sau din ThinQ).
         ro('moon', 'Temporizator somn (min)', 'sensor.lg_somn_min', { unit: 'min', decimals: 0 }),
         ro('calDown', 'Pornire peste (min)', 'sensor.lg_pornire_min', { unit: 'min', decimals: 0 }),
         ro('calUp', 'Oprire peste (min)', 'sensor.lg_oprire_min', { unit: 'min', decimals: 0 })
@@ -145,22 +154,14 @@ export const CLIMAT_ACCORDION = [
 export const PISCINA_ACCORDION = [
   {
     card: 'pool-pump',
-    setpoints: [spNumber('number.pompa_debit', 'Debit pompă', PCT)],
+    // Pompa de filtrare e strict pornit/oprit (switch.filter_pump). Secţiunile
+    // "Viteză" şi "Program" din mockup, setpoint-ul "Debit pompă" şi rândul
+    // "Consum" au fost ELIMINATE (2026-08-22): nu există nicio entitate de
+    // viteză/debit/program/consum pentru această pompă — erau butoane care nu
+    // puteau face nimic, marcate permanent VERIFY.
+    setpoints: [],
     sections: [
-      sec('Viteză', 4, [
-        act('bars1', 'Viteză 1', A.numberFrac('number.pompa_debit', 0.33)),
-        act('bars2', 'Viteză 2', A.numberFrac('number.pompa_debit', 0.66)),
-        act('bars3', 'Viteză 3', A.numberFrac('number.pompa_debit', 1)),
-        act('gauge', 'Oprit', A.numberFrac('number.pompa_debit', 0))
-      ]),
-      sec('Program', 4, [
-        act('auto', 'Auto', A.none('Regimul Auto al pompei nu e expus ca entitate în HA.')),
-        act('clock', 'Programat', A.none('Programările pompei se editează în Home Assistant.')),
-        act('sliders', 'Manual', A.none('Foloseşte valoarea ţintă „Debit pompă" de mai sus.')),
-        act('moon', 'Regim noapte', A.none('Nu există o entitate pentru regimul de noapte.'))
-      ]),
-      sec('Diagnostic', 4, [
-        ro('bolt', 'Consum', 'sensor.pompa_consum'),
+      sec('Diagnostic', 3, [
         ro('waves', 'Problemă debit apă', 'binary_sensor.pc_debit', { map: { on: 'Da', off: 'Nu' } }),
         ro('gauge', 'Temperatură apă', 'sensor.apa_temp', { unit: C }),
         ro('alertCircle', 'Flag problemă', 'binary_sensor.pc_problema', { map: { on: 'Da', off: 'Nu' } })
@@ -171,19 +172,20 @@ export const PISCINA_ACCORDION = [
     card: 'heatpump',
     setpoints: [spClimate('Temperatură ţintă apă')],
     sections: [
-      sec('Mod', 4, [
+      // "Doar ventilator" ELIMINAT (2026-08-22): hvac_modes real al pompei e
+      // [off, auto, cool, heat] — fan_only nu există pe această entitate.
+      sec('Mod', 3, [
         act('flame', 'Încălzire', A.hvac('heat')),
         act('snow', 'Răcire', A.hvac('cool')),
-        act('auto', 'Auto', A.hvac('auto')),
-        act('fan2', 'Doar ventilator', A.hvac('fan_only'))
+        act('auto', 'Auto', A.hvac('auto'))
       ]),
       // Cele 3 presetModes reale ale pompei (quiet/smart/quick) confirmate manual
       // în appul Tuya nativ: Silenţios / Smart / Turbo, exact în această ordine.
-      sec('Funcţii', 4, [
+      // "Temporizator" ELIMINAT: nu există entitate, butonul nu făcea nimic.
+      sec('Funcţii', 3, [
         act('moon', 'Silenţios', A.preset('silent', 'quiet', 'silentios')),
         act('sparkle', 'Smart', A.preset('smart')),
-        act('boost', 'Turbo', A.preset('boost', 'turbo', 'powerful', 'quick')),
-        act('clock', 'Temporizator', A.none(NO_TIMER))
+        act('boost', 'Turbo', A.preset('boost', 'turbo', 'powerful', 'quick'))
       ]),
       sec('Diagnostic', 4, [
         ro('bolt', 'Consum', 'sensor.pc_consum'),
@@ -201,11 +203,12 @@ export const PISCINA_ACCORDION = [
       spNumber('number.clor_productie', 'Producţie clor', PCT)
     ],
     sections: [
-      sec('Regim', 4, [
+      // "Oprit" ELIMINAT (2026-08-22): era un buton inert cu tooltip; oprirea
+      // se face din comutatorul principal al rândului, care există deja.
+      sec('Regim', 3, [
         act('droplet', 'Redus', A.slot('switch.clorinator_redus')),
         act('waves', 'Normal', A.slot('switch.clorinator')),
-        act('boost', 'Boost', A.slot('switch.clorinator_boost')),
-        act('ban', 'Oprit', A.none('Opreşte clorinatorul din comutatorul principal de pe rând.'))
+        act('boost', 'Boost', A.slot('switch.clorinator_boost'))
       ]),
       sec('Producţie clor', 4, [
         act('gauge', '25 %', A.numberFrac('number.clor_productie', 0.25)),
@@ -231,11 +234,11 @@ export const PISCINA_ACCORDION = [
     card: 'clorinator-main',
     setpoints: [spNumber('number.clor_productie', 'Producţie clor', PCT)],
     sections: [
-      sec('Regim', 4, [
+      // "Auto după ORP" ELIMINAT (2026-08-22): nu există entitate, buton inert.
+      sec('Regim', 3, [
         act('droplet', 'Redus', A.slot('switch.clorinator_redus')),
         act('waves', 'Normal', A.slot('switch.clorinator')),
-        act('boost', 'Boost', A.slot('switch.clorinator_boost')),
-        act('auto', 'Auto după ORP', A.none('Nu există o entitate pentru regimul automat după ORP.'))
+        act('boost', 'Boost', A.slot('switch.clorinator_boost'))
       ]),
       sec('Diagnostic', 4, [
         ro('shield', 'Dual Link', 'sensor.clor_dual_link'),

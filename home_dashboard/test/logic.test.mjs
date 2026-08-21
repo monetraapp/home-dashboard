@@ -200,19 +200,25 @@ eq('nicio entitate nu e folosita pentru doua sloturi fara motiv',
      const ok = [
        'climate.pompa_caldura_piscina', 'climate.mansarda_aer_conditionat_vivax_mansarda',
        // firmware-ul apare si pe pagina Retea, si in Mentenanta
-       'update.gateway_principal_firmware', 'update.switch_principal_firmware'
+       'update.gateway_principal_firmware', 'update.switch_principal_firmware',
+       // singurul contor de energie: alimenteaza si randul AC Etaj, si inelul
+       // "total" de pe Acasa (etichetat explicit "AC Etaj")
+       'sensor.etaj_aer_conditionat_lg_etaj_energy_this_month'
      ];
      return Object.keys(seen).filter((id) => seen[id].length > 1 && ok.indexOf(id) < 0);
    })(), []);
 
+// Aux1/Aux2 = iesirile necunoscute ale clorinatorului (switch.aux_1, switch.aux_2).
+// Regexul e ancorat pe cifra finala ca sa NU prinda switch.aux_cloud_* (AC Vortex),
+// care sunt functii legitime, mapate intentionat.
 eq('niciun control interzis nu e mapat (PoE, reboot, Aux1/Aux2)',
-   propuse.filter((k) => /(_poe$|_reboot$|^switch\.aux_)/.test(SUGGESTED_MAP[k])), []);
+   propuse.filter((k) => /(_poe$|_reboot$|^switch\.aux_\d+$)/.test(SUGGESTED_MAP[k])), []);
 
 eq('sloturile ramase au toate un motiv explicit',
    SLOTS.filter((x) => !SUGGESTED_MAP[x.key] && !UNMAPPED_REASONS[x.key]).map((x) => x.key), []);
 
-eq('total: 107 mapate din 111', [propuse.length, SLOTS.length], [107, 111]);
-eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 4);
+eq('total: 117 mapate din 120', [propuse.length, SLOTS.length], [117, 120]);
+eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 3);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

@@ -31,15 +31,30 @@ export const SLOTS = [
   slot('sensor.temp_exterior', 'Temperatură exterior', 'climat', ['sensor', 'weather'], {
     note: 'Opţional — dacă lipseşte, se ia din entitatea weather.'
   }),
-  slot('sensor.lg_pornire_min', 'AC Etaj LG · pornire peste (min)', 'climat', ['sensor'], {
-    note: 'Decalaj în minute faţă de acum, nu o oră fixă — confirmat manual în appul LG ThinQ. Mapat pe sensor.* (device_class duration, unitate min corectă), nu pe number.* (acelaşi număr brut, dar unitate h greşită pe acea entitate).'
+  // Cheile păstrează prefixul istoric "sensor." ca să nu orfanizeze mapările
+  // deja salvate în localStorage; acum ţintesc entităţile number.* (controlabile).
+  slot('sensor.lg_pornire_min', 'AC Etaj LG · pornire peste (min)', 'climat', ['number', 'sensor'], {
+    note: 'Decalaj în minute faţă de acum, nu o oră fixă — confirmat manual în appul LG ThinQ. Mapat pe number.* pentru control (set_value); unitatea afişată e cea reală (min), nu cea declarată greşit de number (h).'
   }),
-  slot('sensor.lg_oprire_min', 'AC Etaj LG · oprire peste (min)', 'climat', ['sensor'], {
-    note: 'Decalaj în minute, nu oră fixă — confirmat manual. Mapat pe sensor.* pentru acelaşi motiv ca mai sus.'
+  slot('sensor.lg_oprire_min', 'AC Etaj LG · oprire peste (min)', 'climat', ['number', 'sensor'], {
+    note: 'Decalaj în minute, nu oră fixă — confirmat manual. Mapat pe number.* pentru control.'
   }),
-  slot('sensor.lg_somn_min', 'AC Etaj LG · temporizator somn (min)', 'climat', ['sensor'], {
-    note: 'Countdown în minute — mapat pe sensor.* (unitate min corectă).'
+  slot('sensor.lg_somn_min', 'AC Etaj LG · temporizator somn (min)', 'climat', ['number', 'sensor'], {
+    note: 'Countdown în minute — mapat pe number.* pentru control.'
   }),
+  slot('switch.lg_economie', 'AC Etaj LG · economie energie', 'climat', ['switch'], {
+    note: 'Funcţia Economie e un switch separat în LG ThinQ, nu un preset al entităţii climate.'
+  }),
+  // Funcţiile AC Vortex sunt switch-uri separate expuse de AUX Cloud, nu
+  // preset_modes pe entitatea climate (care nu are preset_modes deloc).
+  slot('switch.vx_eco', 'Vortex · Eco', 'climat', ['switch']),
+  slot('switch.vx_noapte', 'Vortex · Noapte', 'climat', ['switch']),
+  slot('switch.vx_health', 'Vortex · Health', 'climat', ['switch']),
+  slot('switch.vx_comfwind', 'Vortex · Comfort Wind', 'climat', ['switch']),
+  slot('switch.vx_antimucegai', 'Vortex · Anti-mucegai', 'climat', ['switch']),
+  slot('switch.vx_blocare', 'Vortex · Blocare copii', 'climat', ['switch']),
+  slot('switch.vx_afisaj', 'Vortex · Afişaj', 'climat', ['switch']),
+  slot('switch.vx_autocuratare', 'Vortex · Auto-curăţare', 'climat', ['switch']),
 
   // -------------------------------------------------------------- PISCINĂ
   slot('switch.pompa_filtrare', 'Pompă filtrare piscină', 'piscina', ['switch', 'input_boolean', 'fan'], {

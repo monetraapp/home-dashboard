@@ -61,11 +61,12 @@ export const DEVICE_CARDS = [
       { id: 'hp-silent', icon: 'moon', label: 'Silenţios', action: A.preset('silent', 'quiet', 'silentios') },
       { id: 'hp-smart', icon: 'sparkle', label: 'Smart', action: A.preset('smart') }
     ],
+    // "Doar ventilator" ELIMINAT (2026-08-22): fan_only nu există în
+    // hvac_modes al pompei ([off, auto, cool, heat]) — chip permanent VERIFY.
     circles: [
       { id: 'hp-c-heat', icon: 'flame', label: 'Încălzire apă', action: A.hvac('heat') },
       { id: 'hp-c-cool', icon: 'snow', label: 'Răcire apă', action: A.hvac('cool') },
-      { id: 'hp-c-auto', icon: 'alertTri', label: 'Mod automat', action: A.hvac('auto') },
-      { id: 'hp-c-fan', icon: 'fan2', label: 'Doar ventilator', action: A.hvac('fan_only') }
+      { id: 'hp-c-auto', icon: 'alertTri', label: 'Mod automat', action: A.hvac('auto') }
     ]
   },
   {
@@ -97,18 +98,17 @@ export const DEVICE_CARDS = [
     model: 'Piscină',
     group: 'Piscină',
     kind: 'switch',
-    ambient: { kind: 'compose', parts: [['sensor.pompa_consum', 'Consum ', '']] },
+    // Pompa e strict on/off. Ambient arată temperatura apei (reală), nu
+    // "Consum VERIFY" — nu există senzor de consum pentru pompa de filtrare.
+    // Minis şi circles din mockup (Auto/Programat/Viteze/Manual) ELIMINATE
+    // 2026-08-22: nu există entităţi de viteză/program, erau butoane inerte.
+    // Dial-ul rămâne pe number.pompa_debit (nemapat) — vezi CHANGELOG: element
+    // structural al cardului, imposibil de făcut funcţional fără redesign;
+    // afişează VERIFY intenţionat, ca marker onest al limitării hardware.
+    ambient: { kind: 'compose', parts: [['sensor.apa_temp', 'Apă ', ' °C']] },
     dial: { kind: 'number', slot: 'number.pompa_debit', unit: '%', min: 0, max: 100, step: 10 },
-    minis: [
-      { id: 'pp-auto', icon: 'alertTri', label: 'Auto', action: A.none('Nu există o entitate pentru regimul Auto al pompei.') },
-      { id: 'pp-sched', icon: 'clock', label: 'Programat', action: A.none('Programările pompei nu sunt expuse ca entitate.') }
-    ],
-    circles: [
-      { id: 'pp-c-1', icon: 'bars1', label: 'Viteză 1 · economic', action: A.numberFrac('number.pompa_debit', 0.33) },
-      { id: 'pp-c-2', icon: 'bars2', label: 'Viteză 2 · filtrare normală', action: A.numberFrac('number.pompa_debit', 0.66) },
-      { id: 'pp-c-3', icon: 'bars3', label: 'Viteză 3 · spălare filtru', action: A.numberFrac('number.pompa_debit', 1) },
-      { id: 'pp-c-man', icon: 'gauge', label: 'Control manual debit', action: A.none('Foloseşte butoanele − / + pentru debit manual.') }
-    ]
+    minis: [],
+    circles: []
   },
   {
     id: 'media-mansarda',
@@ -121,13 +121,14 @@ export const DEVICE_CARDS = [
     zone: 'Mansardă şi Foişor',
     ambient: { kind: 'mediaState' },
     dial: { kind: 'volume', unit: '%', min: 0, max: 100, step: 5 },
+    // "Redare" (buton inert) ELIMINAT şi "Plex" înlocuit cu "TV" (2026-08-22):
+    // Plex nu apare în source_list-ul niciunui televizor din casă.
     minis: [
-      { id: 'tv-mute', icon: 'ban', label: 'Mut', action: A.mute() },
-      { id: 'tv-play', icon: 'playCircle', label: 'Redare', action: A.none('Starea de redare o controlezi din butoanele de sub „Redare curentă".') }
+      { id: 'tv-mute', icon: 'ban', label: 'Mut', action: A.mute() }
     ],
     circles: [
       { id: 'tv-c-h1', icon: 'monitor', label: 'HDMI 1', action: A.source('hdmi 1', 'hdmi1', 'hdmi') },
-      { id: 'tv-c-plex', icon: 'server', label: 'Plex', action: A.source('plex') },
+      { id: 'tv-c-tv', icon: 'tv', label: 'TV', action: A.source('live tv', 'tv') },
       { id: 'tv-c-yt', icon: 'playCircle', label: 'YouTube', action: A.source('youtube') },
       { id: 'tv-c-nf', icon: 'sparkle', label: 'Netflix', action: A.source('netflix') }
     ]
@@ -144,7 +145,7 @@ export const DEVICE_CARDS = [
     dial: { kind: 'climate', unit: '°' },
     minis: [
       { id: 'lg-swing', icon: 'wind', label: 'Baleiaj', action: A.swingToggle() },
-      { id: 'lg-eco', icon: 'leaf', label: 'Economie', action: A.preset('eco', 'energy', 'economy') }
+      { id: 'lg-eco', icon: 'leaf', label: 'Economie', action: A.slot('switch.lg_economie') }
     ],
     circles: [
       { id: 'lg-c-cool', icon: 'snow', label: 'Răcire', action: A.hvac('cool') },
@@ -217,13 +218,16 @@ function mediaCard(id, slot, label, model, zone) {
       zone,
       ambient: { kind: 'mediaState' },
       dial: { kind: 'volume', unit: '%', min: 0, max: 100, step: 5 },
+      // "Redare" (inert) eliminat; "Plex" → "TV" — vezi nota de pe cardul
+      // TV Mansardă. Chip-urile YouTube/Netflix rămân: pe Samsung-uri
+      // source_list e doar [TV, HDMI] cât timp TV-ul e stins, dar se
+      // repopulează cu aplicaţii când TV-ul e pornit — se activează singure.
       minis: [
-        { id: id + '-mute', icon: 'ban', label: 'Mut', action: A.mute() },
-        { id: id + '-play', icon: 'playCircle', label: 'Redare', action: A.none('Redarea se controlează din pagina Media.') }
+        { id: id + '-mute', icon: 'ban', label: 'Mut', action: A.mute() }
       ],
       circles: [
         { id: id + '-c-h1', icon: 'monitor', label: 'HDMI 1', action: A.source('hdmi 1', 'hdmi1', 'hdmi') },
-        { id: id + '-c-plex', icon: 'server', label: 'Plex', action: A.source('plex') },
+        { id: id + '-c-tv', icon: 'tv', label: 'TV', action: A.source('live tv', 'tv') },
         { id: id + '-c-yt', icon: 'playCircle', label: 'YouTube', action: A.source('youtube') },
         { id: id + '-c-nf', icon: 'sparkle', label: 'Netflix', action: A.source('netflix') }
       ]
