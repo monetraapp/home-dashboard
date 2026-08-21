@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.1.2
+
+Şase ajustări punctuale din turul vizual al v1.1.1.
+
+1. **Vivax "Maxim" mapat pe `fan_mode: 'full'`** — ambiguitatea a fost închisă
+   de investigaţia read-only: Turbo-ul fizic de pe telecomandă = preset
+   `boost` (deja pe card), iar `full` = treapta de ventilator 100% (Midea:
+   silent 20 / low 40 / medium 60 / high 80 / full 100). Implementat printr-un
+   **set de cuvinte-cheie dedicat** (`FAN.full`), nu prin extinderea lui
+   `FAN.turbo` — setul partajat e folosit şi de chip-ul Turbo al Vortex-ului
+   şi nu trebuie să-şi schimbe potrivirea pe alte unităţi.
+2. **"Boost" → "Turbo" doar pe cardul Vivax** (chip-ul din Funcţii + cercul de
+   pe cardul compact), ca să corespundă etichetei fizice de pe telecomandă.
+   Maparea rămâne `preset_mode: boost`, neschimbată. Regimul "Boost" al
+   clorinatorului (Piscină) NU a fost atins — verificat explicit cu grep.
+3. **"Mut" → "Mute"** peste tot + mutat din rândul de toggle-uri în **rândul
+   de butoane rotunde**, ca al cincilea buton (activ/inactiv prin culoare, ca
+   restul). Zona goală din stânga cardului TV a dispărut; rândul de toggle-uri
+   nu se mai randează deloc când e gol (repara în trecere şi rândul gol de pe
+   cardul Pompă filtrare). Ruta specială Hisense (switch-ul dedicat de mute)
+   şi gating-ul pe standby sunt păstrate — acţiunea e aceeaşi, doar locul şi
+   forma butonului s-au schimbat.
+4. **Tooltip pe controale dezactivate — cauza reală**: nu pointer-events
+   (bula e în portal, în afara cardului), ci **coordonate fixe devenite
+   stale**: poziţia se calcula o singură dată, la apariţie; dacă pagina se
+   derula cu tooltip-ul deschis, bula rămânea la coordonatele vechi, peste
+   alte elemente. Acum se reancorează imediat la scroll (capture) şi resize.
+   În plus, fundalul e aproape opac (0.97) pentru lizibilitate pe orice
+   fundal, iar cazul raportat (tooltip-ul lui Mute peste rândul de surse)
+   dispare şi structural — Mute e acum chiar în rândul de jos.
+5. **Logo-ul "fusion" eliminat** din bara de sus (branding rămas din portarea
+   designului); taburile încep din stânga barei, fără gol suspect.
+6. **Salut adaptiv corect**: 05–10:59 "Bună dimineaţa" / 11–17:59 "Bună ziua"
+   / 18–21:59 "Bună seara" / 22–04:59 **"Noapte bună"** (pragurile vechi
+   afişau "Bună dimineaţa" la 02:47). Ora e cea locală a browserului; `now`
+   se actualizează la fiecare secundă, deci salutul se schimbă şi cu pagina
+   deschisă. Fade-in de 280ms care rulează O SINGURĂ DATĂ per schimbare
+   (`key={greeting}` remontează elementul doar când textul se schimbă) — fără
+   animaţie în buclă.
+
 ## 1.1.1
 
 Corecţii găsite la turul vizual al utilizatorului după v1.1.0.

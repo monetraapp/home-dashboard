@@ -208,9 +208,16 @@ export default function Dashboard({ onOpenMapping }) {
   const deviceGridStyle = 'display:grid; grid-template-columns:repeat(auto-fit,minmax(' + (mob ? '260px' : '298px') + ',1fr)); gap:14px;';
   const tableSectionStyle = 'padding:' + (mob ? '4px 14px 22px' : narrow ? '4px 22px 24px' : '4px 26px 26px 20px') + ';';
 
-  const greeting = now.getHours() < 12 ? 'Bună dimineaţa,' : now.getHours() < 18 ? 'Bună ziua,' : 'Bună seara,';
+  // Salut dupa ora locala a browserului (`now` se actualizeaza la fiecare
+  // secunda, deci trecerea pragului schimba salutul si cu pagina deschisa):
+  // 05-10:59 dimineata / 11-17:59 ziua / 18-21:59 seara / 22-04:59 noapte.
+  const h = now.getHours();
+  const greeting =
+    h >= 5 && h < 11 ? 'Bună dimineaţa,' :
+    h >= 11 && h < 18 ? 'Bună ziua,' :
+    h >= 18 && h < 22 ? 'Bună seara,' : 'Noapte bună,';
 
-  const tipKeyframes = '@keyframes hdTipIn{from{opacity:0; transform:translateY(4px);}to{opacity:1; transform:translateY(0);}}';
+  const tipKeyframes = '@keyframes hdTipIn{from{opacity:0; transform:translateY(4px);}to{opacity:1; transform:translateY(0);}} @keyframes hdFadeIn{from{opacity:0;}to{opacity:1;}}';
 
   return (
     <div style={s(deskStyle)}>
@@ -219,10 +226,9 @@ export default function Dashboard({ onOpenMapping }) {
       <div style={s(panelStyle)}>
         {/* ------------------------------------------------------------- nav */}
         <div style={s(navRowStyle)}>
-          <div style={s('font-family:' + SANS + '; font-size:19px; font-weight:600; color:' + TXT + '; letter-spacing:-0.02em; flex-shrink:0; padding-left:6px;')}>
-            fusion
-          </div>
-          <div style={s('display:flex; align-items:center; gap:9px; flex:1; min-width:0; overflow-x:auto; scrollbar-width:none; padding:2px; mask-image:linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%); -webkit-mask-image:linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);')}>
+          {/* logo-ul "fusion" (branding ramas din portarea designului) a fost
+              eliminat in v1.1.2; taburile incep direct din stanga barei. */}
+          <div style={s('display:flex; align-items:center; gap:9px; flex:1; min-width:0; padding-left:4px; overflow-x:auto; scrollbar-width:none; padding:2px; mask-image:linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%); -webkit-mask-image:linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);')}>
             {NAV.map((n) => {
               const a = n.key === page;
               return (
@@ -254,7 +260,9 @@ export default function Dashboard({ onOpenMapping }) {
           <div style={s(leftColStyle)}>
             <div style={{ padding: '6px 0 52px' }}>
               <div style={s('font-family:' + SERIF + '; font-size:' + (mob ? '16px' : '19px') + '; font-weight:400; color:#9d9186;')}>Bogdan</div>
-              <div style={s('font-family:' + SERIF + '; font-size:' + (mob ? '32px' : '46px') + '; font-weight:400; line-height:1.1; color:#f7f1e9; margin-top:2px; letter-spacing:0.005em;')}>
+              {/* key={greeting}: remonteaza elementul doar cand textul se
+                  schimba, deci fade-in-ul ruleaza O DATA, nu in bucla */}
+              <div key={greeting} style={s('font-family:' + SERIF + '; font-size:' + (mob ? '32px' : '46px') + '; font-weight:400; line-height:1.1; color:#f7f1e9; margin-top:2px; letter-spacing:0.005em; animation:hdFadeIn .28s ease-out;')}>
                 {greeting}
               </div>
             </div>
@@ -735,15 +743,38 @@ function Tip({ text }) {
     const arrowX = Math.max(10, Math.min(a.left + a.width / 2 - left, b.width - 10));
     setBox({ top, left, place, arrowX });
   }, [text]);
+  // Cauza tooltip-urilor "cazute" peste alte elemente (v1.1.2): pozitia fixa
+  // se calcula O SINGURA DATA; daca pagina se derula cu tooltip-ul deschis,
+  // coordonatele ramaneau vechi. La scroll/resize il reancoram imediat.
+  useEffect(() => {
+    const re = () => {
+      const holder = holderRef.current;
+      const bubble = bubbleRef.current;
+      const anchor = holder && holder.parentElement;
+      if (!holder || !bubble || !anchor) return;
+      const a = anchor.getBoundingClientRect();
+      const b = bubble.getBoundingClientRect();
+      const vw = window.innerWidth, vh = window.innerHeight, pad = 8, gap = 10;
+      let top = a.bottom + gap, place = 'below';
+      if (top + b.height > vh - pad && a.top - gap - b.height >= pad) { top = a.top - gap - b.height; place = 'above'; }
+      let left = a.left + a.width / 2 - b.width / 2;
+      left = Math.max(pad, Math.min(left, vw - pad - b.width));
+      const arrowX = Math.max(10, Math.min(a.left + a.width / 2 - left, b.width - 10));
+      setBox({ top, left, place, arrowX });
+    };
+    window.addEventListener('scroll', re, true);
+    window.addEventListener('resize', re);
+    return () => { window.removeEventListener('scroll', re, true); window.removeEventListener('resize', re); };
+  }, []);
   const base =
     'position:fixed; z-index:200; pointer-events:none; padding:8px 12px; border-radius:12px; max-width:260px; width:max-content; text-align:center; font-family:' + SANS +
-    '; font-size:11.5px; font-weight:400; line-height:1.45; color:#f4ece2; background:rgba(28,22,17,0.95); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.14); box-shadow:0 12px 28px -12px rgba(0,0,0,0.9);';
+    '; font-size:11.5px; font-weight:400; line-height:1.45; color:#f4ece2; background:rgba(26,20,15,0.97); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.14); box-shadow:0 12px 28px -12px rgba(0,0,0,0.9);';
   const style = box
     ? s(base + ' top:' + box.top + 'px; left:' + box.left + 'px; animation:hdTipIn .16s ease-out;')
     : s(base + ' top:0; left:0; visibility:hidden;');
   const arrow = box
     ? s(
-        'position:absolute; width:9px; height:9px; transform:rotate(45deg); background:rgba(28,22,17,0.95); left:' + (box.arrowX - 4.5) + 'px; ' +
+        'position:absolute; width:9px; height:9px; transform:rotate(45deg); background:rgba(26,20,15,0.97); left:' + (box.arrowX - 4.5) + 'px; ' +
           (box.place === 'below'
             ? 'top:-5px; border-left:1px solid rgba(255,255,255,0.14); border-top:1px solid rgba(255,255,255,0.14);'
             : 'bottom:-5px; border-right:1px solid rgba(255,255,255,0.14); border-bottom:1px solid rgba(255,255,255,0.14);')
@@ -821,6 +852,7 @@ function DeviceCard({ c }) {
         </div>
       )}
 
+      {c.miniToggles.length ? (
       <div style={s(c.miniRowStyle)}>
         {c.miniToggles.map((mt, i) => (
           <div key={i} style={s(mt.colStyle)} onMouseEnter={mt.onEnter} onMouseLeave={mt.onLeave}>
@@ -835,6 +867,7 @@ function DeviceCard({ c }) {
           </div>
         ))}
       </div>
+      ) : null}
 
       <div style={s(c.circleRowStyle)}>
         {c.circles.map((cb, i) => (

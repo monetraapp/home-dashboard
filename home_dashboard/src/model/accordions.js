@@ -19,7 +19,11 @@ const FAN = {
   low: ['low', 'scazut', 'scăzut', '1', 'min'],
   mid: ['medium', 'mid', 'mediu', '2'],
   high: ['high', 'ridicat', '3'],
-  turbo: ['turbo', 'strong', 'highest', 'max', 'maxim', 'powerful']
+  turbo: ['turbo', 'strong', 'highest', 'max', 'maxim', 'powerful'],
+  // set dedicat pentru treapta 100% (Midea 'full') — NU e adaugat in `turbo`,
+  // ca sa nu schimbe potrivirea pe alte unitati; pe Vivax, Turbo-ul fizic e
+  // preset_mode 'boost', iar 'full' e pur si simplu ventilatorul la maxim.
+  full: ['full', 'maxim', '100']
 };
 const SWING = {
   off: ['off', 'oprit', 'stop', 'fixed'],
@@ -127,13 +131,11 @@ export const CLIMAT_ACCORDION = [
         act('bars2', 'Scăzut', A.fan(...FAN.low)),
         act('bars3', 'Mediu', A.fan(...FAN.mid)),
         act('fan2', 'Ridicat', A.fan(...FAN.high)),
-        // TODO necesită verificare ulterioară: fan_modes al acestui AC (Midea)
-        // conţine atât 'high' cât şi 'full', tratate ca trepte distincte de HA.
-        // Appul nativ Midea nu are o listă separată de trepte (doar un slider
-        // continuu), deci corespondenţa exactă 'full' ↔ eticheta „Maxim" nu a
-        // putut fi confirmată. FAN.turbo nu conţine 'full' printre cuvintele
-        // cheie, deci acest buton rămâne VERIFY până se confirmă — nu ghicim.
-        act('fan', 'Maxim', A.fan(...FAN.turbo))
+        // Confirmat prin investigatia din 2026-08-22: Turbo-ul fizic de pe
+        // telecomanda = preset 'boost' (chip-ul "Turbo" din Functii), iar
+        // 'full' = treapta de ventilator 100% (Midea: silent20/low40/medium60/
+        // high80/full100) — deci "Maxim" se mapeaza pe fan_mode 'full'.
+        act('fan', 'Maxim', A.fan(...FAN.full))
       ]),
       sec('Baleiaj', 4, [
         act('ban', 'Oprit', A.swing(...SWING.off)),
@@ -145,7 +147,9 @@ export const CLIMAT_ACCORDION = [
         act('sofa', 'Comfort', A.preset('comfort')),
         act('leaf', 'Eco', A.preset('eco', 'economy')),
         act('moon', 'Somn', A.preset('sleep', 'somn', 'night')),
-        act('boost', 'Boost', A.preset('boost', 'turbo'))
+        // Eticheta "Turbo" = numele butonului fizic de pe telecomanda Vivax;
+        // maparea ramane preset_mode 'boost' (neschimbata).
+        act('boost', 'Turbo', A.preset('boost', 'turbo'))
       ])
     ]
   }

@@ -20,7 +20,7 @@ const D = {
   'Ventilator|Maxim': 'Treapta cea mai mare de ventilator raportată de unitate.',
   'Ventilator|Auto': 'Unitatea ajustează singură viteza ventilatorului după cât e de departe de ţintă.',
   'Ventilator mediu': 'Setează ventilatorul pe viteza medie.',
-  'Turbo': 'Viteza maximă de ventilator — răcire/încălzire rapidă, mai zgomotoasă.',
+  'Turbo': 'Treapta maximă — unitatea răceşte/încălzeşte cât de repede poate. Mai zgomotoasă, consum mai mare.',
 
   // -------------------------------------------------------------- baleiaj
   'Baleiaj|Oprit': 'Lamelele stau fixe, aerul merge într-o singură direcţie.',
@@ -58,7 +58,7 @@ const D = {
   'Mod automat': 'Pompa alege singură între încălzire şi răcire după temperatura ţintă.',
   'Funcţii|Silenţios': 'Reduce turaţia compresorului şi a ventilatorului — mai lent, dar aproape silenţios.',
   'Smart': 'Regimul echilibrat recomandat: adaptează puterea după diferenţa faţă de ţintă.',
-  'Funcţii|Turbo': 'Putere maximă pentru încălzire rapidă — consum mai mare, zgomot mai mare.',
+  'Funcţii|Turbo': 'Putere maximă temporară pentru atingerea rapidă a ţintei — consum şi zgomot mai mari.',
 
   // ------------------------------------------------------------ clorinator
   'Producţie clor': 'Cât clor produce electroliza, în procente din capacitatea celulei.',
@@ -79,7 +79,7 @@ const D = {
   'TV': 'Comută pe tunerul TV (canale live).',
   'YouTube': 'Deschide aplicaţia YouTube pe televizor.',
   'Netflix': 'Deschide aplicaţia Netflix pe televizor.',
-  'Mut': 'Taie sunetul televizorului fără a-l opri.',
+  'Mute': 'Taie sunetul televizorului fără a-l opri.',
 
   // -------------------------------------------------------------- generice
   'Comfort': 'Presetul de confort al unităţii: temperatură şi ventilaţie echilibrate.',

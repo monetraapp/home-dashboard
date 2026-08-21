@@ -124,14 +124,15 @@ export const DEVICE_CARDS = [
     dial: { kind: 'volume', unit: '%', min: 0, max: 100, step: 1 },
     // "Redare" (buton inert) ELIMINAT şi "Plex" înlocuit cu "TV" (2026-08-22):
     // Plex nu apare în source_list-ul niciunui televizor din casă.
-    minis: [
-      { id: 'tv-mute', icon: 'volumeX', label: 'Mut', action: A.mute() }
-    ],
+    // Mute a fost mutat (v1.1.2) din randul de toggle-uri in randul de butoane
+    // rotunde, ca al cincilea buton — cardul nu mai are zona goala stanga.
+    minis: [],
     circles: [
       { id: 'tv-c-h1', icon: 'cable', label: 'HDMI 1', action: A.source('hdmi 1', 'hdmi1', 'hdmi') },
       { id: 'tv-c-tv', icon: 'tv', label: 'TV', action: A.source('live tv', 'tv') },
       { id: 'tv-c-yt', icon: 'playCircle', label: 'YouTube', action: A.source('youtube') },
-      { id: 'tv-c-nf', icon: 'clapperboard', label: 'Netflix', action: A.source('netflix') }
+      { id: 'tv-c-nf', icon: 'clapperboard', label: 'Netflix', action: A.source('netflix') },
+      { id: 'tv-c-mute', icon: 'volumeX', label: 'Mute', action: A.mute() }
     ]
   },
   {
@@ -172,7 +173,7 @@ export const DEVICE_CARDS = [
     circles: [
       { id: 'vv-c-cool', icon: 'snow', label: 'Răcire', action: A.hvac('cool') },
       { id: 'vv-c-heat', icon: 'sun', label: 'Încălzire', action: A.hvac('heat') },
-      { id: 'vv-c-boost', icon: 'boost', label: 'Boost', action: A.preset('boost', 'turbo') },
+      { id: 'vv-c-boost', icon: 'boost', label: 'Turbo', action: A.preset('boost', 'turbo') },
       { id: 'vv-c-eco', icon: 'leaf', label: 'Eco', action: A.preset('eco') }
     ]
   },
@@ -222,14 +223,13 @@ function mediaCard(id, slot, label, model, zone, muteAction) {
       // TV Mansardă. Chip-urile YouTube/Netflix rămân: pe Samsung-uri
       // source_list e doar [TV, HDMI] cât timp TV-ul e stins, dar se
       // repopulează cu aplicaţii când TV-ul e pornit — se activează singure.
-      minis: [
-        { id: id + '-mute', icon: 'volumeX', label: 'Mut', action: muteAction || A.mute() }
-      ],
+      minis: [],
       circles: [
         { id: id + '-c-h1', icon: 'cable', label: 'HDMI 1', action: A.source('hdmi 1', 'hdmi1', 'hdmi') },
         { id: id + '-c-tv', icon: 'tv', label: 'TV', action: A.source('live tv', 'tv') },
         { id: id + '-c-yt', icon: 'playCircle', label: 'YouTube', action: A.source('youtube') },
-        { id: id + '-c-nf', icon: 'clapperboard', label: 'Netflix', action: A.source('netflix') }
+        { id: id + '-c-nf', icon: 'clapperboard', label: 'Netflix', action: A.source('netflix') },
+        { id: id + '-c-mute', icon: 'volumeX', label: 'Mute', action: muteAction || A.mute() }
       ]
     }
   ];
