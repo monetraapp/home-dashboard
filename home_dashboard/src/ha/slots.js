@@ -28,9 +28,9 @@ export const SLOTS = [
   }),
   slot('climate.etaj', 'AC Etaj LG', 'climat', ['climate']),
   slot('climate.vivax', 'AC Mansardă Vivax', 'climat', ['climate']),
-  slot('sensor.temp_exterior', 'Temperatură exterior', 'climat', ['sensor', 'weather'], {
-    note: 'Opţional — dacă lipseşte, se ia din entitatea weather.'
-  }),
+  // Slotul "Temperatură exterior" a fost ELIMINAT (v1.0.6): nu există senzor
+  // fizic exterior; afişajul "Exterior" citeşte direct weather.main (atributul
+  // temperature), fără slot intermediar.
   // Cheile păstrează prefixul istoric "sensor." ca să nu orfanizeze mapările
   // deja salvate în localStorage; acum ţintesc entităţile number.* (controlabile).
   slot('sensor.lg_pornire_min', 'AC Etaj LG · pornire peste (min)', 'climat', ['number', 'sensor'], {
@@ -61,10 +61,9 @@ export const SLOTS = [
     suggest: 'switch.pompa_filtrare',
     note: 'ID propus de tine, marcat VERIFY.'
   }),
-  slot('number.pompa_debit', 'Debit / viteză pompă filtrare', 'piscina', ['number', 'input_number'], {
-    note: 'Doar dacă pompa expune o viteză reglabilă.'
-  }),
-  slot('sensor.pompa_consum', 'Consum pompă filtrare', 'piscina', ['sensor']),
+  // Sloturile "Debit/viteză pompă" şi "Consum pompă filtrare" au fost ELIMINATE
+  // (v1.0.6): pompa e strict pornit/oprit şi nu are măsurare de consum — nu vor
+  // exista niciodată entităţi pentru ele pe acest hardware.
   slot('climate.pompa_caldura', 'Pompă căldură Fairland', 'piscina', ['climate', 'water_heater'], {
     suggest: 'climate.pompa_caldura_piscina',
     note: 'ID propus de tine, marcat VERIFY.'
@@ -157,6 +156,18 @@ export const SLOTS = [
   slot('net.lan5', 'LAN 5 · stare', 'retea', ['binary_sensor', 'sensor', 'switch']),
   slot('net.lan6', 'LAN 6 · stare', 'retea', ['binary_sensor', 'sensor', 'switch']),
   slot('net.lan7', 'LAN 7 · stare', 'retea', ['binary_sensor', 'sensor', 'switch']),
+  // Switch-urile Easy Managed (apar în HA doar cu MAC): Foişor = ES206XPP-M2
+  // (A8-29-48-ED-C7-2D, cu PoE), Etaj = ES206X-M2 (A8-29-48-EE-DE-FC, fără PoE).
+  slot('net.swf_state', 'Switch Foişor · stare', 'retea', ['sensor', 'binary_sensor']),
+  slot('net.swf_cpu', 'Switch Foişor · CPU', 'retea', ['sensor']),
+  slot('net.swf_mem', 'Switch Foişor · memorie', 'retea', ['sensor']),
+  slot('net.swf_poe1', 'Switch Foişor · PoE port 1', 'retea', ['sensor']),
+  slot('net.swf_poe2', 'Switch Foişor · PoE port 2', 'retea', ['sensor']),
+  slot('net.swf_poe3', 'Switch Foişor · PoE port 3', 'retea', ['sensor']),
+  slot('net.swf_poe4', 'Switch Foişor · PoE port 4', 'retea', ['sensor']),
+  slot('net.swe_state', 'Switch Etaj · stare', 'retea', ['sensor', 'binary_sensor']),
+  slot('net.swe_cpu', 'Switch Etaj · CPU', 'retea', ['sensor']),
+  slot('net.swe_mem', 'Switch Etaj · memorie', 'retea', ['sensor']),
 
   // -------------------------------------------------------------- ENERGIE
   slot('energy.ac_etaj_azi', 'AC Etaj · consum azi', 'energie', ['sensor']),
@@ -180,6 +191,13 @@ export const SLOTS = [
   slot('upd.eap_mansarda', 'Update EAP Mansardă', 'mentenanta', ['update', 'binary_sensor', 'sensor']),
   slot('upd.eap_foisor', 'Update EAP Foişor', 'mentenanta', ['update', 'binary_sensor', 'sensor']),
   slot('upd.eap_casa_fata', 'Update EAP Casa Faţă', 'mentenanta', ['update', 'binary_sensor', 'sensor']),
+  // Indicatori "rulează" pentru add-on-uri (binary_sensor.*_running, hassio).
+  // Erau dezactivate de integrare; activate din registry pe 2026-08-22.
+  // Doar citire — comutarea add-on-urilor (switch.fusion etc.) NU se expune.
+  slot('addon.fusion', 'Add-on Fusion · rulează', 'mentenanta', ['binary_sensor']),
+  slot('addon.get_hacs', 'Add-on Get HACS · rulează', 'mentenanta', ['binary_sensor']),
+  slot('addon.home_dashboard', 'Add-on Home Dashboard · rulează', 'mentenanta', ['binary_sensor']),
+  slot('addon.matter_server', 'Add-on Matter Server · rulează', 'mentenanta', ['binary_sensor']),
   slot('backup.state', 'Stare backup', 'mentenanta', ['sensor', 'binary_sensor']),
   slot('backup.last', 'Ultimul backup reuşit', 'mentenanta', ['sensor']),
   slot('backup.next', 'Următorul backup programat', 'mentenanta', ['sensor']),

@@ -102,11 +102,11 @@ export const DEVICE_CARDS = [
     // "Consum VERIFY" — nu există senzor de consum pentru pompa de filtrare.
     // Minis şi circles din mockup (Auto/Programat/Viteze/Manual) ELIMINATE
     // 2026-08-22: nu există entităţi de viteză/program, erau butoane inerte.
-    // Dial-ul rămâne pe number.pompa_debit (nemapat) — vezi CHANGELOG: element
-    // structural al cardului, imposibil de făcut funcţional fără redesign;
-    // afişează VERIFY intenţionat, ca marker onest al limitării hardware.
+    // Dial-ul a fost ELIMINAT în v1.0.6 (decizia utilizatorului): pompa nu are
+    // nicio entitate numerică, deci cadranul era permanent inert. Cardul
+    // afişează în loc un bloc de stare Pornită/Oprită (vezi hasDial în build).
     ambient: { kind: 'compose', parts: [['sensor.apa_temp', 'Apă ', ' °C']] },
-    dial: { kind: 'number', slot: 'number.pompa_debit', unit: '%', min: 0, max: 100, step: 10 },
+    dial: null,
     minis: [],
     circles: []
   },

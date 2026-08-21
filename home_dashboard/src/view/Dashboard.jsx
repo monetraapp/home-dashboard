@@ -717,19 +717,26 @@ function DeviceCard({ c }) {
 
       <div style={s(c.ambientStyle)}>{c.ambient}</div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 2 }}>
-        <div style={s(c.roundBtnStyle)} onClick={c.onMinus}>−</div>
-        <div style={s(c.stepLabelStyle)}>{c.stepLabel}</div>
-        <div style={s(c.dialWrapStyle)}>
-          {c.dialTicksEl}
-          <div style={s(c.knobStyle)}>
-            <span style={s(c.knobValStyle)}>{c.dialVal}</span>
-            <span style={s(c.knobUnitStyle)}>{c.dialUnit}</span>
+      {c.hasDial ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 2 }}>
+          <div style={s(c.roundBtnStyle)} onClick={c.onMinus}>−</div>
+          <div style={s(c.stepLabelStyle)}>{c.stepLabel}</div>
+          <div style={s(c.dialWrapStyle)}>
+            {c.dialTicksEl}
+            <div style={s(c.knobStyle)}>
+              <span style={s(c.knobValStyle)}>{c.dialVal}</span>
+              <span style={s(c.knobUnitStyle)}>{c.dialUnit}</span>
+            </div>
           </div>
+          <div style={s(c.targetLabelStyle)}>{c.targetLabel}</div>
+          <div style={s(c.roundBtnStyle)} onClick={c.onPlus}>+</div>
         </div>
-        <div style={s(c.targetLabelStyle)}>{c.targetLabel}</div>
-        <div style={s(c.roundBtnStyle)} onClick={c.onPlus}>+</div>
-      </div>
+      ) : (
+        <div style={s(c.noDialWrapStyle)}>
+          {c.noDialIconEl}
+          <div style={s(c.noDialTextStyle)}>{c.noDialText}</div>
+        </div>
+      )}
 
       <div style={s(c.miniRowStyle)}>
         {c.miniToggles.map((mt, i) => (

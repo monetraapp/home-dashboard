@@ -217,8 +217,8 @@ eq('niciun control interzis nu e mapat (PoE, reboot, Aux1/Aux2)',
 eq('sloturile ramase au toate un motiv explicit',
    SLOTS.filter((x) => !SUGGESTED_MAP[x.key] && !UNMAPPED_REASONS[x.key]).map((x) => x.key), []);
 
-eq('total: 117 mapate din 120', [propuse.length, SLOTS.length], [117, 120]);
-eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 3);
+eq('total: 131 mapate din 131 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [131, 131]);
+eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

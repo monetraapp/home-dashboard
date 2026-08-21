@@ -60,12 +60,11 @@ export function matchOption(list, keywords) {
 
 /**
  * Sloturi care pot fi acoperite de altă entitate deja mapată, dacă nu au una
- * proprie. Doar cazuri unde echivalenţa e sigură (temperatura exterioară e
- * exact atributul `temperature` al entităţii weather).
+ * proprie. Gol din v1.0.6 — fostul unic caz (sensor.temp_exterior →
+ * weather.main.temperature) a dispărut odată cu slotul: afişajele "Exterior"
+ * citesc acum weather.main direct, cu opts.attr='temperature'.
  */
-const FALLBACK = {
-  'sensor.temp_exterior': { from: 'weather.main', attr: 'temperature' }
-};
+const FALLBACK = {};
 
 export function useEntities() {
   const ha = useHa();

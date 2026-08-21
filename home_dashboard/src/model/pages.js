@@ -34,7 +34,7 @@ export const PAGES = {
     title: 'Climat',
     chips: [
       { icon: 'home', slot: 'climate.vortex', opts: { attr: 'current_temperature', unit: C }, prefix: 'Mansardă ' },
-      { icon: 'cloud', slot: 'sensor.temp_exterior', opts: { unit: C }, prefix: 'Exterior ' }
+      { icon: 'cloud', slot: 'weather.main', opts: { attr: 'temperature', unit: C }, prefix: 'Exterior ' }
     ],
     cards: [
       {
@@ -50,7 +50,7 @@ export const PAGES = {
             r('AC Etaj Ambient', 'climate.etaj', { attr: 'current_temperature', unit: C }),
             r('Ambient Mansardă', 'climate.vortex', { attr: 'current_temperature', unit: C }),
             r('Vivax Ambient', 'climate.vivax', { attr: 'current_temperature', unit: C }),
-            r('Exterior', 'sensor.temp_exterior', { unit: C })
+            r('Exterior', 'weather.main', { attr: 'temperature', unit: C })
           ])
         ]
       },
@@ -298,6 +298,18 @@ export const PAGES = {
             r('CPU', 'net.sw_cpu', { unit: PCT, decimals: 0 }),
             r('Memorie', 'net.sw_mem', { unit: PCT, decimals: 0 }),
             r('Firmware', 'net.sw_fw', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } })
+          ]),
+          // Switch-urile Easy Managed nu au entitate de firmware în HA —
+          // rândurile lor se opresc la Stare/CPU/Memorie.
+          monitor('Switch Foişor', [
+            r('Stare', 'net.swf_state'),
+            r('CPU', 'net.swf_cpu', { unit: PCT, decimals: 0 }),
+            r('Memorie', 'net.swf_mem', { unit: PCT, decimals: 0 })
+          ]),
+          monitor('Switch Etaj', [
+            r('Stare', 'net.swe_state'),
+            r('CPU', 'net.swe_cpu', { unit: PCT, decimals: 0 }),
+            r('Memorie', 'net.swe_mem', { unit: PCT, decimals: 0 })
           ])
         ]
       },
@@ -316,9 +328,13 @@ export const PAGES = {
       {
         title: 'Consum PoE',
         blocks: [
-          monitor('Porturi 1–8', [
+          monitor('Switch Principal · porturi 1–8', [
             r('Port 1', 'net.poe1'), r('Port 2', 'net.poe2'), r('Port 3', 'net.poe3'), r('Port 4', 'net.poe4'),
             r('Port 5', 'net.poe5'), r('Port 6', 'net.poe6'), r('Port 7', 'net.poe7'), r('Port 8', 'net.poe8')
+          ]),
+          monitor('Switch Foişor · porturi 1–4', [
+            r('Port 1', 'net.swf_poe1'), r('Port 2', 'net.swf_poe2'),
+            r('Port 3', 'net.swf_poe3'), r('Port 4', 'net.swf_poe4')
           ]),
           note('Comutarea PoE nu e expusă în această aplicaţie — ar opri camere şi puncte de acces.')
         ]
@@ -430,6 +446,20 @@ export const PAGES = {
             r('AC Vivax · Midea', 'diag.integrare_vivax'),
             r('Fairland · Tuya Local', 'diag.integrare_fairland'),
             r('Cameră Speed Dome', 'camera.speed_dome')
+          ])
+        ]
+      },
+      {
+        title: 'Add-on-uri',
+        blocks: [
+          // Doar indicatori (binary_sensor.*_running). Comutatoarele de
+          // pornire/oprire add-on NU se expun — oprirea accidentală a unui
+          // add-on de pe dashboard e exact genul de acţiune periculoasă evitată.
+          monitor('Stare add-on-uri', [
+            r('Fusion', 'addon.fusion', { map: { on: 'Rulează', off: 'Oprit' } }),
+            r('Home Dashboard', 'addon.home_dashboard', { map: { on: 'Rulează', off: 'Oprit' } }),
+            r('Matter Server', 'addon.matter_server', { map: { on: 'Rulează', off: 'Oprit' } }),
+            r('Get HACS', 'addon.get_hacs', { map: { on: 'Rulează', off: 'Oprit' } })
           ])
         ]
       },

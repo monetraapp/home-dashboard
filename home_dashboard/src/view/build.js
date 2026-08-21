@@ -604,6 +604,14 @@ export function buildDeviceCard(E, ui, def) {
     label: def.label,
     model: def.model,
     ambient: ambientText(E, def),
+    // Carduri fără cadran (ex. pompa de filtrare, strict on/off): în locul
+    // dial-ului se afişează un bloc de stare cu aceeaşi înălţime (132px),
+    // ca layout-ul cardului să rămână identic cu al vecinilor.
+    hasDial: !!def.dial,
+    noDialWrapStyle: 'height:132px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; margin-top:2px;',
+    noDialIconEl: ic(def.icon, { size: 34, color: a ? ORANGE : TXT3 }),
+    noDialTextStyle: 'font-family:' + SANS + '; font-size:21px; font-weight:500; line-height:1; color:' + (a ? '#f7f1e9' : '#9d9186') + ';',
+    noDialText: !E.mapped(def.slot) ? VERIFY : !E.available(def.slot) ? NA : a ? 'Pornită' : 'Oprită',
     cardStyle: 'padding:16px 16px 14px; border-radius:22px; background:' + CARD_BG + '; border:1px solid ' + CARD_BORDER + ';',
     headIconStyle: 'width:34px; height:34px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:' + (a ? '#2a1608' : TXT2) + '; background:' + (a ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(255,255,255,0.06)') + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)') + ';',
     headIconEl: ic(def.icon, { size: 18 }),
@@ -689,7 +697,8 @@ export function buildSidebarDevice(E, ui, def) {
     dialWrapStyle: 'position:relative; width:74px; height:74px; flex-shrink:0; display:flex; align-items:center; justify-content:center;',
     dialTicksEl: dialTicks(frac, a, 74),
     dialValStyle: 'position:absolute; font-family:' + SANS + '; font-size:15px; font-weight:500; color:' + (a ? '#f7f1e9' : '#9d9186') + ';',
-    dialVal: dialVal + di.unit,
+    // fără cadran: inelul mic din sidebar arată starea în loc de valoare
+    dialVal: def.dial ? dialVal + di.unit : (a ? 'Pornită' : 'Oprită'),
     nameStyle: 'font-family:' + SANS + '; font-size:13.5px; font-weight:500; color:' + TXT + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
     metaStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT3 + '; margin-top:2px;',
     ambientStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + (ambientText(E, def) === VERIFY ? ORANGE : a ? '#c8a173' : TXT3) + '; margin-top:6px;',

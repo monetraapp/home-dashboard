@@ -115,6 +115,19 @@ export const SUGGESTED_MAP = {
   'net.poe6': 'sensor.switch_principal_port_6_poe_power',
   'net.poe7': 'sensor.switch_principal_port_7_poe_power',
   'net.poe8': 'sensor.switch_principal_port_8_poe_power',
+  // Switch Foişor (ES206XPP-M2, A8-29-48-ED-C7-2D) — DOAR senzori read-only;
+  // switch.a8_*_poe (comutare PoE) rămâne interzis pe dashboard.
+  'net.swf_state': 'sensor.a8_29_48_ed_c7_2d_device_status',
+  'net.swf_cpu': 'sensor.a8_29_48_ed_c7_2d_cpu_usage',
+  'net.swf_mem': 'sensor.a8_29_48_ed_c7_2d_memory_usage',
+  'net.swf_poe1': 'sensor.a8_29_48_ed_c7_2d_port_1_poe_power',
+  'net.swf_poe2': 'sensor.a8_29_48_ed_c7_2d_port_2_poe_power',
+  'net.swf_poe3': 'sensor.a8_29_48_ed_c7_2d_port_3_poe_power',
+  'net.swf_poe4': 'sensor.a8_29_48_ed_c7_2d_port_4_poe_power',
+  // Switch Etaj (ES206X-M2, A8-29-48-EE-DE-FC) — fără PoE.
+  'net.swe_state': 'sensor.a8_29_48_ee_de_fc_device_status',
+  'net.swe_cpu': 'sensor.a8_29_48_ee_de_fc_cpu_usage',
+  'net.swe_mem': 'sensor.a8_29_48_ee_de_fc_memory_usage',
 
   // -------------------------------------------------------------- ENERGIE
   'energy.ac_etaj_azi': 'sensor.etaj_aer_conditionat_lg_etaj_energy_today',
@@ -127,6 +140,12 @@ export const SUGGESTED_MAP = {
   'energy.total_luna': 'sensor.etaj_aer_conditionat_lg_etaj_energy_this_month',
 
   // ---------------------------------------------------------- MENTENANŢĂ
+  // Indicatori add-on-uri (activate din registry 2026-08-22; erau
+  // disabled_by:integration). Read-only — switch.fusion etc. NU se mapează.
+  'addon.fusion': 'binary_sensor.fusion_running',
+  'addon.get_hacs': 'binary_sensor.get_hacs_running',
+  'addon.home_dashboard': 'binary_sensor.home_dashboard_running',
+  'addon.matter_server': 'binary_sensor.matter_server_running',
   'upd.ha_core': 'update.home_assistant_core_update',
   'upd.ha_os': 'update.home_assistant_operating_system_update',
   'upd.supervisor': 'update.home_assistant_supervisor_update',
@@ -161,12 +180,9 @@ export const SUGGESTED_MAP = {
  * ştii dacă e ceva de completat sau pur şi simplu nu există în HA.
  */
 export const UNMAPPED_REASONS = {
-  'sensor.temp_exterior':
-    'Nu există un senzor de temperatură exterioară în HA. Valoarea se ia automat din weather.forecast_home.',
-  'number.pompa_debit':
-    'Pompa de filtrare are doar pornit/oprit (switch.filter_pump). Nu există entitate de debit/viteză reglabilă.',
-  'sensor.pompa_consum':
-    'Nu există senzor de consum pentru pompa de filtrare (sensor.pompa_caldura_piscina_power e al pompei de căldură).'
+  // Gol din v1.0.6: cele 3 sloturi fără corespondent hardware (temp exterior,
+  // debit pompă, consum pompă filtrare) au fost eliminate din catalog cu totul,
+  // nu doar lăsate nemapate. Toate sloturile rămase au mapare din audit.
 };
 
 /**

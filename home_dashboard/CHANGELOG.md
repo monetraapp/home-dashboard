@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.0.6
+
+Patru schimbări, un singur release:
+
+**1. Eliminate cele 3 sloturi fără corespondent hardware** — `sensor.temp_exterior`,
+`number.pompa_debit`, `sensor.pompa_consum` au dispărut complet din catalog
+(butonul × din Mapare doar golea maparea, nu ştergea slotul). Afişajele
+"Exterior" de pe pagina Climat (chip + rândul din "Temperaturi pe zone") citesc
+acum `weather.main` direct, cu `attr: 'temperature'` — mecanismul FALLBACK din
+`entities.js` a devenit gol şi e documentat ca atare. `UNMAPPED_REASONS` e gol:
+fiecare slot rămas are mapare din audit.
+
+**2. Dial-ul cardului "Pompă filtrare" eliminat** (decizia utilizatorului, era
+raportat ca imposibil-de-legat în v1.0.5). Cardul păstrează toggle-ul on/off şi
+temperatura apei; în locul cadranului apare un bloc de stare (iconiţă + text
+"Pornită"/"Oprită") cu exact aceeaşi înălţime (132px), deci layout-ul rămâne
+aliniat cu al celorlalte carduri, fără spaţiu gol. Mecanic: `dial: null` pe
+card, `hasDial` în `buildDeviceCard`, ramură alternativă în `DeviceCard`;
+inelul mic din sidebar arată "Pornită"/"Oprită" în loc de valoare. `buildModal`
+avea deja garda `hasTarget: !!def.dial`, deci panoul de setări nu mai afişează
+rândul de valoare ţintă de la sine.
+
+**3. Switch Foişor + Switch Etaj pe pagina Reţea** — 10 sloturi noi
+(`net.swf_*`, `net.swe_*`) mapate pe senzorii TP-Link Omada existenţi
+(A8-29-48-ED-C7-2D = Foişor ES206XPP-M2, A8-29-48-EE-DE-FC = Etaj ES206X-M2),
+cu etichete lizibile, nu MAC-uri. Monitoare noi "Switch Foişor" / "Switch Etaj"
+(Stare/CPU/Memorie) lângă Gateway şi Switch Principal, plus "Switch Foişor ·
+porturi 1–4" în cardul Consum PoE. Doar senzori read-only — comutatoarele PoE
+rămân interzise. Easy Managed-urile nu au entitate de firmware, deci rândul
+Firmware lipseşte intenţionat la ele.
+
+**4. Indicatori add-on-uri pe Mentenanţă** — cele 4 `binary_sensor.*_running`
+(Fusion, Get HACS, Home Dashboard, Matter Server) EXISTAU în registry dar erau
+`disabled_by: integration`, deci invizibile în state machine — asta împacă
+raportul v1.0.5 ("nu există") cu exportul pe device-uri ("există"): ambele erau
+corecte, pe surse diferite. Au fost activate din registry (2026-08-22),
+confirmate cu stări live, şi adăugate ca monitor read-only "Add-on-uri" pe
+Mentenanţă. Comutatoarele `switch.fusion`/`switch.home_dashboard`/etc. NU se
+expun — oprirea accidentală a unui add-on de pe dashboard e exact genul de
+acţiune periculoasă evitată. Alte entităţi `*_running` nu există (căutat
+explicit).
+
+Bilanţ sloturi: **131 total, 131 mapate, 0 nemapate** (120 − 3 eliminate + 10
+reţea + 4 add-on-uri).
+
 ## 1.0.5
 
 Audit "zero elemente nefuncţionale": tot ce e vizibil pe dashboard trebuie să
