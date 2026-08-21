@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.0.3
+
+Maparea din audit (`SUGGESTED_MAP`, aceeaşi din spatele butonului "Aplică
+maparea din audit") devine implicitul aplicaţiei, nu doar o acţiune manuală.
+Până acum `loadMap()` întorcea direct ce era în `localStorage` — gol la prima
+încărcare pe orice browser/device nou, deci ingress-ul din HA (origine diferită
+de `localhost:5173` folosit la testare) pornea mereu nemapat, fiind nevoie de
+un click pe "Aplică din audit" pe fiecare device.
+
+`loadMap()` întoarce acum `{ ...SUGGESTED_MAP, ...stored }`: cele 104 potriviri
+din audit sunt baza, iar orice alegere salvată explicit din ecranul de Mapare
+suprascrie implicitul, nu invers. Cele 4 sloturi fără corespondent confirmat în
+audit (`UNMAPPED_REASONS`) rămân nemapate şi afişează VERIFY, neschimbat.
+
+Pentru ca "suprascrie" să funcţioneze şi în sens invers — cineva şterge manual
+un slot care are implicit din audit —, butonul X din Mapare (`setSlot`) nu mai
+şterge cheia din `entityMap`, ci o setează explicit la `''`. O cheie lipsă
+înseamnă acum "fără opinie, foloseşte implicitul"; o cheie prezentă cu valoare
+goală înseamnă "am ales explicit să nu mapez asta". Fără schimbarea asta,
+implicitul din audit ar fi reapărut la următoarea încărcare a paginii, iar
+butonul de ştergere n-ar mai fi putut aduce un slot înapoi la VERIFY.
+
+Butonul "Aplică maparea din audit" rămâne — nu mai e necesar la prima
+încărcare, dar tot are rost dacă cineva a şters manual un slot şi vrea implicitul
+înapoi, sau dacă `SUGGESTED_MAP` se actualizează cu un audit mai nou.
+
 ## 1.0.2
 
 Nivelul de log nu mai poate împiedica pornirea serviciului. `bashio::config

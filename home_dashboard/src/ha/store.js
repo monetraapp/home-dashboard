@@ -2,6 +2,8 @@
 // Totul stă în localStorage-ul browserului. Nu se trimite nicăieri altundeva
 // în afară de instanța ta de Home Assistant.
 
+import { SUGGESTED_MAP } from './suggestedMap.js';
+
 const KEY_CFG = 'hd.ha.config';
 const KEY_MAP = 'hd.ha.entityMap';
 const KEY_UI = 'hd.ui.prefs';
@@ -43,9 +45,20 @@ export function clearConfig() {
   }
 }
 
-/** { [slotKey]: entity_id } */
+/**
+ * { [slotKey]: entity_id }
+ *
+ * Implicit = maparea din audit (SUGGESTED_MAP, aceeaşi folosită de butonul
+ * "Aplică maparea din audit"), ca să arate corect din prima, pe orice
+ * browser/device, fără vreun click. Orice alegere manuală salvată în
+ * localStorage (ecranul de Mapare) are prioritate şi suprascrie implicitul
+ * — nu invers. Sloturile absente din SUGGESTED_MAP (fără corespondent real
+ * confirmat în audit) rămân nemapate şi cardul lor afişează VERIFY, exact
+ * ca înainte.
+ */
 export function loadMap() {
-  return read(KEY_MAP, {});
+  const stored = read(KEY_MAP, {});
+  return Object.assign({}, SUGGESTED_MAP, stored);
 }
 
 export function saveMap(map) {

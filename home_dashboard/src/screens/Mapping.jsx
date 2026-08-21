@@ -36,8 +36,11 @@ export default function Mapping({ onClose }) {
 
   function setSlot(key, value) {
     const next = Object.assign({}, entityMap);
-    if (!value) delete next[key];
-    else next[key] = value;
+    // Cheia rămâne prezentă chiar şi când e ştearsă (valoare ''), ca să
+    // marcheze explicit "am ales să nu mapez asta" — altfel, dacă am şterge
+    // cheia, implicitul din audit (vezi loadMap în store.js) ar reapărea la
+    // următoarea încărcare, iar butonul X n-ar mai putea readuce slotul la VERIFY.
+    next[key] = value || '';
     setEntityMap(next);
   }
 
