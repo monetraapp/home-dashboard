@@ -188,6 +188,14 @@ function monitorRows(E, ui, title, rows, keyCtx) {
   });
 }
 
+// Titlurile şi numele se rup pe maxim 2 linii în loc să se taie cu "..."
+// după ~10 caractere pe mobil (audit v1.2.0: „Pompă filt…", „Pompa C…" pe
+// Piscină la 390px erau imposibil de deosebit). -webkit-line-clamp pune
+// elipsa abia la capătul liniei a doua; word-break previne overflow-ul
+// cuvintelor foarte lungi. Valorile/metadatele rămân pe o linie (sunt date,
+// nu identitate).
+const CLAMP2 = 'display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;';
+
 const MON_WRAP = 'border:1px solid rgba(255,255,255,0.065); border-radius:14px; overflow:hidden; margin-bottom:12px;';
 const MON_CAP = 'display:flex; align-items:center; gap:8px; padding:9px 14px; font-family:' + SANS + '; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + '; background:rgba(255,255,255,0.022);';
 
@@ -556,13 +564,14 @@ export function buildAccordionItem(E, ui, u) {
     headStyle: 'display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 14px; cursor:pointer;',
     iconWrapStyle: 'width:36px; height:36px; flex-shrink:0; border-radius:12px; display:flex; align-items:center; justify-content:center; color:' + (on ? '#2a1608' : TXT2) + '; background:' + (on ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(255,255,255,0.055)') + '; border:1px solid ' + (on ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)') + ';',
     iconEl: ic(def ? def.icon : 'home', { size: 17 }),
-    nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
+    nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + CLAMP2,
     metaStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + (!mapped ? ORANGE : on ? '#c8a173' : TXT3) + '; margin-top:2px;',
     togglePillStyle: 'display:flex; align-items:center; padding:3px; border-radius:100px; cursor:' + (mapped && avail ? 'pointer' : 'default') + '; width:50px; flex-shrink:0; justify-content:' + (on ? 'flex-end' : 'flex-start') + '; opacity:' + (mapped && avail ? 1 : 0.55) + '; background:' + (on ? PILL_ON : PILL_OFF) + '; border:1px solid ' + (on ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)') + '; ' + (on ? 'box-shadow:0 4px 12px -6px rgba(226,121,58,0.55), inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -2px 4px rgba(150,60,10,0.32);' : PILL_SHADOW_OFF),
     toggleKnobStyle: 'width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:' + (on ? KNOB_ON : KNOB_OFF) + '; ' + KNOB_SHADOW,
     toggleIconEl: ic('power', { size: 12.5, color: on ? '#C4600F' : '#cfc4b8', sw: 2.2 }),
-    chevStyle: 'display:flex; align-items:center; gap:7px; flex-shrink:0; padding:6px 11px 6px 13px; border-radius:100px; cursor:pointer; font-family:' + SANS + '; font-size:11.5px; font-weight:400; color:' + (open ? '#f0c79b' : '#b3a89c') + '; background:' + (open ? 'rgba(240,138,44,0.1)' : 'rgba(255,255,255,0.05)') + '; border:1px solid ' + (open ? 'rgba(240,138,44,0.28)' : 'rgba(255,255,255,0.09)') + ';',
-    chevLabel: open ? 'Închide' : 'Setări',
+    chevStyle: 'display:flex; align-items:center; gap:7px; flex-shrink:0; padding:' + (bpOf(ui).mob ? '10px' : '6px 11px 6px 13px') + '; border-radius:100px; cursor:pointer; font-family:' + SANS + '; font-size:11.5px; font-weight:400; color:' + (open ? '#f0c79b' : '#b3a89c') + '; background:' + (open ? 'rgba(240,138,44,0.1)' : 'rgba(255,255,255,0.05)') + '; border:1px solid ' + (open ? 'rgba(240,138,44,0.28)' : 'rgba(255,255,255,0.09)') + ';',
+    // pe mobil butonul e doar chevron (starea deschis/închis o arată rotaţia)
+    chevLabel: bpOf(ui).mob ? '' : open ? 'Închide' : 'Setări',
     chevIconStyle: 'display:flex; transform:rotate(' + (open ? '180deg' : '0deg') + '); transition:transform .18s ease;',
     chevEl: ic('chevronDown', { size: 15, sw: 1.9 }),
     bodyStyle: 'padding:2px 14px 14px; border-top:1px solid rgba(255,255,255,0.055);',
@@ -811,7 +820,7 @@ export function buildDeviceCard(E, ui, def) {
     cardStyle: 'padding:16px 16px 14px; border-radius:22px; background:' + CARD_BG + '; border:1px solid ' + CARD_BORDER + ';',
     headIconStyle: 'width:34px; height:34px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:' + (a ? '#2a1608' : TXT2) + '; background:' + (a ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(255,255,255,0.06)') + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)') + ';',
     headIconEl: ic(def.icon, { size: 18 }),
-    nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
+    nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + CLAMP2,
     modelStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT3 + '; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
     togglePillStyle: 'display:flex; align-items:center; padding:3px; border-radius:100px; cursor:' + (canToggle ? 'pointer' : 'default') + '; flex-shrink:0; width:50px; justify-content:' + (a ? 'flex-end' : 'flex-start') + '; opacity:' + (canToggle ? 1 : 0.55) + '; background:' + (a ? PILL_ON : PILL_OFF) + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)') + '; ' + (a ? PILL_SHADOW_ON : PILL_SHADOW_OFF),
     toggleKnobStyle: 'width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:' + (a ? KNOB_ON : KNOB_OFF) + '; ' + KNOB_SHADOW,
@@ -900,7 +909,7 @@ export function buildSidebarDevice(E, ui, def) {
     dialVal: !def.dial
       ? (a ? (def.stateLabels ? def.stateLabels[0] : 'Pornit') : (def.stateLabels ? def.stateLabels[1] : 'Oprit'))
       : di.standby ? 'Standby' : dialVal + (di.val === null ? '' : di.unit),
-    nameStyle: 'font-family:' + SANS + '; font-size:13.5px; font-weight:500; color:' + TXT + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
+    nameStyle: 'font-family:' + SANS + '; font-size:13.5px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + CLAMP2,
     metaStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT3 + '; margin-top:2px;',
     ambientStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + (ambientText(E, def) === VERIFY ? ORANGE : a ? '#c8a173' : TXT3) + '; margin-top:6px;',
     togglePillStyle: 'display:flex; align-items:center; padding:3px; border-radius:100px; cursor:' + (canToggle ? 'pointer' : 'default') + '; flex-shrink:0; width:44px; justify-content:' + (a ? 'flex-end' : 'flex-start') + '; opacity:' + (canToggle ? 1 : 0.55) + '; background:' + (a ? PILL_ON : PILL_OFF) + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)') + '; ' + (a ? PILL_SHADOW_ON : PILL_SHADOW_OFF),
@@ -931,7 +940,7 @@ export function buildModal(E, ui) {
     title: E.friendlyName(def.slot, def.label),
     model: def.model,
     status,
-    titleStyle: 'font-family:' + SANS + '; font-size:17px; font-weight:500; color:' + TXT + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
+    titleStyle: 'font-family:' + SANS + '; font-size:17px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + CLAMP2,
     subStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT3 + '; margin-top:2px;',
     iconWrapStyle: 'width:44px; height:44px; flex-shrink:0; border-radius:14px; display:flex; align-items:center; justify-content:center; color:' + (a ? ORANGE : TXT2) + '; background:' + (a ? 'rgba(240,138,44,0.13)' : 'rgba(255,255,255,0.05)') + '; border:1px solid ' + (a ? 'rgba(240,138,44,0.28)' : 'rgba(255,255,255,0.07)') + ';',
     iconEl: ic(def.icon, { size: 20 }),

@@ -134,7 +134,7 @@ function auditPage() {
     return selPath(el) + (t ? ' — „' + t + '"' : '');
   };
 
-  const out = { overflowBody: [], outside: [], containerOverflow: [], touch: [], textCut: [], overlap: [], contrast: [] };
+  const out = { overflowBody: [], outside: [], containerOverflow: [], touch: [], textCut: [], overlap: [], contrast: [], textEllipsis: [] };
 
   // 1) overflow orizontal pe body
   const bodyOver = document.documentElement.scrollWidth - vw;
@@ -217,6 +217,20 @@ function auditPage() {
     // containerele mari de layout (carduri întregi) nu sunt "text tăiat"
     if (el.clientHeight > vh * 0.8) continue;
     out.textCut.push({ el: ident(el), detail: 'conţinut de ' + el.scrollHeight + 'px într-un container de ' + el.clientHeight + 'px cu overflow ascuns' });
+  }
+
+  // 5b) ellipsis orizontal ACTIV: elementul chiar taie text acum (v1.2.0 —
+  // prinde automat regresiile de tip "Pompă filt…"). Se raportează textul
+  // complet vs cel vizibil aproximativ prin depăşirea în pixeli.
+  for (const el of all) {
+    if (out.textEllipsis.length >= CAP) break;
+    if (!isVisible(el)) continue;
+    const st = cs(el);
+    if (st.textOverflow !== 'ellipsis') continue;
+    if (el.scrollWidth <= el.clientWidth + 2) continue;
+    const hasText = (el.textContent || '').trim().length > 0;
+    if (!hasText) continue;
+    out.textEllipsis.push({ el: ident(el), detail: 'textul e tăiat cu ellipsis (' + (el.scrollWidth - el.clientWidth) + 'px nu încap)' });
   }
 
   // 6) suprapuneri între fraţi cu text (intersecţie >25% din cel mai mic)
@@ -329,6 +343,7 @@ const SEVERITY = {
   containerOverflow: ['MEDIU', 'Conţinut tăiat orizontal (overflow ascuns)'],
   touch: ['MEDIU', 'Ţintă tactilă sub 44×44px'],
   textCut: ['MEDIU', 'Text tăiat vertical'],
+  textEllipsis: ['MEDIU', 'Text trunchiat cu ellipsis activ'],
   contrast: ['MINOR', 'Contrast sub pragul WCAG']
 };
 

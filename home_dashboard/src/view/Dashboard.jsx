@@ -1216,7 +1216,7 @@ function Picker({ tracked, setTracked, dragId, setDragId, onClose }) {
                     {ic(c.icon, { size: 17, color: on ? ORANGE : TXT2 })}
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={s('font-family:' + SANS + '; font-size:13px; font-weight:500; color:' + TXT + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;')}>
+                    <div style={s('font-family:' + SANS + '; font-size:13px; font-weight:500; color:' + TXT + '; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;')}>
                       {c.label}
                     </div>
                     <div style={s('font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + (mapped ? TXT3 : ORANGE) + '; margin-top:2px;')}>

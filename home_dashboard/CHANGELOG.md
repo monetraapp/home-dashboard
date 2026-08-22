@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.0
+
+1. **Cardul „Scurtături · Dispozitive urmărite" ELIMINAT** de pe toate
+   subpaginile, împreună cu codul asociat (quickRows, buildQuickRow).
+   Sistemul „tracked" + ecranul Gestionează rămân — alimentează secţiunea
+   şi inelul „Dispozitive" de pe Acasă.
+2. **Titlurile nu se mai taie după ~10 caractere pe mobil**: numele
+   rândurilor de acordeon (bug-ul „Pompă filt…"/„Pompa C…" de pe Piscină la
+   390px), numele cardurilor de dispozitiv, numele din „Control rapid",
+   titlurile cardurilor de pagină şi titlul modalului se rup acum pe maxim
+   2 linii (-webkit-line-clamp), cu elipsă abia la capătul liniei a doua.
+   Rândurile au align-items:center, deci toggle-ul şi butonul de setări
+   rămân centrate vertical. Valorile şi metadatele rămân pe o linie.
+3. **Butonul „Setări" al acordeoanelor devine doar chevron pe mobil** —
+   textul nu adăuga informaţie şi elibera ~50px pentru titlu.
+4. Auditul detectează de acum **ellipsis orizontal activ**
+   (text-overflow:ellipsis + scrollWidth > clientWidth) ca problemă MEDIE —
+   regresiile de tip „Pompă filt…" se prind automat.
+
 ## 1.1.9
 
 Bug confirmat investigând banda offline din audit: `lastCallError` („Comanda
