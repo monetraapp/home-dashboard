@@ -71,7 +71,10 @@ export const CLIMAT_ACCORDION = [
         act('dropletOff', 'Anti-mucegai', A.slot('switch.vx_antimucegai')),
         act('lock', 'Blocare copii', A.slot('switch.vx_blocare')),
         act('monitor', 'Afişaj', A.slot('switch.vx_afisaj')),
-        act('refresh', 'Auto-curăţare', A.slot('switch.vx_autocuratare'))
+        act('refresh', 'Auto-curăţare', A.slot('switch.vx_autocuratare')),
+        // (v1.2.8) Fără acest comutator, limita procentuală setată de number-ul
+        // pwrlimit (rândul „Limită putere" din Diagnostic) nu se aplică.
+        act('gauge', 'Limitare putere', A.slot('switch.vx_limita'))
       ]),
       sec('Diagnostic', 3, [
         ro('gauge', 'Limită putere', 'diag.vortex_limita_putere', { unit: PCT, decimals: 0 }),

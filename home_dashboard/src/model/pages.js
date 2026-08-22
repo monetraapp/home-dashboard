@@ -301,17 +301,19 @@ export const PAGES = {
             r('Memorie', 'net.sw_mem', { unit: PCT, decimals: 0 }),
             r('Firmware', 'net.sw_fw', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } })
           ]),
-          // Switch-urile Easy Managed nu au entitate de firmware în HA —
-          // rândurile lor se opresc la Stare/CPU/Memorie.
+          // (v1.2.8) Şi switch-urile Easy Managed au entităţi de firmware —
+          // comentariul anterior („nu au") era fals; gaură din auditul HA.
           monitor('Switch Foişor', [
             r('Stare', 'net.swf_state'),
             r('CPU', 'net.swf_cpu', { unit: PCT, decimals: 0 }),
-            r('Memorie', 'net.swf_mem', { unit: PCT, decimals: 0 })
+            r('Memorie', 'net.swf_mem', { unit: PCT, decimals: 0 }),
+            r('Firmware', 'upd.net_swf', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } })
           ]),
           monitor('Switch Etaj', [
             r('Stare', 'net.swe_state'),
             r('CPU', 'net.swe_cpu', { unit: PCT, decimals: 0 }),
-            r('Memorie', 'net.swe_mem', { unit: PCT, decimals: 0 })
+            r('Memorie', 'net.swe_mem', { unit: PCT, decimals: 0 }),
+            r('Firmware', 'upd.net_swe', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } })
           ])
         ]
       },
@@ -324,6 +326,14 @@ export const PAGES = {
             ['Mansardă', { pair: ['net.ap_mansarda_cpu', 'net.ap_mansarda_mem'] }],
             ['Foişor', { pair: ['net.ap_foisor_cpu', 'net.ap_foisor_mem'] }],
             ['Casa Faţă', { pair: ['net.ap_casa_fata_cpu', 'net.ap_casa_fata_mem'] }]
+          ]),
+          // (v1.2.8) Starea de conectare — era mapată doar la gateway/switch-uri.
+          monitor('EAP · Stare', [
+            r('Parter', 'net.ap_parter_state'),
+            r('Etaj', 'net.ap_etaj_state'),
+            r('Mansardă', 'net.ap_mansarda_state'),
+            r('Foişor', 'net.ap_foisor_state'),
+            r('Casa Faţă', 'net.ap_casa_fata_state')
           ])
         ]
       },
@@ -722,7 +732,9 @@ export const PAGES = {
             r('EAP Etaj', 'upd.eap_etaj', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } }),
             r('EAP Mansardă', 'upd.eap_mansarda', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } }),
             r('EAP Foişor', 'upd.eap_foisor', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } }),
-            r('EAP Casa Faţă', 'upd.eap_casa_fata', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } })
+            r('EAP Casa Faţă', 'upd.eap_casa_fata', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } }),
+            r('Switch Foişor', 'upd.net_swf', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } }),
+            r('Switch Etaj', 'upd.net_swe', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } })
           ])
         ]
       },

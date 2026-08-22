@@ -62,6 +62,10 @@ export const SLOTS = [
   slot('switch.vx_blocare', 'Vortex · Blocare copii', 'climat', ['switch']),
   slot('switch.vx_afisaj', 'Vortex · Afişaj', 'climat', ['switch']),
   slot('switch.vx_autocuratare', 'Vortex · Auto-curăţare', 'climat', ['switch']),
+  // (v1.2.8) Comutatorul care ACTIVEAZĂ limita de putere — number-ul pwrlimit
+  // (diag.vortex_limita_putere) era mapat, dar fără acest switch limita
+  // setată nu se aplică (gaură găsită de auditul HA din 2026-08-23).
+  slot('switch.vx_limita', 'Vortex · limită de putere (comutator)', 'climat', ['switch']),
 
   // -------------------------------------------------------------- PISCINĂ
   slot('switch.pompa_filtrare', 'Pompă filtrare piscină', 'piscina', ['switch', 'input_boolean', 'fan'], {
@@ -152,6 +156,13 @@ export const SLOTS = [
   slot('net.ap_foisor_mem', 'EAP Foişor · RAM', 'retea', ['sensor']),
   slot('net.ap_casa_fata_cpu', 'EAP Casa Faţă · CPU', 'retea', ['sensor']),
   slot('net.ap_casa_fata_mem', 'EAP Casa Faţă · RAM', 'retea', ['sensor']),
+  // (v1.2.8) Starea de conectare a EAP-urilor — era mapată la gateway şi
+  // switch-uri, dar nu şi la puncte de acces (inconsistenţă din auditul HA).
+  slot('net.ap_parter_state', 'EAP Parter · stare', 'retea', ['sensor', 'binary_sensor']),
+  slot('net.ap_etaj_state', 'EAP Etaj · stare', 'retea', ['sensor', 'binary_sensor']),
+  slot('net.ap_mansarda_state', 'EAP Mansardă · stare', 'retea', ['sensor', 'binary_sensor']),
+  slot('net.ap_foisor_state', 'EAP Foişor · stare', 'retea', ['sensor', 'binary_sensor']),
+  slot('net.ap_casa_fata_state', 'EAP Casa Faţă · stare', 'retea', ['sensor', 'binary_sensor']),
   slot('net.poe1', 'PoE port 1 · putere', 'retea', ['sensor']),
   slot('net.poe2', 'PoE port 2 · putere', 'retea', ['sensor']),
   slot('net.poe3', 'PoE port 3 · putere', 'retea', ['sensor']),
@@ -201,6 +212,10 @@ export const SLOTS = [
   slot('upd.eap_mansarda', 'Update EAP Mansardă', 'mentenanta', ['update', 'binary_sensor', 'sensor']),
   slot('upd.eap_foisor', 'Update EAP Foişor', 'mentenanta', ['update', 'binary_sensor', 'sensor']),
   slot('upd.eap_casa_fata', 'Update EAP Casa Faţă', 'mentenanta', ['update', 'binary_sensor', 'sensor']),
+  // (v1.2.8) Şi switch-urile Easy Managed AU entităţi de firmware — comentariul
+  // vechi „nu au entitate de firmware" era fals (gaură din auditul HA).
+  slot('upd.net_swf', 'Update Switch Foişor', 'mentenanta', ['update', 'binary_sensor', 'sensor']),
+  slot('upd.net_swe', 'Update Switch Etaj', 'mentenanta', ['update', 'binary_sensor', 'sensor']),
   // Indicatori "rulează" pentru add-on-uri (binary_sensor.*_running, hassio).
   // Erau dezactivate de integrare; activate din registry pe 2026-08-22.
   // Doar citire — comutarea add-on-urilor (switch.fusion etc.) NU se expune.

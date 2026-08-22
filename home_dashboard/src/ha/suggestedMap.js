@@ -40,6 +40,8 @@ export const SUGGESTED_MAP = {
   'switch.vx_blocare': 'switch.aux_cloud_ec0baeae4fb7_childlock',
   'switch.vx_afisaj': 'switch.aux_cloud_ec0baeae4fb7_scrdisp',
   'switch.vx_autocuratare': 'switch.aux_cloud_ec0baeae4fb7_ac_clean',
+  // (v1.2.8) Comutatorul care aplică limita setată de number-ul pwrlimit.
+  'switch.vx_limita': 'switch.aux_cloud_ec0baeae4fb7_pwrlimitswitch',
 
   // -------------------------------------------------------------- PISCINĂ
   'switch.pompa_filtrare': 'switch.filter_pump',
@@ -114,6 +116,12 @@ export const SUGGESTED_MAP = {
   'net.ap_foisor_mem': 'sensor.eap_foisor_memory_usage',
   'net.ap_casa_fata_cpu': 'sensor.eap_casa_fata_cpu_usage',
   'net.ap_casa_fata_mem': 'sensor.eap_casa_fata_memory_usage',
+  // (v1.2.8) Starea EAP-urilor — entităţi active, dar nemapate până acum.
+  'net.ap_parter_state': 'sensor.eap_parter_device_status',
+  'net.ap_etaj_state': 'sensor.eap_etaj_device_status',
+  'net.ap_mansarda_state': 'sensor.eap_mansarda_device_status',
+  'net.ap_foisor_state': 'sensor.eap_foisor_device_status',
+  'net.ap_casa_fata_state': 'sensor.eap_casa_fata_device_status',
   'net.poe1': 'sensor.switch_principal_port_1_poe_power',
   'net.poe2': 'sensor.switch_principal_port_2_poe_power',
   'net.poe3': 'sensor.switch_principal_port_3_poe_power',
@@ -165,6 +173,10 @@ export const SUGGESTED_MAP = {
   'upd.eap_mansarda': 'update.eap_mansarda_firmware',
   'upd.eap_foisor': 'update.eap_foisor_firmware',
   'upd.eap_casa_fata': 'update.eap_casa_fata_firmware',
+  // (v1.2.8) Firmware-ul switch-urilor Easy Managed (entităţile există în HA,
+  // contrar comentariului vechi din pagina Reţea).
+  'upd.net_swf': 'update.foisor_switch_foisor_firmware',
+  'upd.net_swe': 'update.hol_etaj_switch_etaj_firmware',
   'backup.state': 'sensor.backup_backup_manager_state',
   'backup.last': 'sensor.backup_last_successful_automatic_backup',
   'backup.next': 'sensor.backup_next_scheduled_automatic_backup',

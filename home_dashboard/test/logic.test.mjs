@@ -258,7 +258,7 @@ eq('niciun control interzis nu e mapat (PoE, reboot, Aux1/Aux2)',
 eq('sloturile ramase au toate un motiv explicit',
    SLOTS.filter((x) => !SUGGESTED_MAP[x.key] && !UNMAPPED_REASONS[x.key]).map((x) => x.key), []);
 
-eq('total: 280 mapate din 280 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [280, 280]);
+eq('total: 288 mapate din 288 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [288, 288]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------
