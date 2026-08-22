@@ -18,7 +18,15 @@ const FALLBACK_MS = 150;
 
 function read() {
   const vw = typeof window === 'undefined' ? 1600 : window.innerWidth;
-  return { vw, mob: vw < MOBILE_MAX, tab: vw >= MOBILE_MAX && vw < NARROW_MAX, narrow: vw < NARROW_MAX };
+  // coarse = pointerul PRIMAR e degetul (v1.2.2). Dashboard-ul rulează pe
+  // tablete montate pe perete, atinse de la 1-2m — acolo lăţimea ecranului nu
+  // spune nimic despre tipul de input: o tabletă de 10" poate raporta 1180px
+  // şi tot cu degetul e atinsă. Deliberat `pointer: coarse`, NU `any-pointer`:
+  // ţintim exact tableta; un desktop cu mouse rămâne pe dimensiunile fine.
+  const coarse = typeof window !== 'undefined' && window.matchMedia
+    ? window.matchMedia('(pointer: coarse)').matches
+    : false;
+  return { vw, coarse, mob: vw < MOBILE_MAX, tab: vw >= MOBILE_MAX && vw < NARROW_MAX, narrow: vw < NARROW_MAX };
 }
 
 export function useBreakpoint() {
@@ -33,8 +41,8 @@ export function useBreakpoint() {
       timer = null;
       setBp((prev) => {
         const next = read();
-        // re-randăm doar când chiar se schimbă lăţimea
-        return next.vw === prev.vw ? prev : next;
+        // re-randăm doar când chiar se schimbă lăţimea sau tipul de pointer
+        return next.vw === prev.vw && next.coarse === prev.coarse ? prev : next;
       });
     };
 

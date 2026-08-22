@@ -17,7 +17,7 @@ const DAYS7 = 7;
 
 /** Breakpoint-ul curent, transmis prin `ui` din Dashboard. */
 function bpOf(ui) {
-  return (ui && ui.bp) || { vw: 1600, mob: false, tab: false, narrow: false };
+  return (ui && ui.bp) || { vw: 1600, coarse: false, mob: false, tab: false, narrow: false };
 }
 function colsOf(ui) {
   const b = bpOf(ui);
@@ -589,7 +589,8 @@ export function buildAccordionItem(E, ui, u) {
         hint: i.mapped ? 'pas ' + i.step + ' · ' + i.min + '–' + i.max + ' ' + i.unit : 'slot nemapat',
         valStyle: 'font-family:' + DOTO + '; font-size:20px; font-weight:600; color:' + (shown === VERIFY ? ORANGE : ORANGE) + '; letter-spacing:0.02em;' + (shown === VERIFY ? ' font-size:13px;' : '') + (i.stale ? ' opacity:0.55;' : ''),
         val: shown,
-        btnStyle: 'width:' + (bpOf(ui).mob ? 44 : 30) + 'px; height:' + (bpOf(ui).mob ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (i.writable ? 'pointer' : 'default') + '; opacity:' + (i.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
+        // 44 şi pe tabletele cu deget (pointer: coarse), nu doar sub 760px
+        btnStyle: 'width:' + (bpOf(ui).mob || bpOf(ui).coarse ? 44 : 30) + 'px; height:' + (bpOf(ui).mob || bpOf(ui).coarse ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (i.writable ? 'pointer' : 'default') + '; opacity:' + (i.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
         onMinus: (e) => { stop(e); if (i.writable && i.val !== null) i.set(i.val - i.step); },
         onPlus: (e) => { stop(e); if (i.writable) i.set((i.val === null ? i.min : i.val) + i.step); }
       };
@@ -793,6 +794,8 @@ function buildToggleAction(E, ui, def, item, size) {
 
 export function buildDeviceCard(E, ui, def) {
   const mob = bpOf(ui).mob;
+  // butoanele rotunde: 44 şi pe tabletele cu deget (pointer: coarse)
+  const touch44 = mob || bpOf(ui).coarse;
   const a = E.mapped(def.slot) && E.isOn(def.slot);
   const di = dialInfo(E, def);
   const frac = di.val === null ? 0 : (di.val - di.min) / ((di.max - di.min) || 1);
@@ -840,7 +843,7 @@ export function buildDeviceCard(E, ui, def) {
     // titlu pe butoanele −/+ (pasul e comunicat aici, nu printr-o valoare
     // laterală ambiguă — vezi CHANGELOG 1.0.7 punctul 1.3)
     stepTitle: 'pas ' + (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
-    roundBtnStyle: 'width:' + (mob ? 44 : 30) + 'px; height:' + (mob ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
+    roundBtnStyle: 'width:' + (touch44 ? 44 : 30) + 'px; height:' + (touch44 ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
     stepLabelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT2 + '; white-space:nowrap;',
     stepLabel: (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
     targetLabelStyle: 'font-family:' + SANS + '; font-size:13px; font-weight:' + (targetLabel === VERIFY ? 600 : 500) + '; color:' + (targetLabel === VERIFY ? ORANGE : a ? ORANGE : TXT3) + '; white-space:nowrap;',

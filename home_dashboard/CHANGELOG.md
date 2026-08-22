@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.2
+
+**Ţintele tactile urmează tipul de input, nu lăţimea ecranului.**
+Dashboard-ul rulează pe tablete montate pe perete, atinse cu degetul de la
+1-2m — o tabletă de 10" poate raporta 1180px şi tot cu degetul e atinsă.
+`useBreakpoint` expune acum câmpul `coarse` (`matchMedia('(pointer: coarse)')`,
+deliberat NU `any-pointer` — ţintim exact tableta; desktopul cu mouse rămâne
+pe dimensiunile fine), recalculat împreună cu breakpoint-urile. Ambele situri
+cu tiparul `mob ? 44 : 30` folosesc acum `mob || coarse`: butoanele −/+ ale
+setpoint-urilor din acordeoane şi butoanele rotunde ale cadranelor
+(DeviceCard + modal). Inventar complet: doar aceste două — restul
+potrivirilor „44" erau lăţimi de sparkline şi fonturi.
+
+
 ## 1.2.1
 
 Batch-ul de fix-uri din auditul v1.2.0, în ordinea severităţii.
