@@ -974,10 +974,30 @@ export function buildModal(E, ui) {
   const di = dialInfo(E, def);
   const status = !E.mapped(def.slot) ? VERIFY : !E.available(def.slot) ? 'Indisponibil' : a ? 'Pornit' : 'Oprit';
 
+  // (v1.3.2) Modalul respectă aceleaşi reguli ca şi cardul:
+  //  - controalele STRUCTURAL nesuportate (integrarea nu le expune deloc —
+  //    res.structural) se ELIMINĂ, nu se afişează cu "VERIFY";
+  //  - cele tranzitorii (TV în standby, entitate indisponibilă) rămân
+  //    dezactivate, cu motivul în title — fără eticheta VERIFY, care e
+  //    rezervată sloturilor nemapate;
+  //  - o secţiune rămasă goală dispare cu totul (ex. "Opţiuni" la TV-uri,
+  //    ambele la pompa de filtrare).
   const sections = [
     { title: 'Mod', items: def.circles },
     { title: 'Opţiuni', items: def.minis }
-  ];
+  ]
+    .map((sec) => ({
+      title: sec.title,
+      items: sec.items
+        .map((item) => ({ item, res: resolveAction(E, def.slot, item.action) }))
+        .filter((x) => !(x.res.structural && !x.res.supported))
+    }))
+    .filter((sec) => sec.items.length > 0);
+
+  // Volum fără VOLUME_SET (bit 4, ex. Hisense/HomeKit): aceeaşi degradare ca
+  // pe card (v1.2.6) — bloc STATIC cu sursa curentă, fără −/+ şi fără
+  // "pas · interval" care ar promite un control inexistent.
+  const staticVol = !!def.dial && def.dial.kind === 'volume' && E.mapped(def.slot) && !E.supportsFeature(def.slot, 4);
 
   return {
     title: E.friendlyName(def.slot, def.label),
@@ -994,30 +1014,36 @@ export function buildModal(E, ui) {
     toggleIconEl: ic('power', { size: 13, color: a ? '#2a1608' : '#8f8272', sw: 2 }),
     onToggle: () => { if (E.mapped(def.slot)) E.toggle(def.slot); },
     hasTarget: !!def.dial,
-    targetLabel: def.dial && def.dial.kind === 'volume' ? 'Volum' : def.dial && def.dial.kind === 'climate' ? 'Temperatură ţintă' : 'Valoare ţintă',
-    targetUnit: di.unit === '°' ? '°C' : di.unit,
-    targetHint: di.mapped
-      ? 'pas ' + di.step + ' · interval ' + di.min + '–' + di.max
-      : 'VERIFY · nu ai mapat încă entitatea pentru această valoare',
-    targetVal: di.val === null ? NA : (di.unit === '%' || !di.decimals ? String(Math.round(di.val)) : decSep(di.val.toFixed(di.decimals))),
+    targetStatic: staticVol,
+    targetLabel: staticVol ? 'Sursă curentă' : def.dial && def.dial.kind === 'volume' ? 'Volum' : def.dial && def.dial.kind === 'climate' ? 'Temperatură ţintă' : 'Valoare ţintă',
+    targetUnit: staticVol ? '' : di.unit === '°' ? '°C' : di.unit,
+    targetHint: staticVol
+      ? 'Televizorul nu expune controlul volumului prin integrarea lui (HomeKit) — mute şi schimbarea sursei funcţionează din butoanele de mai jos.'
+      : di.mapped
+        ? 'pas ' + di.step + ' · interval ' + di.min + '–' + di.max
+        : 'VERIFY · nu ai mapat încă entitatea pentru această valoare',
+    targetVal: staticVol
+      ? (!E.available(def.slot) ? NA : E.isOn(def.slot) ? (E.currentSource(def.slot) || 'Pornit') : 'Standby')
+      : di.val === null ? NA : (di.unit === '%' || !di.decimals ? String(Math.round(di.val)) : decSep(di.val.toFixed(di.decimals))),
     targetWrapStyle: 'margin-top:18px; padding:16px; border-radius:18px; text-align:center; background:rgba(240,138,44,0.07); border:1px solid rgba(240,138,44,0.2);',
     targetCapStyle: 'font-family:' + SANS + '; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:' + ORANGE + ';',
     targetValStyle: 'font-family:' + DOTO + '; font-size:44px; font-weight:400; color:#f7f1e9; line-height:1;' + (di.stale ? ' opacity:0.55;' : ''),
     targetUnitStyle: 'font-family:' + SANS + '; font-size:13px; color:' + TXT2 + ';',
     targetHintStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + (di.mapped ? TXT3 : ORANGE) + '; margin-top:10px;',
     stepBtnStyle: 'width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:19px; font-weight:400; color:#e2d6c7; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);',
-    onMinus: () => { if (di.writable && di.val !== null) di.set(di.val - di.step); },
-    onPlus: () => { if (di.writable) di.set((di.val === null ? di.min : di.val) + di.step); },
+    onMinus: () => { if (!staticVol && di.writable && di.val !== null) di.set(di.val - di.step); },
+    onPlus: () => { if (!staticVol && di.writable) di.set((di.val === null ? di.min : di.val) + di.step); },
     bodyStyle: 'margin-top:18px; max-height:44vh; overflow-y:auto; padding-right:4px;',
     sections: sections.map((sec) => ({
       title: sec.title,
       headerStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:500; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + '; margin-bottom:9px;',
       gridStyle: 'display:grid; grid-template-columns:repeat(' + colsOf(ui) + ',minmax(0,1fr)); gap:8px;',
-      items: sec.items.map((item) => {
-        const res = resolveAction(E, def.slot, item.action);
+      items: sec.items.map(({ item, res }) => {
         const on = res.active;
         // v1.1.0: fara valori tehnice sub etichete (bug 0.2 — 'swing_mo...')
-        const val = res.supported ? '' : VERIFY;
+        // v1.3.2: eticheta VERIFY doar pentru sloturi nemapate; nesuportatul
+        // tranzitoriu (standby) ramane dezactivat, cu motivul in title.
+        const val = res.supported ? '' : (res.reason || '').indexOf('VERIFY') === 0 ? VERIFY : '';
         return {
           iconEl: ic(item.icon, { size: 16, color: on ? '#2a1608' : TXT2 }),
           label: item.label,

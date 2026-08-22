@@ -1,6 +1,11 @@
 // Traduce descriptorii de acţiune din devices.js în comenzi reale către HA.
 // Dacă o acţiune nu poate fi rezolvată cu certitudine, întoarce supported:false
-// şi motivul — controlul rămâne vizibil, dar dezactivat şi marcat VERIFY.
+// şi motivul. `structural: true` (v1.3.2) marchează cazurile PERMANENTE —
+// hardware-ul/integrarea nu expune funcţia deloc (bit de supported_features
+// lipsă, mod/sursă absente din listele entităţii). Modalul le ELIMINĂ
+// (regula proiectului: un control fără entitate reală nu se afişează);
+// cazurile tranzitorii (TV în standby, entitate indisponibilă) rămân
+// vizibile, dezactivate, cu motivul în tooltip.
 
 const SWING_OFF = ['off', 'oprit', 'stop', 'fixed', 'none'];
 
@@ -60,7 +65,7 @@ export function resolveAction(E, cardSlot, action) {
   if (action.k === 'hvac') {
     const modes = E.attr(cardSlot, 'hvac_modes') || [];
     if (modes.indexOf(action.v) < 0) {
-      return Object.assign({}, noop, { reason: 'Unitatea nu raportează modul „' + action.v + '".' });
+      return Object.assign({}, noop, { structural: true, reason: 'Unitatea nu raportează modul „' + action.v + '".' });
     }
     return {
       supported: true,
@@ -75,7 +80,8 @@ export function resolveAction(E, cardSlot, action) {
     const m = E.matchOption(list, action.kw);
     if (!m) {
       return Object.assign({}, noop, {
-        reason: 'VERIFY · nu găsesc o treaptă de ventilator care să corespundă (' + action.kw.join(', ') + ').'
+        structural: true,
+        reason: 'Unitatea nu expune o treaptă de ventilator care să corespundă (' + action.kw.join(', ') + ').'
       });
     }
     return {
@@ -90,7 +96,7 @@ export function resolveAction(E, cardSlot, action) {
   if (action.k === 'swing') {
     const list = E.attr(cardSlot, 'swing_modes');
     const m = E.matchOption(list, action.kw);
-    if (!m) return Object.assign({}, noop, { reason: 'VERIFY · modul de baleiaj nu a putut fi identificat.' });
+    if (!m) return Object.assign({}, noop, { structural: true, reason: 'Unitatea nu expune acest mod de baleiaj.' });
     return {
       supported: true,
       active: E.attr(cardSlot, 'swing_mode') === m,
@@ -103,12 +109,12 @@ export function resolveAction(E, cardSlot, action) {
   if (action.k === 'swingToggle') {
     const list = E.attr(cardSlot, 'swing_modes');
     if (!Array.isArray(list) || list.length < 2) {
-      return Object.assign({}, noop, { reason: 'VERIFY · unitatea nu expune baleiaj.' });
+      return Object.assign({}, noop, { structural: true, reason: 'Unitatea nu expune baleiaj.' });
     }
     const offMode = list.find(isSwingOff);
     const onMode = E.matchOption(list, ['both', 'vertical', 'on', 'ambele', 'pornit']) || list.find((x) => !isSwingOff(x));
     if (!offMode || !onMode) {
-      return Object.assign({}, noop, { reason: 'VERIFY · nu pot determina perechea pornit/oprit pentru baleiaj.' });
+      return Object.assign({}, noop, { structural: true, reason: 'Nu pot determina perechea pornit/oprit pentru baleiaj.' });
     }
     const cur = E.attr(cardSlot, 'swing_mode');
     const on = !isSwingOff(cur);
@@ -126,7 +132,8 @@ export function resolveAction(E, cardSlot, action) {
     const m = E.matchOption(list, action.kw);
     if (!m) {
       return Object.assign({}, noop, {
-        reason: 'VERIFY · unitatea nu expune presetul (' + action.kw.join(', ') + ').'
+        structural: true,
+        reason: 'Unitatea nu expune presetul (' + action.kw.join(', ') + ').'
       });
     }
     const cur = E.attr(cardSlot, 'preset_mode');
@@ -144,14 +151,24 @@ export function resolveAction(E, cardSlot, action) {
   if (action.k === 'source') {
     // media_player: SELECT_SOURCE = bit 2048 din supported_features
     if (!E.supportsFeature(cardSlot, 2048)) {
-      return Object.assign({}, noop, { reason: 'Televizorul nu expune schimbarea sursei prin media_player.' });
+      return Object.assign({}, noop, { structural: true, reason: 'Televizorul nu expune schimbarea sursei prin media_player.' });
+    }
+    const list = E.sourceList(cardSlot);
+    const m = E.matchOption(list, action.kw);
+    // Absenţa dintr-o listă NEVIDĂ e structurală şi se verifică ÎNAINTE de
+    // standby — altfel standby-ul ar masca-o şi butonul inexistent (ex.
+    // YouTube pe Hisense/HomeKit) ar reapărea cu TV-ul stins. Pe Samsung
+    // lista se repopulează cu aplicaţii la pornire, deci butonul revine.
+    if (Array.isArray(list) && list.length && !m) {
+      return Object.assign({}, noop, {
+        structural: true,
+        reason: 'Sursa nu apare în source_list (' + action.kw.join(', ') + ').'
+      });
     }
     // TV oprit: comanda ar eşua garantat ("Device is off and cannot be controlled")
     if (E.rawState(cardSlot) === 'off' || E.rawState(cardSlot) === 'standby') {
       return Object.assign({}, noop, { reason: 'TV în standby — porneşte-l întâi.' });
     }
-    const list = E.sourceList(cardSlot);
-    const m = E.matchOption(list, action.kw);
     if (!m) {
       return Object.assign({}, noop, {
         reason: 'VERIFY · sursa nu apare în source_list (' + action.kw.join(', ') + ').'
@@ -170,7 +187,7 @@ export function resolveAction(E, cardSlot, action) {
     // media_player: VOLUME_MUTE = bit 8. Hisense (HomeKit) NU îl are — acolo
     // cardul foloseşte switch-ul dedicat de mute (A.slot), nu această acţiune.
     if (!E.supportsFeature(cardSlot, 8)) {
-      return Object.assign({}, noop, { reason: 'Televizorul nu expune mute prin media_player.' });
+      return Object.assign({}, noop, { structural: true, reason: 'Televizorul nu expune mute prin media_player.' });
     }
     if (E.rawState(cardSlot) === 'off' || E.rawState(cardSlot) === 'standby') {
       return Object.assign({}, noop, { reason: 'TV în standby — porneşte-l întâi.' });

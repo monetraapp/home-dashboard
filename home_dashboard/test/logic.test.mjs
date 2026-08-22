@@ -154,6 +154,19 @@ eq('mute fara bitul VOLUME_MUTE (Hisense) -> nesuportat', r.supported, false);
 r = resolveAction(E, 'media.hisense', { k: 'source', kw: ['hdmi1'] });
 eq('sursa Hisense (are SELECT_SOURCE) -> suportat', r.supported, true);
 
+// v1.3.2: nesuportat STRUCTURAL (integrarea nu expune functia deloc) vs
+// TRANZITORIU (TV in standby). Modalul le elimina doar pe primele.
+r = resolveAction(E, 'media.hisense', { k: 'source', kw: ['youtube'] });
+eq('sursa absenta din source_list -> structural (se elimina din modal)', [r.supported, r.structural === true], [false, true]);
+r = resolveAction(E, 'media.hisense', { k: 'mute' });
+eq('mute fara VOLUME_MUTE -> structural', r.structural === true, true);
+r = resolveAction(E, 'media.standby', { k: 'source', kw: ['hdmi 1'] });
+eq('sursa existenta pe TV in standby -> tranzitoriu (ramane vizibila)', [r.supported, r.structural === true], [false, false]);
+// lista se verifica INAINTE de standby cand e nevida — altfel standby-ul
+// ar masca absenta structurala si butonul ar reaparea cu TV-ul stins.
+r = resolveAction(E, 'media.standby', { k: 'source', kw: ['netflix'] });
+eq('sursa absenta din lista, TV in standby -> tot structural', r.structural === true, true);
+
 r = resolveAction(E, 'x', { k: 'numberFrac', slot: 'number.clor_productie', frac: 0.5 });
 eq('numberFrac 50% este activ', [r.supported, r.active], [true, true]);
 E.calls.length = 0;
