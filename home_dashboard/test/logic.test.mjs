@@ -6,6 +6,9 @@ import {
 import { tileCols, MOBILE_MAX, NARROW_MAX } from '../src/design/breakpoints.js';
 import { SLOTS } from '../src/ha/slots.js';
 import { SUGGESTED_MAP, UNMAPPED_REASONS } from '../src/ha/suggestedMap.js';
+import {
+  particleSpeed, strokeWidth, flowDir, fmtFlowPower, dayCurve, dayHourLabels
+} from '../src/design/flowMath.js';
 
 let pass = 0, fail = 0;
 function eq(name, got, want) {
@@ -280,6 +283,40 @@ eq('entitatile Growatt sunt unice pe sloturi',
      gwKeys.forEach((k) => { seen[SUGGESTED_MAP[k]] = (seen[SUGGESTED_MAP[k]] || 0) + 1; });
      return Object.keys(seen).filter((id) => seen[id] > 1);
    })(), []);
+
+// ---- diagrama de flux energetic (v1.1.4) -----------------------------------
+console.log('diagrama de flux:');
+eq('sub prag (99 W) -> fara particule', particleSpeed(99), 0);
+eq('la pragul de jos (100 W) viteza minima', particleSpeed(100), 40);
+eq('la pragul de sus (15 kW) viteza maxima', particleSpeed(15000), 220);
+eq('peste 15 kW viteza ramane plafonata', particleSpeed(25000), 220);
+eq('viteza creste monoton cu puterea', particleSpeed(5000) > particleSpeed(1000), true);
+eq('traseu inactiv -> grosime minima statica', strokeWidth(0), 1.5);
+eq('grosimea creste cu puterea', strokeWidth(12000) > strokeWidth(500), true);
+eq('flowDir: incarcare (pos)', flowDir(145, 0), { sign: 1, power: 145 });
+eq('flowDir: descarcare (neg) inverseaza directia', flowDir(0, 800), { sign: -1, power: 800 });
+eq('flowDir: sub 1 W = repaus', flowDir(0.4, 0.2), { sign: 0, power: 0 });
+eq('badge W intregi sub 1 kW', fmtFlowPower(450), '450 W');
+eq('badge kW cu 2 zecimale sub 10 kW', fmtFlowPower(1234), '1.23 kW');
+eq('badge kW cu 1 zecimala peste 10 kW', fmtFlowPower(12302), '12.3 kW');
+eq('badge pentru valoare lipsa', fmtFlowPower(null), '—');
+
+// dayCurve pe un caz sintetic: miezul noptii = 0, "acum" = ora 3, cosuri de 1h.
+const H = 3600 * 1000;
+const dsamples = [
+  { lu: (0.5 * H) / 1000, s: '100' },
+  { lu: (0.6 * H) / 1000, s: '300' },           // cosul 0 -> media 200
+  { lu: (2.5 * H) / 1000, s: '500' },           // cosul 2
+  { lu: (2.7 * H) / 1000, s: 'unavailable' },   // ne-numeric -> ignorat
+  { lu: (5 * H) / 1000, s: '900' }              // dupa "acum" -> ignorat
+];
+const dc = dayCurve(dsamples, 0, 3 * H, 24);
+eq('dayCurve: media valorilor pe cos', dc.values[0], 200);
+eq('dayCurve: cos gol preia ultima valoare', dc.values[1], 200);
+eq('dayCurve: cosul orei 2', dc.values[2], 500);
+eq('dayCurve: lastIdx la "acum"', dc.lastIdx, 3);
+eq('dayCurve: dupa "acum" ramane null', dc.values[4], null);
+eq('etichete de ore din 4 in 4', dayHourLabels(4), ['00', '04', '08', '12', '16', '20', '24']);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

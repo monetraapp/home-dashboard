@@ -8,13 +8,13 @@
 
 import {
   ro, txt, sw, grid, monitor, note, slots, nowPlaying, cameraGrid, chart, timeline,
-  accordion, sec, act, spClimate, spNumber, stats, flowbar, bars, expand
+  accordion, sec, act, spClimate, spNumber, stats, flowdiagram, daychart, bars, expand
 } from './blocks.js';
 import { CLIMAT_ACCORDION, PISCINA_ACCORDION } from './accordions.js';
 
 export {
   ro, txt, sw, grid, monitor, note, slots, nowPlaying, cameraGrid, chart, timeline,
-  accordion, sec, act, spClimate, spNumber, stats, flowbar, bars, expand
+  accordion, sec, act, spClimate, spNumber, stats, flowdiagram, daychart, bars, expand
 };
 
 export const ORANGE_SERIES = '#F08A2C';
@@ -414,18 +414,14 @@ export const PAGES = {
               flow: { pos: 'gw.p_export', neg: 'gw.p_import', posLabel: 'Export', negLabel: 'Import', zeroLabel: 'Echilibru' }
             }
           ]),
-          flowbar([
-            { label: 'Soare', color: ORANGE_SERIES, slot: 'gw.pv_in' },
-            { label: 'Casă', color: SAND_SERIES, slot: 'gw.p_casa' },
-            {
-              label: 'Baterie', color: BLUE_SERIES,
-              flow: { pos: 'gw.p_chr', neg: 'gw.p_dischr', posLabel: 'Încărcare', negLabel: 'Descărcare', zeroLabel: 'Repaus' }
-            },
-            {
-              label: 'Reţea', color: '#9a8f80',
-              flow: { pos: 'gw.p_export', neg: 'gw.p_import', posLabel: 'Export', negLabel: 'Import', zeroLabel: 'Echilibru' }
-            }
-          ])
+          // Diagrama de flux (v1.1.4): 5 noduri, particule direcţionale,
+          // grosime şi viteză proporţionale cu puterea reală.
+          flowdiagram({
+            pv: 'gw.pv_in', load: 'gw.p_casa', soc: 'gw.soc',
+            chr: 'gw.p_chr', dischr: 'gw.p_dischr',
+            exp: 'gw.p_export', imp: 'gw.p_import'
+          }),
+          daychart('Producţie azi', 'puterea PV pe ziua curentă', 'gw.pv_in', ORANGE_SERIES)
         ]
       },
       {

@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.1.4
+
+Diagrama de flux energetic — piesa centrală a paginii Energie, în locul
+barei orizontale din v1.1.3.
+
+1. **Diagramă SVG cu 5 noduri** (Soare sus, Invertor centru, Baterie stânga,
+   Casă dreapta, Reţea jos) şi trasee cu **particule luminoase** care curg în
+   direcţia reală a fluxului. Direcţia se inversează dinamic: bateria descarcă
+   → particulele merg spre invertor; import din reţea → la fel.
+2. **Proporţionalitate reală**: viteza particulelor şi grosimea traseului
+   cresc cu puterea (praguri 100 W … 15 kW — modul pur `flowMath.js`, acoperit
+   de teste). Sub 100 W traseul rămâne static, fără particule.
+3. **Lizibil de la distanţă, fără hover**: badge-uri cu valoarea în W/kW
+   (min. 18px la lăţimea de referinţă, contur închis prin `paint-order` — nu
+   doar glow), cuvânt de direcţie pe ramurile bidirecţionale, SOC pe nodul
+   bateriei. Nodurile inactive se estompează la opacity 0.55.
+4. **Curbă de producţie pe ziua curentă** sub diagramă (bloc nou `daychart`):
+   arie umplută cu ore pe axa X, agregată din istoricul recorder al
+   `pv_input_actual` (stare de sensor, nu atribut — lecţia v1.1.1), coşuri de
+   15 minute cu carry-forward şi punct accentuat pe "acum".
+5. **Cifrele din rândul-erou rulează** spre valoarea nouă (~400ms, ease-out),
+   nu mai sar brusc.
+6. **Constrângeri pentru tableta montată**: rAF-ul se opreşte când pagina nu
+   e vizibilă (`visibilitychange`) şi respectă `prefers-reduced-motion`;
+   comutator nou "Animaţii" în bara de sus (persistat în preferinţe) — oprit,
+   diagrama rămâne complet funcţională static.
+
 ## 1.1.3
 
 Pagina Energie, reconstruită în jurul invertorului hibrid Growatt 25 kW

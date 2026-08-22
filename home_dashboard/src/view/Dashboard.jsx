@@ -11,6 +11,7 @@ import { useBreakpoint } from '../design/breakpoints.js';
 import { useHa } from '../ha/context.js';
 import { useEntities, VERIFY, NA, HVAC_LABEL } from '../ha/entities.js';
 import { useHistory, dailyAverage, fillGaps, lastDayLabels } from '../ha/history.js';
+import { particleSpeed, strokeWidth, flowNorm } from '../design/flowMath.js';
 import { useDailyForecast, formatForecast, COND_RO, COND_ICON } from '../ha/weather.js';
 import { loadPrefs, savePrefs } from '../ha/store.js';
 import {
@@ -34,6 +35,7 @@ function collectHistorySlots(pageDef) {
         });
       }
       if (b.type === 'timeline') b.rows.forEach((r) => out.push(r.slot));
+      if (b.type === 'daychart') out.push(b.slot);
     })
   );
   return out;
@@ -58,6 +60,10 @@ export default function Dashboard({ onOpenMapping }) {
   const [tracked, setTracked] = useState(() =>
     Array.isArray(prefs.tracked) && prefs.tracked.length ? prefs.tracked.filter((id) => CARD_BY_ID[id]) : DEFAULT_TRACKED.slice()
   );
+  // Comutatorul "Animaţii" (v1.1.4): pornit implicit, persistat în prefs.
+  // Oprit -> diagrama de flux rămâne statică (fără particule, fără rAF) şi
+  // cifrele din rândul-erou sar direct la valoarea nouă.
+  const [anim, setAnim] = useState(() => prefs.anim !== false);
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -66,8 +72,8 @@ export default function Dashboard({ onOpenMapping }) {
   }, []);
 
   useEffect(() => {
-    savePrefs(Object.assign({}, loadPrefs(), { tracked }));
-  }, [tracked]);
+    savePrefs(Object.assign({}, loadPrefs(), { tracked, anim }));
+  }, [tracked, anim]);
 
   const isAcasa = page === 'acasa';
   const pageDef = isAcasa ? null : PAGES[page];
@@ -86,7 +92,7 @@ export default function Dashboard({ onOpenMapping }) {
   // ------------------------------------------------------------------ ui
   const ui = {
     page, hoverKey, setHoverKey, hoverChart, setHoverChart, modalId, setModalId,
-    openAcc, setOpenAcc, mediaZone, setMediaZone, tracked, bp,
+    openAcc, setOpenAcc, mediaZone, setMediaZone, tracked, bp, anim,
     catalog: { DEVICE_CARDS, CARD_BY_ID }
   };
 
@@ -242,6 +248,13 @@ export default function Dashboard({ onOpenMapping }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <div style={s(circleBtnStyle)} title="Mapare entităţi" onClick={onOpenMapping}>
               {ic('sliders', { size: 16 })}
+            </div>
+            <div
+              style={s(circleBtnStyle + (anim ? ' color:' + ORANGE + '; border-color:rgba(240,138,44,0.4);' : ' opacity:0.55;'))}
+              title={anim ? 'Animaţii pornite — apasă pentru a le opri (diagrama rămâne statică)' : 'Animaţii oprite — apasă pentru a le porni'}
+              onClick={() => setAnim(!anim)}
+            >
+              {ic('sparkle', { size: 16 })}
             </div>
             <div
               style={s(circleBtnStyle + ' color:' + (ha.connected ? '#b8ab9b' : '#e8a08a') + ';')}
@@ -799,6 +812,223 @@ function Tip({ text }) {
 // unei iconite de "mod explicatii" pentru ca nu adauga UI si nu intra in
 // conflict cu tap-ul obisnuit.
 const press = { t: null, fired: false };
+// ------------------------------------------ diagrama de flux (v1.1.4)
+// Culorile pe funcţie, din specificaţie: producţie auriu, consum cyan,
+// baterie verde, reţea portocaliu.
+const FLOW_COLORS = { pv: '#E8C15A', load: '#5FC9D8', bat: '#7BC98A', grid: '#F08A2C' };
+
+// Geometria (viewBox 360×330; la ≥360px lăţime reală, fontul de 19 din badge
+// se randează la ≥19px — cerinţa de lizibilitate de la 1–2 m).
+// "forward" pe fiecare traseu = sensul semnului pozitiv al fluxului:
+// pv: soare→invertor, load: invertor→casă, bat: invertor→baterie (încărcare),
+// grid: invertor→reţea (export). Semnul negativ inversează particulele.
+const FLOW_GEO = {
+  nodes: {
+    sun: { x: 180, y: 46, r: 22, icon: 'sun', label: 'Soare' },
+    inv: { x: 180, y: 164, r: 26, icon: 'bolt', label: 'Invertor' },
+    bat: { x: 54, y: 164, r: 22, icon: 'batteryCharging', label: 'Baterie' },
+    house: { x: 306, y: 164, r: 22, icon: 'home', label: 'Casă' },
+    grid: { x: 180, y: 282, r: 22, icon: 'utilityPole', label: 'Reţea' }
+  },
+  paths: {
+    pv: 'M 180 74 L 180 132',
+    load: 'M 212 164 L 278 164',
+    bat: 'M 148 164 L 82 164',
+    grid: 'M 180 196 L 180 254'
+  }
+};
+
+/** Numărul de particule pe un traseu, în funcţie de putere (2..5). */
+function particleCount(watts) {
+  const n = flowNorm(watts);
+  return n === 0 ? 0 : 2 + Math.round(3 * n);
+}
+
+function FlowDiagram({ b }) {
+  const pathRefs = useRef({});
+  const dotRefs = useRef({});
+  const flowRef = useRef(b.flows);
+  flowRef.current = b.flows;
+  const animOn = b.anim && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  useEffect(() => {
+    if (!animOn) return undefined;
+    let raf = 0;
+    let running = false;
+    let last = 0;
+    const offsets = { pv: 0, load: 0, bat: 0, grid: 0 };
+
+    const step = (t) => {
+      if (!running) return;
+      const dt = last ? Math.min(0.1, (t - last) / 1000) : 0;
+      last = t;
+      const flows = flowRef.current;
+      ['pv', 'load', 'bat', 'grid'].forEach((k) => {
+        const path = pathRefs.current[k];
+        const dots = dotRefs.current[k] || [];
+        if (!path || !dots.length) return;
+        const f = flows[k];
+        const sign = f.sign === undefined ? 1 : f.sign;
+        const speed = particleSpeed(f.w);
+        if (!f.active || speed === 0 || sign === 0) {
+          dots.forEach((d) => d && d.setAttribute('opacity', '0'));
+          return;
+        }
+        const len = path.getTotalLength();
+        offsets[k] = (offsets[k] + speed * dt) % len;
+        dots.forEach((d, i) => {
+          if (!d) return;
+          let at = (offsets[k] + (i * len) / dots.length) % len;
+          if (sign < 0) at = len - at; // direcţia se inversează dinamic
+          const pt = path.getPointAtLength(at);
+          d.setAttribute('cx', pt.x);
+          d.setAttribute('cy', pt.y);
+          d.setAttribute('opacity', '0.95');
+        });
+      });
+      raf = requestAnimationFrame(step);
+    };
+    const start = () => {
+      if (running) return;
+      running = true;
+      last = 0;
+      raf = requestAnimationFrame(step);
+    };
+    const stop = () => {
+      running = false;
+      cancelAnimationFrame(raf);
+    };
+    // Tabletă montată: rAF nu are voie să ardă GPU cât timp pagina nu se vede.
+    const onVis = () => (document.visibilityState === 'visible' ? start() : stop());
+    document.addEventListener('visibilitychange', onVis);
+    onVis();
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      stop();
+    };
+  }, [animOn]);
+
+  const F = b.flows;
+  const G = FLOW_GEO;
+  const branch = (k, f) => {
+    const color = FLOW_COLORS[k];
+    const active = f.active;
+    const dots = [];
+    const nDots = animOn && active ? particleCount(f.w) : 0;
+    for (let i = 0; i < nDots; i++) {
+      dots.push(
+        <circle
+          key={k + i}
+          ref={(el2) => { (dotRefs.current[k] = dotRefs.current[k] || [])[i] = el2; }}
+          r="2.6" cx="-10" cy="-10" opacity="0" fill={color}
+          style={{ filter: 'drop-shadow(0 0 4px ' + color + ')' }}
+        />
+      );
+    }
+    if (dotRefs.current[k]) dotRefs.current[k].length = nDots;
+    return (
+      <g key={k}>
+        <path d={G.paths[k]} stroke={color} fill="none" strokeLinecap="round"
+          strokeWidth={strokeWidth(active ? f.w : 0)}
+          opacity={active ? 0.85 : 0.28} />
+        {dots}
+      </g>
+    );
+  };
+
+  const node = (k) => {
+    const nd = G.nodes[k];
+    const flowKey = k === 'sun' ? 'pv' : k === 'house' ? 'load' : k === 'inv' ? null : k;
+    // invertorul e activ dacă orice ramură e activă
+    const active = flowKey === null
+      ? F.pv.active || F.load.active || F.bat.active || F.grid.active
+      : F[flowKey].active;
+    const color = flowKey === null ? '#d8c9b4' : FLOW_COLORS[flowKey];
+    return (
+      <g key={k} opacity={active ? 1 : 0.55}>
+        {active ? <circle cx={nd.x} cy={nd.y} r={nd.r + 7} fill={color} opacity="0.22" style={{ filter: 'blur(6px)' }} /> : null}
+        <circle cx={nd.x} cy={nd.y} r={nd.r} fill="rgba(20,16,12,0.85)" stroke={color} strokeWidth={active ? 1.8 : 1.2} />
+        <g transform={'translate(' + (nd.x - 10) + ',' + (nd.y - 10) + ')'}>
+          {ic(nd.icon, { size: 20, color: active ? color : '#8a7c6c' })}
+        </g>
+      </g>
+    );
+  };
+
+  // Badge de valoare: contrast ridicat prin contur închis (paint-order), NU
+  // doar glow — la lumină puternică glow-ul dispare.
+  const badgeStyle = { fontFamily: DOTO, fontSize: '19px', fontWeight: 700, paintOrder: 'stroke', stroke: 'rgba(15,12,9,0.9)', strokeWidth: 4, strokeLinejoin: 'round' };
+  const dirStyle = { fontFamily: SANS, fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.05em', paintOrder: 'stroke', stroke: 'rgba(15,12,9,0.85)', strokeWidth: 3 };
+  const labelStyle = { fontFamily: SANS, fontSize: '11px', fontWeight: 400, fill: '#bdb1a4' };
+
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <svg viewBox="0 0 360 330" width="100%" style={{ display: 'block', maxWidth: 560, margin: '0 auto' }}>
+        {branch('pv', F.pv)}
+        {branch('load', F.load)}
+        {branch('bat', F.bat)}
+        {branch('grid', F.grid)}
+        {/* refs pe path-uri: aceleaşi d ca în branch, invizibile, pt. getPointAtLength */}
+        {['pv', 'load', 'bat', 'grid'].map((k) => (
+          <path key={'m' + k} d={FLOW_GEO.paths[k]} fill="none" stroke="none"
+            ref={(el2) => { pathRefs.current[k] = el2; }} />
+        ))}
+        {node('sun')}{node('bat')}{node('inv')}{node('house')}{node('grid')}
+
+        <text x="150" y="51" textAnchor="end" style={labelStyle}>Soare</text>
+        <text x="306" y="200" textAnchor="middle" style={labelStyle}>Casă</text>
+        <text x="54" y="200" textAnchor="middle" style={labelStyle}>Baterie</text>
+        <text x="180" y="322" textAnchor="middle" style={labelStyle}>Reţea</text>
+
+        <text x="192" y="108" textAnchor="start" fill={FLOW_COLORS.pv} style={badgeStyle}>{F.pv.text}</text>
+        <text x="245" y="150" textAnchor="middle" fill={FLOW_COLORS.load} style={badgeStyle}>{F.load.text}</text>
+        <text x="115" y="150" textAnchor="middle" fill={FLOW_COLORS.bat} style={badgeStyle}>{F.bat.text}</text>
+        <text x="115" y="185" textAnchor="middle" fill={FLOW_COLORS.bat} style={dirStyle}>{F.bat.dirWord}</text>
+        {F.bat.soc !== null ? (
+          <text x="54" y="216" textAnchor="middle" fill={FLOW_COLORS.bat} style={{ ...badgeStyle, fontSize: '18px' }}>{F.bat.soc + '%'}</text>
+        ) : null}
+        <text x="192" y="224" textAnchor="start" fill={FLOW_COLORS.grid} style={badgeStyle}>{F.grid.text}</text>
+        <text x="192" y="242" textAnchor="start" fill={FLOW_COLORS.grid} style={dirStyle}>{F.grid.dirWord}</text>
+      </svg>
+    </div>
+  );
+}
+
+// Tranziţie de rulare pentru cifrele din rândul-erou (~400ms). Interpolează
+// doar când sufixul (unitatea) rămâne acelaşi; altfel comută direct.
+function Roll({ text, anim }) {
+  const [shown, setShown] = useState(text);
+  const prevRef = useRef(text);
+  const rafRef = useRef(0);
+  useEffect(() => {
+    const from = prevRef.current;
+    prevRef.current = text;
+    if (from === text) return undefined;
+    const NUM = /^(-?\d+(?:\.\d+)?)( .*)?$/;
+    const m1 = NUM.exec(String(from || ''));
+    const m2 = NUM.exec(String(text || ''));
+    if (!anim || !m1 || !m2 || (m1[2] || '') !== (m2[2] || '')) {
+      setShown(text);
+      return undefined;
+    }
+    const a = parseFloat(m1[1]);
+    const bVal = parseFloat(m2[1]);
+    const dec = (m2[1].split('.')[1] || '').length;
+    const suffix = m2[2] || '';
+    const t0 = performance.now();
+    cancelAnimationFrame(rafRef.current);
+    const step2 = (t) => {
+      const k = Math.min(1, (t - t0) / 400);
+      const e = 1 - Math.pow(1 - k, 3);
+      setShown((a + (bVal - a) * e).toFixed(dec) + suffix);
+      if (k < 1) rafRef.current = requestAnimationFrame(step2);
+    };
+    rafRef.current = requestAnimationFrame(step2);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [text, anim]);
+  return <span>{shown}</span>;
+}
+
 function pressProps(show, hide, toggle) {
   return {
     onTouchStart: () => { press.fired = false; clearTimeout(press.t); press.t = setTimeout(() => { press.fired = true; show(); }, 450); },
@@ -911,7 +1141,7 @@ function Block({ b }) {
           <div key={i} style={s(it.wrapStyle)} onMouseEnter={it.onEnter} onMouseLeave={it.onLeave}>
             <div style={s(it.tileStyle)} {...pressProps(it.onEnter, it.onLeave, () => {})}>
               <div style={s(it.headStyle)}>{it.iconEl}{it.label}</div>
-              <div style={s(it.valueStyle)}>{it.value}</div>
+              <div style={s(it.valueStyle)}><Roll text={it.value} anim={b.anim} /></div>
               {it.sub ? <div style={s(it.subStyle)}>{it.sub}</div> : null}
             </div>
             {it.showTip ? <Tip text={it.tipText} /> : null}
@@ -920,18 +1150,7 @@ function Block({ b }) {
       </div>
     );
 
-  if (b.isFlowbar)
-    return (
-      <div style={s(b.wrapStyle)}>
-        {b.segs.map((sg, i) => (
-          <div key={i} style={{ ...s(sg.segStyle), flex: sg.flex + ' 1 0%' }}>
-            <div style={s(sg.barStyle)} />
-            <div style={s(sg.labelStyle)}>{sg.label}</div>
-            <div style={s(sg.valueStyle)}>{sg.text}</div>
-          </div>
-        ))}
-      </div>
-    );
+  if (b.isFlowDiagram) return <FlowDiagram b={b} />;
 
   if (b.isBars)
     return (

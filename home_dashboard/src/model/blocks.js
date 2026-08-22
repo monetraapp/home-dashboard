@@ -26,9 +26,13 @@ export const accordion = (items) => ({ type: 'accordion', items });
  * `flow` = {pos, neg, posLabel, negLabel, zeroLabel, unit} afişează sub valoare
  * direcţia netă dintre două sloturi de putere (ex. încărcare vs descărcare). */
 export const stats = (items) => ({ type: 'stats', items });
-/** Bară de flux orizontală: segments = [{icon, label, slot | flow, color}].
- * Lăţimea fiecărui segment e proporţională cu puterea lui (W). */
-export const flowbar = (segments) => ({ type: 'flowbar', segments });
+/** Diagramă de flux energetic (v1.1.4, înlocuieşte bara orizontală):
+ * 5 noduri (soare/invertor/baterie/casă/reţea) cu trasee SVG animate.
+ * cfg = { pv, load, soc, chr, dischr, exp, imp } — chei de slot. */
+export const flowdiagram = (cfg) => ({ type: 'flowdiagram', cfg });
+/** Curbă de producţie pe ziua curentă (arie umplută, ore pe axa X).
+ * slot = senzorul de putere din care se agregă istoricul recorder. */
+export const daychart = (title, hint, slot, color) => ({ type: 'daychart', title, hint, slot, color });
 /** Bare comparate vizual (ex. echilibrul celor 3 faze): items = [{label, slot}]. */
 export const bars = (title, items, unit) => ({ type: 'bars', title, items, unit });
 /** Secţiune cu rezumat vizibil şi detaliu extensibil. summary/detail = rânduri

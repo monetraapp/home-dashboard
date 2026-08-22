@@ -362,3 +362,58 @@ export function poolChart(values, labels, highlightIdx, deltaLabel) {
     el('span', { key: i, style: cssToObj('flex:1; text-align:center; font-family:' + SANS + '; font-size:10.5px; color:#6c6053;') }, lb)));
   return el('div', {}, [svg, labelRow]);
 }
+
+// ------------------------------------------------- producţie pe zi (v1.1.4)
+/**
+ * Curbă de producţie cu arie umplută pe ziua curentă, ore pe axa X.
+ * values = un punct pe coş (null după "acum"), lastIdx = ultimul coş cu date.
+ */
+export function dayAreaChart(values, lastIdx, color, unit, mob) {
+  const w = mob ? 330 : 640, h = mob ? 150 : 170, padL = mob ? 34 : 44, padR = mob ? 8 : 12, padT = 14, padB = 22;
+  const id = 'da' + (++CHART_SEQ);
+  const n = values.length;
+  const present = values.filter((v) => v !== null);
+  const hi = Math.max.apply(null, present.concat([100])) * 1.12;
+  const iw = w - padL - padR, ih = h - padT - padB;
+  const px = (i) => padL + (i / (n - 1)) * iw;
+  const py = (v) => padT + ih - (v / hi) * ih;
+
+  const nodes = [];
+  for (let g = 0; g <= 3; g++) {
+    const gv = hi * (g / 3), gy = py(gv);
+    nodes.push(el('line', { key: 'g' + g, x1: padL, y1: gy, x2: w - padR, y2: gy, stroke: 'rgba(255,255,255,0.055)', strokeWidth: 1 }));
+    nodes.push(el('text', { key: 'gl' + g, x: padL - 7, y: gy + 3.5, textAnchor: 'end',
+      style: { fontFamily: SANS, fontSize: mob ? '9px' : '9.5px', fontWeight: 300, fill: '#6f6558' } },
+      gv >= 1000 ? (gv / 1000).toFixed(1) + 'k' : Math.round(gv)));
+  }
+  // etichete de ore la fiecare 4h (00..24) pe toată lăţimea zilei
+  for (let hLab = 0; hLab <= 24; hLab += 4) {
+    const x = padL + (hLab / 24) * iw;
+    nodes.push(el('text', { key: 'h' + hLab, x, y: h - 6, textAnchor: 'middle',
+      style: { fontFamily: SANS, fontSize: mob ? '9px' : '9.5px', fontWeight: 300, fill: '#6c6053' } },
+      (hLab < 10 ? '0' + hLab : hLab) + ''));
+  }
+
+  let line = '';
+  let started = false;
+  let firstIdx = -1;
+  for (let i = 0; i < n; i++) {
+    if (values[i] === null) continue;
+    if (!started) { line += 'M ' + px(i).toFixed(1) + ' ' + py(values[i]).toFixed(1); started = true; firstIdx = i; }
+    else line += ' L ' + px(i).toFixed(1) + ' ' + py(values[i]).toFixed(1);
+  }
+  if (started && lastIdx >= 0 && firstIdx >= 0) {
+    const area = line + ' L ' + px(lastIdx).toFixed(1) + ' ' + py(0).toFixed(1) +
+      ' L ' + px(firstIdx).toFixed(1) + ' ' + py(0).toFixed(1) + ' Z';
+    nodes.push(el('defs', { key: 'd' }, el('linearGradient', { id, x1: 0, y1: 0, x2: 0, y2: 1 }, [
+      el('stop', { key: 0, offset: '0%', stopColor: color, stopOpacity: 0.32 }),
+      el('stop', { key: 1, offset: '100%', stopColor: color, stopOpacity: 0.02 })
+    ])));
+    nodes.push(el('path', { key: 'a', d: area, fill: 'url(#' + id + ')', stroke: 'none' }));
+    nodes.push(el('path', { key: 'l', d: line, fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinejoin: 'round', strokeLinecap: 'round' }));
+    // punctul de "acum", accentuat
+    nodes.push(el('circle', { key: 'p', cx: px(lastIdx), cy: py(values[lastIdx]), r: 3.4, fill: color, stroke: 'rgba(20,16,12,0.9)', strokeWidth: 1.6 }));
+  }
+
+  return el('svg', { viewBox: '0 0 ' + w + ' ' + h, width: '100%', height: h, style: { display: 'block' } }, nodes);
+}
