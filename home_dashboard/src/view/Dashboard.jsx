@@ -282,8 +282,11 @@ export default function Dashboard({ onOpenMapping }) {
   // participa la hit-testing pentru parinte. hdTap = +7px pe toate laturile
   // (30/34px -> >=44); hdTapY = doar vertical (pill-uri/chips-uri late dar
   // scunde; expandarea orizontala ar fura tap-uri elementelor vecine).
+  // v1.2.3: hdTapY -8 -> -10: cel mai scund pill (minis, 25px) ajungea doar
+  // la 41px zona efectiva; cu ±10 ajunge la 45. Randurile vecine sunt la
+  // >=8px distanta, deci banda de ambiguitate ramane minima.
   + ' .hdTap{position:relative;} .hdTap::after{content:""; position:absolute; inset:-7px;}'
-  + ' .hdTapY{position:relative;} .hdTapY::after{content:""; position:absolute; left:0; right:0; top:-8px; bottom:-8px;}';
+  + ' .hdTapY{position:relative;} .hdTapY::after{content:""; position:absolute; left:0; right:0; top:-10px; bottom:-10px;}';
 
   return (
     <div style={s(deskStyle)}>
