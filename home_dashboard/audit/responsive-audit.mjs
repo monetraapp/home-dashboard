@@ -205,8 +205,14 @@ function auditPage() {
       w += Math.max(0, -l) + Math.max(0, -rr);
       h += Math.max(0, -t) + Math.max(0, -b2);
     }
-    if (w < 43.5 || h < 43.5) {
-      out.touch.push({ el: ident(el), detail: Math.round(w) + '×' + Math.round(h) + 'px zonă efectivă (minim 44×44)' });
+    // Prag: 44 peste tot, CU EXCEPTIA latimilor de desktop/tableta fara touch
+    // (pointer: fine = mouse), unde 30 e acceptat — decizia v1.2.2. Latimile
+    // de telefon pastreaza 44 chiar daca contextul emulat n-are touch: acolo
+    // simulam telefoane reale, care au intotdeauna pointer coarse.
+    const finePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+    const minTarget = finePointer && vw >= 760 ? 29.5 : 43.5;
+    if (w < minTarget || h < minTarget) {
+      out.touch.push({ el: ident(el), detail: Math.round(w) + '×' + Math.round(h) + 'px zonă efectivă (minim ' + (minTarget > 40 ? '44×44' : '30×30, pointer fine') + ')' });
     }
   }
 
@@ -218,6 +224,9 @@ function auditPage() {
     const hidden = st.overflowY === 'hidden' || st.overflow === 'hidden' || st.overflowY === 'clip';
     if (!hidden) continue;
     if (st.textOverflow === 'ellipsis') continue;
+    // line-clamp = trunchiere INTENTIONATA (rupere pe N linii cu elipsa la
+    // capat) — decizia din 22.08: nu se mai raporteaza ca text taiat.
+    if (st.webkitLineClamp && st.webkitLineClamp !== 'none') continue;
     if (el.scrollHeight <= el.clientHeight + 3) continue;
     const hasText = Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent.trim());
     if (!hasText && !el.querySelector('span, div')) continue;

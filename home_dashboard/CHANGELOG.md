@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.2.3
+
+Batch-ul post-audit v1.2.2 (rulat pe build proaspăt de acum înainte).
+
+1. **CRITIC** — badge-ul de consum din diagrama verticală trece SUB traseu
+   (axa corectă): la y=150 nu există loc orizontal între halo-urile
+   Invertorului şi Casei; mutările orizontale doar plimbau suprapunerea.
+2. **hdTapY −8 → −10** — pill-urile de 25px (minis) ajung la 45px zonă
+   efectivă (rămăseseră la 41).
+3. **Etichetele de tile/chip se rup pe 2 linii** (LABEL_WRAP2, append peste
+   labelFor la punctul de folosire — tokens.js neatins): „Regim boost",
+   „Ştergător Speed Dome", „Clorinator", chips-urile din acordeoane,
+   etichetele de timeline; `hyphens:auto` desparte cuvintele unice lungi.
+   Nicio etichetă scurtată la sursă.
+4. **Audit**: build NECONDIŢIONAT la fiecare rulare + versiunea şi hash-ul
+   bundle-ului în antetul raportului (de două ori într-o zi s-a raportat pe
+   date greşite); line-clamp recunoscut ca trunchiere intenţionată; 30px
+   acceptat pe pointer:fine la ≥760px (decizia v1.2.2) — pragul 44 rămâne
+   pe lăţimile de telefon şi pe ramura touch. Testele de istoric ancorate
+   la amiază (flake la rulările dintre 23:00 şi 00:00).
+
+
 ## 1.2.2
 
 **Ţintele tactile urmează tipul de input, nu lăţimea ecranului.**

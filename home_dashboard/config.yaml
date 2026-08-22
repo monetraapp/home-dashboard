@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration
 name: Home Dashboard
-version: "1.2.2"
+version: "1.2.3"
 slug: home_dashboard
 description: Dashboard propriu pentru casă, conectat live la Home Assistant prin WebSocket
 url: "https://github.com/monetraapp/home-dashboard/tree/main/home_dashboard"
