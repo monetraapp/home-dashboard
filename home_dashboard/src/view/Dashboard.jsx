@@ -7,7 +7,7 @@ import {
 import { ic } from '../design/icons.js';
 import { arcGauge, sliderRow, ribbonRing, segmentRing, poolChart } from '../design/graphics.js';
 import { useBreakpoint } from '../design/breakpoints.js';
-import { fmtUnitAuto, fmtTemp } from '../design/format.js';
+import { fmtUnitAuto, fmtTemp, dec } from '../design/format.js';
 import { useHa } from '../ha/context.js';
 import { useEntities, VERIFY, NA, HVAC_LABEL } from '../ha/entities.js';
 import { useHistory, dailyAverage, fillGaps, lastDayLabels } from '../ha/history.js';
@@ -427,7 +427,7 @@ export default function Dashboard({ onOpenMapping }) {
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 10, marginTop: -6 }}>
                     <span style={s('font-family:' + SANS + '; font-size:12px; font-weight:300; color:' + TXT2 + ';')}>Ţintă</span>
                     <span style={s('font-family:' + DOTO + '; font-size:34px; font-weight:400; color:#f7ede2; letter-spacing:0.02em;' + (acStale ? ' opacity:0.55;' : ''))}>
-                      {acTarget === null ? NA : acDecimals ? acTarget.toFixed(acDecimals) : String(Math.round(acTarget))}
+                      {acTarget === null ? NA : acDecimals ? dec(acTarget.toFixed(acDecimals)) : String(Math.round(acTarget))}
                     </span>
                     <span style={s('font-family:' + SANS + '; font-size:12px; color:' + TXT2 + ';')}>°C</span>
                   </div>
@@ -496,7 +496,7 @@ export default function Dashboard({ onOpenMapping }) {
                       <div style={s(cardTitleStyle)}>Temperatură piscină</div>
                       <div style={s(cardSubStyle)}>
                         {poolSeries
-                          ? (poolDelta >= 0 ? '+' : '') + poolDelta + '°C în 7 zile'
+                          ? (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°C în 7 zile'
                           : E.mapped('sensor.apa_temp')
                             ? poolHist.loading ? 'se încarcă istoricul…' : 'fără date în recorder'
                             : 'VERIFY · mapează senzorul de temperatură apă'}
@@ -665,7 +665,7 @@ function pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energy
     return {
       title: 'Medie casă',
       sub: 'din unităţile mapate',
-      value: houseAvg === null ? VERIFY : houseAvg.toFixed(1),
+      value: houseAvg === null ? VERIFY : dec(houseAvg.toFixed(1)),
       unit: '°C',
       ringEl: ribbonRing(118, pct)
     };
@@ -676,7 +676,7 @@ function pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energy
     return {
       title: 'Temperatură apă',
       sub: E.mapped('sensor.apa_temp') ? 'senzor live' : 'VERIFY · senzor nemapat',
-      value: t === null ? VERIFY : t.toFixed(1),
+      value: t === null ? VERIFY : dec(t.toFixed(1)),
       unit: '°C',
       ringEl: ribbonRing(118, pct)
     };

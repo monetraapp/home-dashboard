@@ -14,7 +14,7 @@ import {
   valueAt, peakOf, hourCurve, statEnergySeries, statMeanSeries, sumOrNull
 } from '../src/design/energyMath.js';
 import {
-  fmtPow, fmtEn, fmtVar, fmtVA, fmtTemp, fmtVolt, fmtAmp, fmtFreq, fmtPct, fmtText, fmtUnitAuto
+  fmtPow, fmtEn, fmtVar, fmtVA, fmtTemp, fmtVolt, fmtAmp, fmtFreq, fmtPct, fmtText, fmtUnitAuto, dec
 } from '../src/design/format.js';
 
 let pass = 0, fail = 0;
@@ -347,7 +347,7 @@ eq('flowDir: incarcare (pos)', flowDir(145, 0), { sign: 1, power: 145 });
 eq('flowDir: descarcare (neg) inverseaza directia', flowDir(0, 800), { sign: -1, power: 800 });
 eq('flowDir: sub 1 W = repaus', flowDir(0.4, 0.2), { sign: 0, power: 0 });
 eq('badge W intregi sub 1 kW', fmtFlowPower(450), '450 W');
-eq('badge kW cu 1 zecimala sub 10 kW (regula v1.3.0)', fmtFlowPower(1234), '1.2 kW');
+eq('badge kW cu 1 zecimala sub 10 kW (regula v1.3.0)', fmtFlowPower(1234), '1,2 kW');
 eq('badge kW intregi de la 10 kW in sus (regula v1.3.0)', fmtFlowPower(12302), '12 kW');
 eq('badge pentru valoare lipsa', fmtFlowPower(null), '—');
 
@@ -355,32 +355,35 @@ eq('badge pentru valoare lipsa', fmtFlowPower(null), '—');
 console.log('formatare unitati:');
 // PUTERE: <1000 W intregi; 1-10 kW o zecimala; >=10 kW intregi; apoi MW la fel.
 eq('999 W ramane W', fmtPow(999), { v: '999', u: 'W' });
-eq('1000 W -> 1.0 kW', fmtPow(1000), { v: '1.0', u: 'kW' });
-eq('9200 W -> 9.2 kW', fmtPow(9200), { v: '9.2', u: 'kW' });
+eq('1000 W -> 1.0 kW', fmtPow(1000), { v: '1,0', u: 'kW' });
+eq('9200 W -> 9.2 kW', fmtPow(9200), { v: '9,2', u: 'kW' });
 eq('9999 W -> 10 kW (nu 10.0)', fmtPow(9999), { v: '10', u: 'kW' });
 eq('25000 W -> 25 kW', fmtPow(25000), { v: '25', u: 'kW' });
-eq('1.5 MW', fmtPow(1500000), { v: '1.5', u: 'MW' });
-eq('puterea negativa pastreaza semnul', fmtPow(-2728), { v: '-2.7', u: 'kW' });
+eq('1.5 MW', fmtPow(1500000), { v: '1,5', u: 'MW' });
+eq('puterea negativa pastreaza semnul', fmtPow(-2728), { v: '-2,7', u: 'kW' });
 eq('putere lipsa -> null', fmtPow(null), null);
 // ENERGIE (intrare kWh): oglinda puterii, dar MWh ramane cu 1 zecimala mereu.
 eq('0.45 kWh -> 450 Wh', fmtEn(0.45), { v: '450', u: 'Wh' });
-eq('9.034 kWh -> 9.0 kWh (cazul "9034 Wh" de pe Acasa)', fmtEn(9.034), { v: '9.0', u: 'kWh' });
+eq('9.034 kWh -> 9.0 kWh (cazul "9034 Wh" de pe Acasa)', fmtEn(9.034), { v: '9,0', u: 'kWh' });
 eq('117.4 kWh -> 117 kWh', fmtEn(117.4), { v: '117', u: 'kWh' });
-eq('57117 kWh -> 57.1 MWh (cazul de la Energie)', fmtEn(57117), { v: '57.1', u: 'MWh' });
-eq('37730.5 kWh -> 37.7 MWh (contoarele raman comparabile)', fmtEn(37730.5), { v: '37.7', u: 'MWh' });
+eq('57117 kWh -> 57.1 MWh (cazul de la Energie)', fmtEn(57117), { v: '57,1', u: 'MWh' });
+eq('37730.5 kWh -> 37.7 MWh (contoarele raman comparabile)', fmtEn(37730.5), { v: '37,7', u: 'MWh' });
 // ALTE FAMILII
-eq('var pe aceeasi scara ca W', fmtVar(-1806), { v: '-1.8', u: 'kvar' });
-eq('VA pe aceeasi scara ca W', fmtVA(2408), { v: '2.4', u: 'kVA' });
-eq('temperatura mereu cu 1 zecimala', fmtTemp(25), { v: '25.0', u: '°C' });
+eq('var pe aceeasi scara ca W', fmtVar(-1806), { v: '-1,8', u: 'kvar' });
+eq('VA pe aceeasi scara ca W', fmtVA(2408), { v: '2,4', u: 'kVA' });
+eq('temperatura mereu cu 1 zecimala', fmtTemp(25), { v: '25,0', u: '°C' });
 eq('tensiune de faza intreaga (>=100 V)', fmtVolt(230.7), { v: '231', u: 'V' });
-eq('tensiune de celula cu 3 zecimale (<10 V)', fmtVolt(3.336), { v: '3.336', u: 'V' });
-eq('curent cu 1 zecimala', fmtAmp(10.44), { v: '10.4', u: 'A' });
-eq('frecventa cu 2 zecimale', fmtFreq(49.9), { v: '49.90', u: 'Hz' });
+eq('tensiune de celula cu 3 zecimale (<10 V)', fmtVolt(3.336), { v: '3,336', u: 'V' });
+eq('curent cu 1 zecimala', fmtAmp(10.44), { v: '10,4', u: 'A' });
+eq('frecventa cu 2 zecimale', fmtFreq(49.9), { v: '49,90', u: 'Hz' });
 eq('procente intregi', fmtPct(53.4), { v: '53', u: '%' });
-eq('fmtText compune "v u"', fmtText(fmtPow(9200)), '9.2 kW');
+eq('fmtText compune "v u"', fmtText(fmtPow(9200)), '9,2 kW');
 eq('fmtText pentru lipsa -> null', fmtText(null), null);
+// Separatorul zecimal al aplicatiei e virgula (v1.3.1).
+eq('dec inlocuieste punctul cu virgula', dec('9.2'), '9,2');
+eq('dec lasa intregii neatinsi', dec('117'), '117');
 // AUTO dupa unitatea declarata (calea E.fmt) — inclusiv conversii de intrare.
-eq('auto: 9034 Wh -> 9.0 kWh', fmtUnitAuto(9034, 'Wh'), { v: '9.0', u: 'kWh' });
+eq('auto: 9034 Wh -> 9.0 kWh', fmtUnitAuto(9034, 'Wh'), { v: '9,0', u: 'kWh' });
 eq('auto: 12300 W -> 12 kW (randurile de tabel)', fmtUnitAuto(12300, 'W'), { v: '12', u: 'kW' });
 eq('auto: 12.3 kW declarat in kW', fmtUnitAuto(12.3, 'kW'), { v: '12', u: 'kW' });
 eq('auto: ore intregi', fmtUnitAuto(10393.49, 'h'), { v: '10393', u: 'h' });
@@ -430,7 +433,7 @@ eq('raport cu import zero -> null ("—")', exportImportRatio(100, 0), null);
 eq('delta procentuala', deltaPct(110, 100), 10);
 eq('delta fara referinta -> null', deltaPct(110, null), null);
 eq('fmtDelta null -> "—" fara sageata', fmtDelta(null), { txt: '—', dir: 0 });
-eq('fmtDelta pozitiv', fmtDelta(9.8), { txt: '▲ 9.8%', dir: 1 });
+eq('fmtDelta pozitiv', fmtDelta(9.8), { txt: '▲ 9,8%', dir: 1 });
 
 // valueAt: ultimul esantion dinaintea momentului, in toleranta de 30 min.
 const vs = [{ lu: 100, s: '5' }, { lu: 200, s: '7' }, { lu: 4000, s: '9' }];

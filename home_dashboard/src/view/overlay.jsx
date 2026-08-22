@@ -104,23 +104,27 @@ export function Roll({ text, anim }) {
     const from = prevRef.current;
     prevRef.current = text;
     if (from === text) return undefined;
-    const NUM = /^(-?\d+(?:\.\d+)?)( .*)?$/;
+    // (v1.3.1) Separatorul zecimal al aplicaţiei e virgula — regexul şi
+    // redarea intermediară trebuie s-o accepte, altfel animaţia moare mut.
+    const NUM = /^(-?\d+(?:[.,]\d+)?)( .*)?$/;
     const m1 = NUM.exec(String(from || ''));
     const m2 = NUM.exec(String(text || ''));
     if (!anim || !m1 || !m2 || (m1[2] || '') !== (m2[2] || '')) {
       setShown(text);
       return undefined;
     }
-    const a = parseFloat(m1[1]);
-    const bVal = parseFloat(m2[1]);
-    const dec = (m2[1].split('.')[1] || '').length;
+    const comma = m2[1].indexOf(',') >= 0;
+    const a = parseFloat(m1[1].replace(',', '.'));
+    const bVal = parseFloat(m2[1].replace(',', '.'));
+    const dec = (m2[1].split(/[.,]/)[1] || '').length;
     const suffix = m2[2] || '';
     const t0 = performance.now();
     cancelAnimationFrame(rafRef.current);
     const step2 = (t) => {
       const k = Math.min(1, (t - t0) / 400);
       const e = 1 - Math.pow(1 - k, 3);
-      setShown((a + (bVal - a) * e).toFixed(dec) + suffix);
+      const num = (a + (bVal - a) * e).toFixed(dec);
+      setShown((comma ? num.replace('.', ',') : num) + suffix);
       if (k < 1) rafRef.current = requestAnimationFrame(step2);
     };
     rafRef.current = requestAnimationFrame(step2);

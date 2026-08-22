@@ -13,6 +13,13 @@
 // devină „10 kW", nu „10.0 kW". Lizibilitate pe tabletă la 1–2 m: cât mai
 // puţine zecimale care nu adaugă informaţie.
 
+/** Separatorul zecimal al aplicaţiei: VIRGULĂ (v1.3.1) — interfaţa e
+ * integral în română, deci "9,2 kW", nu "9.2 kW". Orice text numeric
+ * vizibil trece prin dec(); coordonatele SVG rămân cu punct. */
+export function dec(x) {
+  return String(x).replace('.', ',');
+}
+
 /** Scara în trepte de 1000 pe trei unităţi. Întoarce {v, u} sau null. */
 export function fmtScale3(x, u0, u1, u2) {
   if (x === null || x === undefined || !isFinite(x)) return null;
@@ -20,10 +27,10 @@ export function fmtScale3(x, u0, u1, u2) {
   if (a < 999.5) return { v: String(Math.round(x)), u: u0 };
   const k = x / 1000;
   const ka = Math.abs(k);
-  if (ka < 9.95) return { v: k.toFixed(1), u: u1 };
+  if (ka < 9.95) return { v: dec(k.toFixed(1)), u: u1 };
   if (ka < 999.5) return { v: String(Math.round(k)), u: u1 };
   const m = k / 1000;
-  return { v: Math.abs(m) < 9.95 ? m.toFixed(1) : String(Math.round(m)), u: u2 };
+  return { v: Math.abs(m) < 9.95 ? dec(m.toFixed(1)) : String(Math.round(m)), u: u2 };
 }
 
 /** Putere: intrare în W. */
@@ -44,30 +51,30 @@ export function fmtEn(kwh) {
   if (kwh === null || kwh === undefined || !isFinite(kwh)) return null;
   const a = Math.abs(kwh);
   if (a < 0.9995) return { v: String(Math.round(kwh * 1000)), u: 'Wh' };
-  if (a < 9.95) return { v: kwh.toFixed(1), u: 'kWh' };
+  if (a < 9.95) return { v: dec(kwh.toFixed(1)), u: 'kWh' };
   if (a < 999.5) return { v: String(Math.round(kwh)), u: 'kWh' };
-  return { v: (kwh / 1000).toFixed(1), u: 'MWh' };
+  return { v: dec((kwh / 1000).toFixed(1)), u: 'MWh' };
 }
 
 export function fmtTemp(c) {
   if (c === null || c === undefined || !isFinite(c)) return null;
-  return { v: c.toFixed(1), u: '°C' };
+  return { v: dec(c.toFixed(1)), u: '°C' };
 }
 
 export function fmtVolt(v) {
   if (v === null || v === undefined || !isFinite(v)) return null;
   const a = Math.abs(v);
-  return { v: a < 10 ? v.toFixed(3) : a < 100 ? v.toFixed(1) : String(Math.round(v)), u: 'V' };
+  return { v: a < 10 ? dec(v.toFixed(3)) : a < 100 ? dec(v.toFixed(1)) : String(Math.round(v)), u: 'V' };
 }
 
 export function fmtAmp(a) {
   if (a === null || a === undefined || !isFinite(a)) return null;
-  return { v: a.toFixed(1), u: 'A' };
+  return { v: dec(a.toFixed(1)), u: 'A' };
 }
 
 export function fmtFreq(hz) {
   if (hz === null || hz === undefined || !isFinite(hz)) return null;
-  return { v: hz.toFixed(2), u: 'Hz' };
+  return { v: dec(hz.toFixed(2)), u: 'Hz' };
 }
 
 export function fmtPct(p) {

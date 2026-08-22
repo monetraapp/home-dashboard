@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.1
+
+Separatorul zecimal devine VIRGULA pe toată aplicaţia — interfaţa e
+integral în română, deci „9,2 kW”, „25,0 °C”, „3,336 V”, „57,1 MWh”.
+Implementat prin `dec()` în design/format.js (aplicat în toate funcţiile
+canonice) + măturarea ultimelor situri de afişare din afara modulului:
+euristica de rezervă din E.fmt, celulele diff/maxOf/stats/dial/setpoint,
+legendele şi tooltip-urile graficelor, axele (doar etichetele —
+coordonatele SVG rămân cu punct), deltele (▲ 9,8%), temperaturile şi
+factorul de putere din instrument, dezechilibrul de celule, media casei
+şi apa piscinei de pe Acasă. Componenta Roll (cifrele animate din erou)
+parsează şi redă acum virgula — altfel animaţia murea mut pe noul
+format. Teste: 133 logică + 44 stil.
+
 ## 1.3.0
 
 Formatare canonică a unităţilor pe toată aplicaţia — un singur modul

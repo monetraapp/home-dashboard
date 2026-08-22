@@ -1,7 +1,7 @@
 // Stratul care traduce între sloturile designului și entităţile reale din HA.
 import { useMemo } from 'react';
 import { useHa } from './context.js';
-import { fmtUnitAuto } from '../design/format.js';
+import { fmtUnitAuto, dec } from '../design/format.js';
 
 export const VERIFY = 'VERIFY';
 export const NA = '—';
@@ -164,7 +164,7 @@ export function useEntities() {
         // valorile întregi rămân întregi ("0" nu devine "0.0")
         const isWholeRaw = Number.isInteger(n) && String(v).indexOf('.') < 0 && o.scale === undefined;
         const d = o.decimals === undefined ? (isWholeRaw ? 0 : Math.abs(n) < 100 ? 1 : 0) : o.decimals;
-        v = roundTo(n, d).toFixed(d);
+        v = dec(roundTo(n, d).toFixed(d));
       }
       return unit ? v + ' ' + unit : String(v);
     }

@@ -3,6 +3,8 @@
 // explicit (2026-08-22); regula de aur: fără date -> null (UI afişează "—"),
 // NICIODATĂ zero inventat.
 
+import { dec } from './format.js';
+
 /** Consumul casei ca energie: autoconsum + import. eload* e respins de audit
  * (firmware-ul îl lasă permanent 0), aşa că se derivă din registrele valide. */
 export function consumCasaAzi(selfKwh, importKwh) {
@@ -49,7 +51,7 @@ export function deltaPct(now, prev) {
 /** Formatarea deltei pentru badge. null -> "—" fără săgeată. */
 export function fmtDelta(d) {
   if (d === null) return { txt: '—', dir: 0 };
-  return { txt: (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '· ') + Math.abs(d).toFixed(1) + '%', dir: d > 0 ? 1 : d < 0 ? -1 : 0 };
+  return { txt: (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '· ') + dec(Math.abs(d).toFixed(1)) + '%', dir: d > 0 ? 1 : d < 0 ? -1 : 0 };
 }
 
 /**

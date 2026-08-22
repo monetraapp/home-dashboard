@@ -10,7 +10,7 @@ import {
 import { dialTicks, lineChart, barChart } from '../design/graphics.js';
 import { VERIFY, NA, HVAC_SHORT } from '../ha/entities.js';
 import { describe } from '../model/descriptions.js';
-import { fmtPow, fmtText } from '../design/format.js';
+import { fmtPow, fmtText, dec as decSep } from '../design/format.js';
 import { resolveAction } from '../model/actions.js';
 import { dailyAverage, dailyLast, fillGaps, timelineSegments, lastDayLabels } from '../ha/history.js';
 
@@ -151,7 +151,7 @@ function monitorValue(E, cell) {
     if (va === null || vb === null) return { text: NA, verify: false };
     const dec = cell.decimals === undefined ? 0 : cell.decimals;
     const scaled = (va - vb) * (cell.scale === undefined ? 1 : cell.scale);
-    return { text: scaled.toFixed(dec) + (cell.unit ? ' ' + cell.unit : ''), verify: false };
+    return { text: decSep(scaled.toFixed(dec)) + (cell.unit ? ' ' + cell.unit : ''), verify: false };
   }
   // maxOf (v1.1.3): maximul mai multor sloturi — ex. cea mai mare temperatură
   // dintre sondele invertorului, ca rezumat al secţiunii.
@@ -160,7 +160,7 @@ function monitorValue(E, cell) {
     const vals = cell.maxOf.map((k) => E.num(k)).filter((v) => v !== null);
     if (!vals.length) return { text: NA, verify: false };
     const m = Math.max.apply(null, vals);
-    return { text: m.toFixed(1) + (cell.unit ? ' ' + cell.unit : ''), verify: false };
+    return { text: decSep(m.toFixed(1)) + (cell.unit ? ' ' + cell.unit : ''), verify: false };
   }
   const t = E.fmt(cell.slot, cell.opts);
   return { text: t, verify: t === VERIFY };
@@ -502,7 +502,7 @@ export function buildBlock(E, ui, hist, b) {
       legendStyle: 'display:flex; flex-wrap:wrap; gap:16px; margin-top:12px;',
       legend: built.map((sBuilt) => ({
         label: sBuilt.name,
-        value: sBuilt.values[sBuilt.values.length - 1] + ' ' + b.unit,
+        value: decSep(sBuilt.values[sBuilt.values.length - 1]) + ' ' + b.unit,
         rowStyle: 'display:flex; align-items:center; gap:7px;',
         dotStyle: 'width:8px; height:8px; border-radius:' + (sBuilt.dashed ? '2px' : '50%') + '; flex-shrink:0; background:' + sBuilt.color + ';',
         labelStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:400; color:#bdb1a4;',
@@ -601,7 +601,7 @@ export function buildAccordionItem(E, ui, u) {
     setpointGridStyle: 'display:grid; grid-template-columns:repeat(' + (bpOf(ui).mob ? 1 : 2) + ',minmax(0,1fr)); gap:8px;',
     setpoints: (u.setpoints || []).map((sp) => {
       const i = setpointInfo(E, def, sp);
-      const shown = !i.mapped ? VERIFY : i.val === null ? NA : (i.decimals ? i.val.toFixed(i.decimals) : String(Math.round(i.val))) + (i.unit ? ' ' + i.unit : '');
+      const shown = !i.mapped ? VERIFY : i.val === null ? NA : (i.decimals ? decSep(i.val.toFixed(i.decimals)) : String(Math.round(i.val))) + (i.unit ? ' ' + i.unit : '');
       return {
         label: i.label,
         wrapStyle: 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.07);',
@@ -823,7 +823,7 @@ export function buildDeviceCard(E, ui, def) {
   const stop = (e) => { if (e && e.stopPropagation) e.stopPropagation(); };
   const canToggle = E.mapped(def.slot) && E.available(def.slot);
 
-  const dialVal = di.val === null ? NA : (di.decimals ? di.val.toFixed(di.decimals) : String(Math.round(di.val)));
+  const dialVal = di.val === null ? NA : (di.decimals ? decSep(di.val.toFixed(di.decimals)) : String(Math.round(di.val)));
   // fără unitate lângă valoarea lipsă ("—", nu "—%")
   const dialUnitShown = di.val === null ? '' : di.unit;
   const targetLabel = di.standby ? 'Standby' : !di.mapped ? VERIFY : di.val === null ? NA : dialVal + di.unit;
@@ -999,7 +999,7 @@ export function buildModal(E, ui) {
     targetHint: di.mapped
       ? 'pas ' + di.step + ' · interval ' + di.min + '–' + di.max
       : 'VERIFY · nu ai mapat încă entitatea pentru această valoare',
-    targetVal: di.val === null ? NA : (di.unit === '%' || !di.decimals ? String(Math.round(di.val)) : di.val.toFixed(di.decimals)),
+    targetVal: di.val === null ? NA : (di.unit === '%' || !di.decimals ? String(Math.round(di.val)) : decSep(di.val.toFixed(di.decimals))),
     targetWrapStyle: 'margin-top:18px; padding:16px; border-radius:18px; text-align:center; background:rgba(240,138,44,0.07); border:1px solid rgba(240,138,44,0.2);',
     targetCapStyle: 'font-family:' + SANS + '; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:' + ORANGE + ';',
     targetValStyle: 'font-family:' + DOTO + '; font-size:44px; font-weight:400; color:#f7f1e9; line-height:1;' + (di.stale ? ' opacity:0.55;' : ''),

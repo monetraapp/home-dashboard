@@ -22,7 +22,7 @@ import {
   consumCasaAzi, autoconsumPct, sankeyLanes, exportImportRatio, deltaPct, fmtDelta,
   valueAt, peakOf, hourCurve, statEnergySeries, statMeanSeries, sumOrNull
 } from '../design/energyMath.js';
-import { fmtPow, fmtEn } from '../design/format.js';
+import { fmtPow, fmtEn, dec } from '../design/format.js';
 import { Tip, Roll, pressProps } from './overlay.jsx';
 import { describe } from '../model/descriptions.js';
 
@@ -76,7 +76,7 @@ function chartSvg(cfg) {
     const gv = lo + (hi - lo) * (i / 4), gy = py(gv);
     const zero = cfg.zero && Math.abs(gv) < (hi - lo) / 40;
     g.push(el('line', { key: 'g' + i, x1: padL, y1: gy, x2: w - padR, y2: gy, stroke: zero ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.038)', strokeWidth: 1 }));
-    g.push(el('text', { key: 'gl' + i, x: padL - 10, y: gy + 3.4, textAnchor: 'end', style: { fontFamily: SANS, fontSize: '10px', fontWeight: 300, fill: TXT3 } }, Math.abs(hi - lo) < 12 ? gv.toFixed(1) : Math.round(gv)));
+    g.push(el('text', { key: 'gl' + i, x: padL - 10, y: gy + 3.4, textAnchor: 'end', style: { fontFamily: SANS, fontSize: '10px', fontWeight: 300, fill: TXT3 } }, Math.abs(hi - lo) < 12 ? dec(gv.toFixed(1)) : Math.round(gv)));
   }
   cfg.labels.forEach((lb, i) => {
     if (!lb) return;
@@ -658,7 +658,7 @@ export function EnergyInstrument({ anim }) {
     }
     if (cat === 'invertor') {
       return {
-        label: 'Temperatură maximă', fm: tMax === null ? null : { v: tMax.toFixed(1), u: '°C' },
+        label: 'Temperatură maximă', fm: tMax === null ? null : { v: dec(tMax.toFixed(1)), u: '°C' },
         delta: deltaLive('gw.t_inv'), capPct: null, capText: null
       };
     }
@@ -669,7 +669,7 @@ export function EnergyInstrument({ anim }) {
         return {
           label: gridDir.word + ' acum', fm, delta: deltaLive('gw.p_export'),
           capPct: pct === null ? null : Math.min(100, pct),
-          capText: pct === null ? null : pct.toFixed(1) + ' % din producţia curentă'
+          capText: pct === null ? null : dec(pct.toFixed(1)) + ' % din producţia curentă'
         };
       }
       const sum = sumOrNull(statEnergy('energie.stat_export'));
@@ -716,7 +716,7 @@ export function EnergyInstrument({ anim }) {
       cell('bolt', GOLD, batDir.word, batDir.sign === 0 ? { v: '0', u: 'W' } : fmtPow(batDir.power), fmtDelta(null)),
       cell('trend', GREEN, 'Încărcat azi', en(nv('gw.echr_azi')), deltaLive('gw.echr_azi')),
       cell('leaf', GREEN, 'SOH', pc(soh), fmtDelta(null)),
-      cell('thermo', GRID_O, 'Temp. pachet', nv('gw.bat_temp') === null ? null : { v: nv('gw.bat_temp').toFixed(1), u: '°C' }, fmtDelta(null))
+      cell('thermo', GRID_O, 'Temp. pachet', nv('gw.bat_temp') === null ? null : { v: dec(nv('gw.bat_temp').toFixed(1)), u: '°C' }, fmtDelta(null))
     ];
     if (cat === 'retea') return [
       cell('trend', GRID_O, 'Export azi', en(expAzi), deltaLive('gw.exp_azi')),
@@ -728,7 +728,7 @@ export function EnergyInstrument({ anim }) {
       cell('gauge', GOLD, 'Grad încărcare', pc(sarcina), fmtDelta(null)),
       cell('bolt', GOLD_HI, 'Bus DC', nv('gw.v_bus') === null ? null : { v: String(Math.round(nv('gw.v_bus'))), u: 'V' }, fmtDelta(null)),
       cell('clock', CYAN, 'Funcţionare', nv('gw.ore') === null ? null : { v: String(Math.round(nv('gw.ore'))), u: 'h' }, fmtDelta(null)),
-      cell('thermo', GRID_O, 'Temp. maximă', tMax === null ? null : { v: tMax.toFixed(1), u: '°C' }, deltaLive('gw.t_inv'))
+      cell('thermo', GRID_O, 'Temp. maximă', tMax === null ? null : { v: dec(tMax.toFixed(1)), u: '°C' }, deltaLive('gw.t_inv'))
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cat, per, pCasa, soc, acPct, pvOut, solAzi, sarcina, soh, expAzi, impAzi, tMax, peakAzi, hist.raw, gridDir.sign, gridDir.power, batDir.word, batDir.sign, batDir.power]);
@@ -739,7 +739,7 @@ export function EnergyInstrument({ anim }) {
     if (key === 'productie') { const f2 = fmtEn(solAzi); return f2 ? f2.v + ' ' + f2.u + ' azi' : '—'; }
     if (key === 'baterie') return soc === null ? '—' : Math.round(soc) + ' %';
     if (key === 'retea') return gridDir.sign === 0 ? 'echilibru' : gridDir.word.toLowerCase() + ' ' + fmtFlowPower(gridDir.power);
-    return tMax === null ? '—' : tMax.toFixed(1) + ' °C';
+    return tMax === null ? '—' : dec(tMax.toFixed(1)) + ' °C';
   };
 
   /* ---------------------------------------------- grafică per categorie */
@@ -846,8 +846,8 @@ export function EnergyInstrument({ anim }) {
     if (cat === 'baterie') return { title: 'Pachet APX', rows: [
       row('SOC', soc === null ? null : Math.round(soc) + ' %', 'gw.soc', GREEN),
       row('Putere', batDir.sign === 0 ? '0 W' : (batDir.sign > 0 ? '+' : '−') + fmtFlowPower(batDir.power), 'gw.p_chr', GOLD),
-      row('Temp. pachet', nv('gw.bat_temp') === null ? null : nv('gw.bat_temp').toFixed(1) + ' °C', null, GRID_O),
-      row('Temp. medie celule', nv('gw.bat_temp_med') === null ? null : nv('gw.bat_temp_med').toFixed(1) + ' °C', null, CYAN),
+      row('Temp. pachet', nv('gw.bat_temp') === null ? null : dec(nv('gw.bat_temp').toFixed(1)) + ' °C', null, GRID_O),
+      row('Temp. medie celule', nv('gw.bat_temp_med') === null ? null : dec(nv('gw.bat_temp_med').toFixed(1)) + ' °C', null, CYAN),
       row('Încărcat total', enT(nv('gw.echr_tot')), null, GREEN),
       row('Descărcat total', enT(nv('gw.edis_tot')), null, CYAN)
     ] };
@@ -859,13 +859,13 @@ export function EnergyInstrument({ anim }) {
         row('Export total', enT(nv('gw.exp_tot')), null, GRID_O),
         row('Import total', enT(nv('gw.imp_tot')), null, CYAN),
         row('Autoconsum total', enT(nv('gw.self_tot')), null, GREEN),
-        row('Raport export/import', ratio === null ? '—' : String(ratio), null, TXT2)
+        row('Raport export/import', ratio === null ? '—' : dec(String(ratio)), null, TXT2)
       ] };
     }
     return { title: 'Sistem', rows: [
       row('Bus DC', nv('gw.v_bus') === null ? null : Math.round(nv('gw.v_bus')) + ' V', 'gw.t_inv', GOLD),
       row('Grad încărcare', sarcina === null ? null : Math.round(sarcina) + ' %', 'gw.pv_in', GOLD_HI),
-      row('Factor de putere', nv('gw.pf') === null ? null : (nv('gw.pf') / 1000).toFixed(2), null, GREEN),
+      row('Factor de putere', nv('gw.pf') === null ? null : dec((nv('gw.pf') / 1000).toFixed(2)), null, GREEN),
       row('Scurgere GFCI', nv('gw.gfci') === null ? null : Math.round(nv('gw.gfci')) + ' mA', null, CYAN),
       row('Ore funcţionare', nv('gw.ore') === null ? null : Math.round(nv('gw.ore')) + ' h', null, TXT2),
       row('Încărcare din AC', enT(nv('gw.eac_chr_tot')), null, CYAN)
@@ -1013,7 +1013,7 @@ export function EnergyInstrument({ anim }) {
                     <div key={i} style={s('display:flex; align-items:center; gap:6px;')}>
                       <span style={s('width:7px; height:7px; border-radius:50%; flex-shrink:0; background:' + sr.color + '; box-shadow:0 0 9px ' + sr.color + ';')} />
                       <span style={s('font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT2 + ';')}>{sr.name}</span>
-                      <span style={s('font-family:' + SANS + '; font-size:11px; font-weight:400; color:' + TXT + '; font-variant-numeric:tabular-nums;')}>{lastV === undefined ? '—' : lastV + ' ' + chartCfg.unit}</span>
+                      <span style={s('font-family:' + SANS + '; font-size:11px; font-weight:400; color:' + TXT + '; font-variant-numeric:tabular-nums;')}>{lastV === undefined ? '—' : dec(lastV) + ' ' + chartCfg.unit}</span>
                     </div>
                   );
                 })}
@@ -1169,7 +1169,8 @@ function stringSpectrumSvg(w, d) {
     g.push(el('text', { key: 'v' + i, x, y: top - 20, textAnchor: 'middle', opacity: dim, style: { fontFamily: DOTO, fontSize: '26px', fontWeight: 600, fill: kw ? TXT : TXT3 } }, wParts ? wParts.v : '—'));
     g.push(el('text', { key: 'u' + i, x, y: top - 6, textAnchor: 'middle', opacity: dim, style: { fontFamily: SANS, fontSize: '9.5px', fontWeight: 400, letterSpacing: '0.1em', fill: kw ? st.color : TXT3 } }, wParts ? wParts.u : 'kW'));
     g.push(el('text', { key: 'n' + i, x, y: top + bh + 22, textAnchor: 'middle', opacity: dim, style: { fontFamily: SANS, fontSize: '12.5px', fontWeight: 500, fill: kw ? TXT : TXT3 } }, st.n));
-    const aziTxt = st.missing ? 'string inexistent' : st.azi === null ? '—' : st.azi.toFixed(1) + ' kWh azi';
+    const aziParts = fmtEn(st.azi);
+    const aziTxt = st.missing ? 'string inexistent' : aziParts === null ? '—' : aziParts.v + ' ' + aziParts.u + ' azi';
     g.push(el('text', { key: 'd' + i, x, y: top + bh + 39, textAnchor: 'middle', opacity: dim, style: { fontFamily: SANS, fontSize: '10px', fontWeight: 300, fill: TXT3 } }, aziTxt));
     const share = !st.missing && st.azi !== null && d.total ? Math.round((st.azi / d.total) * 100) + ' %' : '—';
     g.push(el('text', { key: 's' + i, x, y: top + bh + 55, textAnchor: 'middle', opacity: dim, style: { fontFamily: SANS, fontSize: '10px', fontWeight: 300, fill: st.missing ? TXT3 : st.color } }, share));
@@ -1220,7 +1221,7 @@ function batteryStackSvg(w, d) {
   if (d.dez !== null) {
     const txt = narrow
       ? 'dezechilibru ' + d.dez + ' mV'
-      : 'dezechilibru celule ' + d.dez + ' mV · ' + (d.celMin / 1000).toFixed(3) + ' → ' + (d.celMax / 1000).toFixed(3) + ' V';
+      : 'dezechilibru celule ' + d.dez + ' mV · ' + dec((d.celMin / 1000).toFixed(3)) + ' → ' + dec((d.celMax / 1000).toFixed(3)) + ' V';
     g.push(el('text', { key: 'cb', x: barX, y: 250, style: { fontFamily: SANS, fontSize: (narrow ? 8.5 : 10) + 'px', fontWeight: 300, fill: TXT3 } }, txt));
     g.push(el('rect', { key: 'cbt', x: barX, y: 232, width: barW, height: 5, rx: 2.5, fill: 'rgba(255,255,255,0.06)' }));
     g.push(el('rect', { key: 'cbf', x: barX, y: 232, width: barW * Math.min(1, d.dez / 100), height: 5, rx: 2.5, fill: GREEN }));
@@ -1258,7 +1259,7 @@ function gridSankeySvg(w, d) {
   });
   g.push(el('text', { key: 'h1', x: x0, y: 26, style: { fontFamily: SANS, fontSize: '10px', fontWeight: 500, letterSpacing: '0.13em', textTransform: 'uppercase', fill: TXT3 } }, 'unde merge energia acum'));
   const gridShare = d.pvIn ? Math.round((L.pvToGrid / d.pvIn) * 1000) / 10 : null;
-  const foot = (d.acPct === null ? '' : 'autoconsum ' + d.acPct + ' %') + (gridShare === null ? '' : (d.acPct === null ? '' : ' · ') + gridShare + ' % din producţie pleacă în reţea');
+  const foot = (d.acPct === null ? '' : 'autoconsum ' + d.acPct + ' %') + (gridShare === null ? '' : (d.acPct === null ? '' : ' · ') + dec(gridShare) + ' % din producţie pleacă în reţea');
   if (foot) g.push(el('text', { key: 'f1', x: x0, y: 246, style: { fontFamily: SANS, fontSize: '10.5px', fontWeight: 300, fill: TXT3 } }, foot));
   return el('svg', { viewBox: '0 0 ' + w + ' ' + h, width: '100%', height: h, style: { display: 'block' } }, g);
 }
@@ -1279,7 +1280,7 @@ function tempBarsSvg(w, probes) {
       const hot = present.length && p[1] >= Math.max.apply(null, present) - 0.05;
       g.push(el('rect', { key: 'f' + i, x: x0, y: y - 6, width: lw, height: 12, rx: 6, fill: hot ? GRID_O : GOLD, opacity: 0.85 }));
     }
-    g.push(el('text', { key: 'v' + i, x: x0 + maxW + (narrow ? 8 : 14), y: y + 4, style: { fontFamily: SANS, fontSize: (narrow ? 10 : 12) + 'px', fontWeight: 400, fill: p[1] === null ? TXT3 : TXT, fontVariantNumeric: 'tabular-nums' } }, p[1] === null ? '—' : p[1].toFixed(1) + ' °C'));
+    g.push(el('text', { key: 'v' + i, x: x0 + maxW + (narrow ? 8 : 14), y: y + 4, style: { fontFamily: SANS, fontSize: (narrow ? 10 : 12) + 'px', fontWeight: 400, fill: p[1] === null ? TXT3 : TXT, fontVariantNumeric: 'tabular-nums' } }, p[1] === null ? '—' : dec(p[1].toFixed(1)) + ' °C'));
   });
   return el('svg', { viewBox: '0 0 ' + w + ' ' + h, width: '100%', height: h, style: { display: 'block' } }, g);
 }

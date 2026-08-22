@@ -1,5 +1,6 @@
 // Grafica vectorială (gauge-uri, inele, grafice) copiată 1:1 din "Home Dashboard.dc.html".
 import { el, ic } from './icons.js';
+import { dec } from './format.js';
 import { SANS, ORANGE, ORANGE_HI, cssToObj } from './tokens.js';
 
 export function arcGauge(fraction, mult) {
@@ -227,7 +228,7 @@ export function lineChart(series, labels, unit, yMinIn, yMaxIn, hoverIdx, onHove
     const gv = lo + (hi - lo) * (g / 4), gy = py(gv);
     nodes.push(el('line', { key: 'g' + g, x1: padL, y1: gy, x2: w - padR, y2: gy, stroke: 'rgba(255,255,255,0.055)', strokeWidth: 1 }));
     nodes.push(el('text', { key: 'gl' + g, x: padL - (mob ? 5 : 8), y: gy + 3.5, textAnchor: 'end',
-      style: { fontFamily: SANS, fontSize: fsAxis, fontWeight: 300, fill: '#6f6558' } }, (Math.abs(hi - lo) < 8 ? gv.toFixed(1) : Math.round(gv))));
+      style: { fontFamily: SANS, fontSize: fsAxis, fontWeight: 300, fill: '#6f6558' } }, (Math.abs(hi - lo) < 8 ? dec(gv.toFixed(1)) : Math.round(gv))));
   }
   labels.forEach((lb, i) => {
     if (!lb) return;
@@ -270,7 +271,7 @@ export function lineChart(series, labels, unit, yMinIn, yMaxIn, hoverIdx, onHove
     series.forEach((s, si) => {
       tipKids.push(el('circle', { key: 'td' + si, cx: tipX + 14, cy: tipY + 27 + si * 15, r: 3, fill: s.color }));
       tipKids.push(el('text', { key: 'tv' + si, x: tipX + 23, y: tipY + 30 + si * 15,
-        style: { fontFamily: SANS, fontSize: fsTipV, fontWeight: 300, fill: '#bdb1a4' } }, s.name.slice(0, mob ? 11 : 16) + '  ' + s.values[hoverIdx] + ' ' + unit));
+        style: { fontFamily: SANS, fontSize: fsTipV, fontWeight: 300, fill: '#bdb1a4' } }, s.name.slice(0, mob ? 11 : 16) + '  ' + dec(s.values[hoverIdx]) + ' ' + unit));
     });
     nodes.push(el('g', { key: 'tip' }, tipKids));
   }
@@ -324,7 +325,7 @@ export function barChart(values, labels, unit, hoverIdx, onHover, mob) {
     nodes.push(el('g', { key: 'tip' }, [
       el('rect', { key: 'r', x: tx, y: padT + 2, width: tw, height: 38, rx: 8, fill: 'rgba(24,18,14,0.96)', stroke: 'rgba(255,255,255,0.14)', strokeWidth: 1 }),
       el('text', { key: 't1', x: tx + 10, y: padT + 17, style: { fontFamily: SANS, fontSize: mob ? '9.5px' : '10px', fontWeight: 500, fill: '#e7dcd0' } }, labels[hoverIdx]),
-      el('text', { key: 't2', x: tx + 10, y: padT + 32, style: { fontFamily: SANS, fontSize: fsAxis, fontWeight: 300, fill: '#bdb1a4' } }, values[hoverIdx] + ' ' + unit)
+      el('text', { key: 't2', x: tx + 10, y: padT + 32, style: { fontFamily: SANS, fontSize: fsAxis, fontWeight: 300, fill: '#bdb1a4' } }, dec(values[hoverIdx]) + ' ' + unit)
     ]));
   }
   function handleMove(e) {
@@ -393,7 +394,7 @@ export function dayAreaChart(values, lastIdx, color, unit, mob) {
     nodes.push(el('line', { key: 'g' + g, x1: padL, y1: gy, x2: w - padR, y2: gy, stroke: 'rgba(255,255,255,0.055)', strokeWidth: 1 }));
     nodes.push(el('text', { key: 'gl' + g, x: padL - 7, y: gy + 3.5, textAnchor: 'end',
       style: { fontFamily: SANS, fontSize: mob ? '9px' : '9.5px', fontWeight: 300, fill: '#6f6558' } },
-      gv >= 1000 ? (gv / 1000).toFixed(1) + 'k' : Math.round(gv)));
+      gv >= 1000 ? dec((gv / 1000).toFixed(1)) + 'k' : Math.round(gv)));
   }
   // etichete de ore la fiecare 4h (00..24) pe toată lăţimea zilei
   for (let hLab = 0; hLab <= 24; hLab += 4) {
