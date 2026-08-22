@@ -91,7 +91,7 @@ export function buildItem(E, ui, d, keyCtx) {
     value,
     tileStyle: tileStyleFor(active, canToggle) + (d.toggleable && !canToggle ? ' opacity:0.72;' : ''),
     iconWrapStyle: iconWrapFor(active),
-    labelStyle: labelFor(active),
+    labelStyle: labelFor(active) + LABEL_WRAP2,
     valueStyle: verifyValueStyle(active, value),
     wrapStyle: 'position:relative; display:flex; min-width:0;',
     tipText: tip,
@@ -195,6 +195,14 @@ function monitorRows(E, ui, title, rows, keyCtx) {
 // cuvintelor foarte lungi. Valorile/metadatele rămân pe o linie (sunt date,
 // nu identitate).
 const CLAMP2 = 'display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;';
+
+// Etichetele de tile/chip se rup pe maxim 2 linii in loc sa se taie cu
+// '...' (audit v1.2.x: 'Regim boost' pierdea 41px, 'Stergator Speed Dome'
+// 51px). APPEND peste labelFor() — suprascrie nowrap/ellipsis la punctul de
+// folosire, tokens.js ramane identic cu designul original (testul de stil).
+// hyphens:auto desparte cu cratima cuvintele unice lungi ('Dezumidificare');
+// <html lang="ro"> exista deja.
+const LABEL_WRAP2 = ' white-space:normal; text-overflow:clip; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; hyphens:auto; overflow-wrap:break-word; line-height:1.25;';
 
 const MON_WRAP = 'border:1px solid rgba(255,255,255,0.065); border-radius:14px; overflow:hidden; margin-bottom:12px;';
 const MON_CAP = 'display:flex; align-items:center; gap:8px; padding:9px 14px; font-family:' + SANS + '; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + '; background:rgba(255,255,255,0.022);';
@@ -392,7 +400,7 @@ export function buildBlock(E, ui, hist, b) {
       return {
         label: row.label + (E.mapped(row.slot) ? '' : ' · VERIFY'),
         rowStyle: 'display:grid; grid-template-columns:' + (bpOf(ui).mob ? '86px' : '132px') + ' minmax(0,1fr); align-items:center; gap:' + (bpOf(ui).mob ? '8px' : '12px') + '; margin-bottom:6px;',
-        labelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:400; color:' + (E.mapped(row.slot) ? '#bdb1a4' : ORANGE) + '; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
+        labelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:400; color:' + (E.mapped(row.slot) ? '#bdb1a4' : ORANGE) + '; text-align:right;' + LABEL_WRAP2,
         barStyle: 'display:flex; gap:1.5px; height:22px; border-radius:7px; overflow:hidden; background:rgba(255,255,255,0.03);',
         segs: use.map((sg) => ({ style: 'flex:' + sg[1] + ' 1 0; background:' + (STATE_COLORS[sg[0]] || STATE_COLORS.idle) + ';' }))
       };
@@ -622,7 +630,7 @@ function buildActionTile(E, ui, def, item, cardId, context) {
     value,
     tileStyle: tileStyleFor(on, res.supported) + (res.supported ? '' : ' opacity:0.55;'),
     iconWrapStyle: iconWrapFor(on),
-    labelStyle: labelFor(on),
+    labelStyle: labelFor(on) + LABEL_WRAP2,
     valueStyle: verifyValueStyle(on, value),
     wrapStyle: 'position:relative; display:flex; min-width:0;',
     tipText: res.supported ? (describe(context, item.label) || item.label) : item.label + ' · ' + res.reason,
@@ -988,7 +996,7 @@ export function buildModal(E, ui) {
           title: res.supported ? (describe(sec.title, item.label) || item.label) : res.reason,
           tileStyle: tileStyleFor(on, res.supported) + (res.supported ? '' : ' opacity:0.55;'),
           iconWrapStyle: iconWrapFor(on),
-          labelStyle: labelFor(on),
+          labelStyle: labelFor(on) + LABEL_WRAP2,
           valueStyle: verifyValueStyle(on, val),
           onToggle: () => { if (res.supported) res.run(); }
         };
