@@ -826,6 +826,22 @@ export function buildDeviceCard(E, ui, def) {
     // Un dial de volum se ascunde şi când media_player-ul nu declară
     // VOLUME_SET (bit 4) — ex. Hisense prin HomeKit.
     hasDial: !!def.dial && !(def.dial.kind === 'volume' && E.mapped(def.slot) && !E.supportsFeature(def.slot, 4)),
+    // v1.2.6: in locul lui, un cadran STATIC cu aceeasi silueta — inelul
+    // estompat (0.55, conventia pentru 'valid dar fara hardware'), in centru
+    // sursa curenta / starea, spacer-e de latimea butoanelor -/+ ca centrul
+    // sa ramana aliniat cu celelalte carduri. Nu e clickabil (n-ar controla
+    // nimic); tooltip-ul explica de ce. Mute si sursele de mai jos raman
+    // functionale.
+    staticDial: !!def.dial && def.dial.kind === 'volume' && E.mapped(def.slot) && !E.supportsFeature(def.slot, 4),
+    staticDialTicksEl: dialTicks(0, false, mob ? 116 : 132),
+    staticDialVal: !E.available(def.slot) ? NA
+      : E.isOn(def.slot) ? (E.currentSource(def.slot) || 'Pornit') : 'Standby',
+    staticKnobValStyle: 'font-family:' + SANS + '; font-size:13px; font-weight:500; line-height:1.2; text-align:center; max-width:60px; color:' + (a ? '#f7f1e9' : '#9d9186') + '; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;',
+    spacerStyle: 'width:' + (touch44 ? 44 : 30) + 'px; height:' + (touch44 ? 44 : 30) + 'px; flex-shrink:0;',
+    staticDialTip: 'Televizorul nu expune controlul volumului prin integrarea lui (HomeKit) — cadranul arata doar sursa curenta. Mute si schimbarea sursei functioneaza din butoanele de mai jos.',
+    showStaticTip: ui.hoverKey === 'sdial:' + def.id,
+    onStaticEnter: () => ui.setHoverKey('sdial:' + def.id),
+    onStaticLeave: () => ui.setHoverKey(null),
     noDialWrapStyle: 'height:132px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; margin-top:2px;',
     noDialIconEl: ic(def.icon, { size: 34, color: a ? ORANGE : TXT3 }),
     noDialTextStyle: 'font-family:' + SANS + '; font-size:21px; font-weight:500; line-height:1; color:' + (a ? '#f7f1e9' : '#9d9186') + ';',

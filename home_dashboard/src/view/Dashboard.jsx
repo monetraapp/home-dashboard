@@ -800,6 +800,27 @@ function DeviceCard({ c }) {
           </div>
           <div className="hdTap" style={s(c.roundBtnStyle)} onClick={c.onPlus} title={c.stepTitle}>{ic('plus', { size: 16, sw: 2 })}</div>
         </div>
+      ) : c.staticDial ? (
+        /* v1.2.6: silueta cadranului se pastreaza si cand volumul nu e
+           expus (Hisense/HomeKit) — inel estompat + sursa curenta in centru,
+           spacer-e de latimea butoanelor -/+ pentru aliniere; tooltip-ul
+           (hover / long-press) explica de ce nu exista control. */
+        <div
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 2, position: 'relative' }}
+          onMouseEnter={c.onStaticEnter}
+          onMouseLeave={c.onStaticLeave}
+          {...pressProps(c.onStaticEnter, c.onStaticLeave, () => {})}
+        >
+          <div style={s(c.spacerStyle)} />
+          <div style={s(c.dialWrapStyle + ' opacity:0.55;')}>
+            {c.staticDialTicksEl}
+            <div style={s(c.knobStyle)}>
+              <span style={s(c.staticKnobValStyle)}>{c.staticDialVal}</span>
+            </div>
+          </div>
+          <div style={s(c.spacerStyle)} />
+          {c.showStaticTip ? <Tip text={c.staticDialTip} /> : null}
+        </div>
       ) : (
         <div style={s(c.noDialWrapStyle)}>
           {c.noDialIconEl}
