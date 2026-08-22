@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.1.7
+
+Bug real găsit de auditul Playwright: banda „Deconectat / Se reconectează"
+(OfflineBanner) era `position:fixed` peste bara de navigaţie — cât timp era
+vizibilă (reconectare, call-error neînchis), taburile de sub ea nu primeau
+niciun click. Masca de fade din v1.1.6 a fost exonerată: e `mask-image` pe
+containerul de scroll, afectează doar pixelii, nu hit-testing-ul — nu există
+niciun element de fade suprapus.
+
+- OfflineBanner: `fixed` → `sticky` — împinge conţinutul în jos în loc să-l
+  acopere; butoanele ei rămân active, taburile rămân apăsabile.
+- Auditul e acum rezistent la eşecuri: click normal → fallback click
+  programatic (aplicaţia nu are rute URL) → verificare pe subtitlul paginii;
+  interceptările clickului normal se raportează ca problemă CRITICĂ separată,
+  combinaţiile nenavigabile se marchează în raport şi rularea continuă.
+
 ## 1.1.6
 
 Fix-uri pentru mobil (360–414px), verificate după refactorizarea v1.1.5.

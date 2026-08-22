@@ -736,7 +736,12 @@ function OfflineBanner() {
   return (
     <div
       style={s(
-        'position:fixed; top:0; left:0; right:0; z-index:120; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; padding:8px 16px; font-family:' +
+        // v1.1.7: era position:fixed şi ACOPEREA bara de navigaţie — cât timp
+        // banda era vizibilă (reconectare, call-error neînchis), taburile de
+        // sub ea nu primeau clicuri (găsit de auditul Playwright: "intercepts
+        // pointer events"). sticky împinge conţinutul în jos în loc să-l
+        // acopere şi rămâne lipită sus la scroll; butoanele ei rămân active.
+        'position:sticky; top:0; z-index:120; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; padding:8px 16px; font-family:' +
           SANS + '; font-size:12px; font-weight:500; color:' + color +
           '; background:rgba(32,18,12,0.96); border-bottom:1px solid rgba(226,120,90,0.35); backdrop-filter:blur(8px);' +
           (connecting ? ' animation:offlinePulse 2.6s ease-in-out infinite;' : '')

@@ -42,6 +42,47 @@ const PAGES = [
   ['acasa', 'Acasă'], ['climat', 'Climat'], ['piscina', 'Piscină'], ['energie', 'Energie'],
   ['camere', 'Camere'], ['retea', 'Reţea'], ['media', 'Media'], ['mentenanta', 'Mentenanţă']
 ];
+// Subtitlurile din PAGE_HERO (src/model/pages.js) — unice per pagină; le
+// folosim ca dovadă că navigarea chiar a schimbat pagina.
+const PAGE_SUBTITLE = {
+  acasa: 'Centrul de operaţiuni', climat: 'Confort termic pe trei niveluri',
+  piscina: 'Apă, chimie şi filtrare', energie: 'Producţie, stocare şi consum',
+  camere: 'Cinci camere, perimetru complet', retea: 'Infrastructură şi conectivitate',
+  media: 'Opt televizoare, patru zone', mentenanta: 'Starea sistemului sub control'
+};
+
+/**
+ * Navigare rezistentă la eşecuri (v2 al auditului). Aplicaţia NU are rute URL
+ * (pagina e stare React), deci echivalentul "navigării directe" e clickul
+ * programatic pe tab, care ocoleşte hit-testing-ul (deci şi orice element
+ * care ar intercepta pointerul). Ordinea:
+ *   1) click normal Playwright (detectează interceptări reale — le raportăm);
+ *   2) click programatic prin evaluate;
+ *   3) verificare că pagina chiar s-a schimbat (subtitlul din hero).
+ * Întoarce { ok, reason, intercepted } — nu aruncă niciodată.
+ */
+async function gotoPage(pg, key, label) {
+  let intercepted = null;
+  try {
+    await pg.getByText(label, { exact: true }).first().click({ timeout: 8000 });
+  } catch (e) {
+    intercepted = (e.message || '').split('\n').find((l) => l.includes('intercepts pointer events')) || e.message.split('\n')[0];
+    try {
+      await pg.evaluate((lbl) => {
+        const spans = Array.from(document.querySelectorAll('span')).filter((sp) => sp.textContent.trim() === lbl);
+        const tab = spans.map((sp) => sp.closest('div')).find((d) => d && getComputedStyle(d).cursor === 'pointer');
+        if (!tab) throw new Error('tabul „' + lbl + '" nu există în DOM');
+        tab.click();
+      }, label);
+    } catch (e2) {
+      return { ok: false, intercepted, reason: 'click interceptat ŞI click programatic eşuat: ' + e2.message.split('\n')[0] };
+    }
+  }
+  await pg.waitForTimeout(key === 'energie' ? 3000 : 1500);
+  const changed = await pg.evaluate((sub) => document.body.innerText.includes(sub), PAGE_SUBTITLE[key]);
+  if (!changed) return { ok: false, intercepted, reason: 'pagina nu s-a schimbat după click (subtitlul „' + PAGE_SUBTITLE[key] + '" absent)' };
+  return { ok: true, intercepted };
+}
 // Lăţimile — graniţele din breakpoints.js + 360/390/414 cerute + 1440 desktop.
 const WIDTHS = [360, 390, 414, 759, 760, 1179, 1180, 1440];
 
@@ -263,6 +304,8 @@ function startPreview() {
 
 /* -------------------------------------------------------------------- main */
 const SEVERITY = {
+  nav: ['CRITIC', 'Pagină nenavigabilă'],
+  navBlocked: ['CRITIC', 'Click pe tab interceptat de alt element'],
   overflowBody: ['CRITIC', 'Overflow orizontal pe body'],
   outside: ['CRITIC', 'Element ieşit din viewport'],
   overlap: ['CRITIC', 'Elemente suprapuse'],
@@ -333,18 +376,33 @@ async function main() {
 
       for (const [key, label] of PAGES) {
         if (key !== 'acasa') {
-          await pg.getByText(label, { exact: true }).first().click();
-          await pg.waitForTimeout(key === 'energie' ? 3000 : 1500);
-        }
-        const res = await pg.evaluate(auditPage);
-        const shot = key + '_' + width + '.png';
-        await pg.screenshot({ path: path.join(SHOTS, shot), fullPage: true });
-        for (const [type, list] of Object.entries(res)) {
-          for (const item of list) {
-            findings.push({ page: key, width, type, el: item.el || 'body', detail: item.detail });
+          const nav = await gotoPage(pg, key, label);
+          // clickul normal blocat de un element = problemă reală de UI, chiar
+          // dacă fallback-ul programatic a mers — o raportăm separat
+          if (nav.intercepted) {
+            findings.push({ page: key, width, type: 'navBlocked', el: 'tabul „' + label + '"', detail: 'clickul normal a fost interceptat (' + nav.intercepted.trim() + '); a mers doar clickul programatic' });
+          }
+          if (!nav.ok) {
+            findings.push({ page: key, width, type: 'nav', el: 'navigaţie', detail: 'combinaţie nenavigabilă — ' + nav.reason });
+            try { await pg.screenshot({ path: path.join(SHOTS, key + '_' + width + '_nenavigabil.png'), fullPage: false }); } catch (e) { /* măcar am încercat */ }
+            console.log('  ' + key + ' @ ' + width + 'px — NENAVIGABILĂ (' + nav.reason + ')');
+            continue;
           }
         }
-        console.log('  ' + key + ' @ ' + width + 'px — ' + Object.values(res).reduce((a, l) => a + l.length, 0) + ' probleme, captura ' + shot);
+        try {
+          const res = await pg.evaluate(auditPage);
+          const shot = key + '_' + width + '.png';
+          await pg.screenshot({ path: path.join(SHOTS, shot), fullPage: true });
+          for (const [type, list] of Object.entries(res)) {
+            for (const item of list) {
+              findings.push({ page: key, width, type, el: item.el || 'body', detail: item.detail });
+            }
+          }
+          console.log('  ' + key + ' @ ' + width + 'px — ' + Object.values(res).reduce((a, l) => a + l.length, 0) + ' probleme, captura ' + shot);
+        } catch (e) {
+          findings.push({ page: key, width, type: 'nav', el: 'audit', detail: 'auditul paginii a eşuat: ' + e.message.split('\n')[0] });
+          console.log('  ' + key + ' @ ' + width + 'px — AUDIT EŞUAT (' + e.message.split('\n')[0] + ')');
+        }
       }
       await ctx.close();
     }
