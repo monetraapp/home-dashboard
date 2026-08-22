@@ -172,12 +172,13 @@ const GEO_V = {
   view: '0 0 360 330',
   paths: { pv: 'M 180 74 L 180 132', load: 'M 212 164 L 278 164', bat: 'M 148 164 L 82 164', grid: 'M 180 196 L 180 254' },
   flip: { pv: 1, load: 1, bat: 1, grid: 1 },
-  // load SUB traseu (y 186), nu deasupra: la y 150 nu există loc orizontal —
-  // între bbox-ul halo-ului Invertorului (până la x≈214) şi cel al Casei
-  // (de la x≈276) încap doar ~62px, mai puţin decât lăţimea badge-ului.
-  // Mutarea pe orizontală (audit v1.2.x) doar plimba suprapunerea dintr-un
-  // halo în celălalt; sub traseu culoarul e liber.
-  badges: { pv: [192, 108, 'start'], load: [246, 186, 'middle'], bat: [115, 150, 'middle'], grid: [192, 224, 'start'] },
+  // load: deasupra traseului (ca bat), dar ancorat START la x=218 — începe
+  // imediat după bbox-ul Invertorului (≤214) şi creşte spre dreapta doar cât
+  // are text. Centrat nu încăpea (culoar ~62px < badge), iar sub traseu
+  // (v1.2.3) intra în bbox-ul întins de subtitlul „autoconsum NN %" al Casei.
+  // Cu „12.30 kW" (cel mai lat caz) intersecţia cu halo-ul difuz al Casei
+  // rămâne ~16% din badge — sub pragul de suprapunere şi invizibilă practic.
+  badges: { pv: [192, 108, 'start'], load: [218, 150, 'start'], bat: [115, 150, 'middle'], grid: [192, 224, 'start'] },
   dirWords: { bat: [115, 185, 'middle'], grid: [192, 242, 'start'] },
   font: 19
 };

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.4
+
+Ultima problemă din auditul complet (1 CRITIC, restul zero): badge-ul de
+consum din diagrama verticală intersecta bounding-box-ul nodului Casă —
+întins spre stânga de subtitlul „autoconsum NN %". Badge-ul revine
+deasupra traseului, ancorat START la x=218 (imediat după bbox-ul
+Invertorului, creşte spre dreapta doar cât are text). Verificat cu
+valorile cele mai late posibile (12.30 kW): zero suprapuneri ≥25%.
+
+
 ## 1.2.3
 
 Batch-ul post-audit v1.2.2 (rulat pe build proaspăt de acum înainte).
