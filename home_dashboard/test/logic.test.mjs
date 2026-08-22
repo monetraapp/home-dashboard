@@ -168,10 +168,16 @@ eq('card nemapat -> nesuportat', r.supported, false);
 console.log('istoric:');
 const DAY = 86400000;
 const now = Date.now();
+// Perechea din ziua -2 e ancorată la AMIAZĂ, nu la "now - 2 zile + 1h":
+// varianta veche sărea în altă zi calendaristică atunci când testul rula
+// între 23:00 şi 00:00 (flake descoperit pe 22.08, la o rulare târzie).
+const noonAnchor = new Date();
+noonAnchor.setHours(12, 0, 0, 0);
+const NOON2 = noonAnchor.getTime() - 2 * DAY;
 const raw = {
   'sensor.apa': [
-    { lu: (now - 2 * DAY) / 1000, s: '30' },
-    { lu: (now - 2 * DAY + 3600000) / 1000, s: '32' },
+    { lu: NOON2 / 1000, s: '30' },
+    { lu: (NOON2 + 3600000) / 1000, s: '32' },
     { lu: (now - 1 * DAY) / 1000, s: '28' },
     { lu: now / 1000, s: '33' }
   ],
