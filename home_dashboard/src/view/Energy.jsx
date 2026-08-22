@@ -22,6 +22,7 @@ import {
   consumCasaAzi, autoconsumPct, sankeyLanes, exportImportRatio, deltaPct, fmtDelta,
   valueAt, peakOf, hourCurve, statEnergySeries, statMeanSeries, sumOrNull
 } from '../design/energyMath.js';
+import { fmtPow, fmtEn } from '../design/format.js';
 import { Tip, Roll, pressProps } from './overlay.jsx';
 import { describe } from '../model/descriptions.js';
 
@@ -42,15 +43,8 @@ const H_MS = 3600 * 1000;
 const DAY_MS = 24 * H_MS;
 
 /* ------------------------------------------------------------- formatare */
-function fmtPow(w) {
-  if (w === null || !isFinite(w)) return null;
-  return Math.abs(w) < 1000 ? { v: String(Math.round(w)), u: 'W' } : { v: (w / 1000).toFixed(2), u: 'kW' };
-}
-function fmtEn(kwh) {
-  if (kwh === null || !isFinite(kwh)) return null;
-  if (Math.abs(kwh) > 999) return { v: (kwh / 1000).toFixed(1), u: 'MWh' };
-  return { v: Math.abs(kwh) < 10 ? kwh.toFixed(1) : String(Math.round(kwh)), u: 'kWh' };
-}
+// (v1.3.0) fmtPow / fmtEn vin din design/format.js — regulile canonice,
+// aceleaşi pe toată aplicaţia. Formatterele locale au fost eliminate.
 function hhmm(ms) {
   const d = new Date(ms);
   const p = (n) => (n < 10 ? '0' + n : String(n));
@@ -687,7 +681,7 @@ export function EnergyInstrument({ anim }) {
       const pct = pvIn !== null && pNominal ? Math.round((pvIn / pNominal) * 100) : null;
       return {
         label: 'Producţie acum', fm, delta: deltaLive('gw.pv_in'),
-        capPct: pct, capText: pct === null ? null : (pvIn / 1000).toFixed(2) + ' din ' + Math.round(pNominal / 1000) + ' kW instalaţi · ' + pct + ' %'
+        capPct: pct, capText: pct === null ? null : (fm ? fm.v + ' ' + fm.u : '—') + ' din ' + Math.round(pNominal / 1000) + ' kW instalaţi · ' + pct + ' %'
       };
     }
     const sum = sumOrNull(statEnergy('gw.gen_tot'));
@@ -1126,10 +1120,11 @@ function dayArcSvg(w, d) {
   }
 
   const big = R > 200;
-  const solTxt = d.solAzi === null ? '—' : (Math.abs(d.solAzi) < 10 ? d.solAzi.toFixed(1) : String(Math.round(d.solAzi)));
+  const solParts = fmtEn(d.solAzi);
+  const solTxt = solParts ? solParts.v : '—';
   g.push(el('text', { key: 'c1', x: cx, y: cy - (big ? 48 : 40), textAnchor: 'middle', style: { fontFamily: SANS, fontSize: (big ? 10 : 9) + 'px', fontWeight: 500, letterSpacing: '0.14em', textTransform: 'uppercase', fill: TXT3 } }, 'energie solară azi'));
   g.push(el('text', { key: 'c2', x: cx - (big ? 14 : 12), y: cy - (big ? 12 : 12), textAnchor: 'middle', style: { fontFamily: DOTO, fontSize: (big ? 44 : 32) + 'px', fontWeight: 600, fill: TXT } }, solTxt));
-  g.push(el('text', { key: 'c3', x: cx + (big ? 46 : 34), y: cy - (big ? 12 : 12), textAnchor: 'start', style: { fontFamily: SANS, fontSize: (big ? 13 : 11) + 'px', fontWeight: 400, fill: GOLD } }, d.solAzi === null ? '' : 'kWh'));
+  g.push(el('text', { key: 'c3', x: cx + (big ? 46 : 34), y: cy - (big ? 12 : 12), textAnchor: 'start', style: { fontFamily: SANS, fontSize: (big ? 13 : 11) + 'px', fontWeight: 400, fill: GOLD } }, solParts ? solParts.u : ''));
   const subTxt = haveSun
     ? 'răsărit ' + hhmm(d.sunrise) + ' · apus ' + hhmm(d.sunset) + ' · acum ' + hhmm(d.now)
     : 'acum ' + hhmm(d.now);
@@ -1163,12 +1158,16 @@ function stringSpectrumSvg(w, d) {
       g.push(el('rect', { key: 'fl' + i, x: x - bw / 2, y: py, width: bw, height: fh, rx: 9, fill: 'url(#esg' + i + ')' }));
       if (st.peak !== null && st.peak > 0) {
         const pk = top + bh - (st.peak / 1000 / NOM) * bh;
+        const pkParts = fmtPow(st.peak);
         g.push(el('line', { key: 'pk' + i, x1: x - bw / 2 - 5, y1: pk, x2: x + bw / 2 + 5, y2: pk, stroke: 'rgba(255,255,255,0.3)', strokeWidth: 1, strokeDasharray: '3 3' }));
-        g.push(el('text', { key: 'pt' + i, x: x + bw / 2 + 8, y: pk + 3.4, style: { fontFamily: SANS, fontSize: '9px', fontWeight: 300, fill: TXT3 } }, 'vârf ' + (st.peak / 1000).toFixed(1)));
+        g.push(el('text', { key: 'pt' + i, x: x + bw / 2 + 8, y: pk + 3.4, style: { fontFamily: SANS, fontSize: '9px', fontWeight: 300, fill: TXT3 } }, 'vârf ' + (pkParts ? pkParts.v + ' ' + pkParts.u : '—')));
       }
     }
-    g.push(el('text', { key: 'v' + i, x, y: top - 20, textAnchor: 'middle', opacity: dim, style: { fontFamily: DOTO, fontSize: '26px', fontWeight: 600, fill: kw ? TXT : TXT3 } }, kw === null ? '—' : kw.toFixed(2)));
-    g.push(el('text', { key: 'u' + i, x, y: top - 6, textAnchor: 'middle', opacity: dim, style: { fontFamily: SANS, fontSize: '9.5px', fontWeight: 400, letterSpacing: '0.1em', fill: kw ? st.color : TXT3 } }, 'kW'));
+    // (v1.3.0) Valorile coloanelor pe regulile canonice: unitatea per string
+    // (W sub 1 kW, kW peste) — nu mai forţăm kW cu 2 zecimale peste tot.
+    const wParts = fmtPow(st.w);
+    g.push(el('text', { key: 'v' + i, x, y: top - 20, textAnchor: 'middle', opacity: dim, style: { fontFamily: DOTO, fontSize: '26px', fontWeight: 600, fill: kw ? TXT : TXT3 } }, wParts ? wParts.v : '—'));
+    g.push(el('text', { key: 'u' + i, x, y: top - 6, textAnchor: 'middle', opacity: dim, style: { fontFamily: SANS, fontSize: '9.5px', fontWeight: 400, letterSpacing: '0.1em', fill: kw ? st.color : TXT3 } }, wParts ? wParts.u : 'kW'));
     g.push(el('text', { key: 'n' + i, x, y: top + bh + 22, textAnchor: 'middle', opacity: dim, style: { fontFamily: SANS, fontSize: '12.5px', fontWeight: 500, fill: kw ? TXT : TXT3 } }, st.n));
     const aziTxt = st.missing ? 'string inexistent' : st.azi === null ? '—' : st.azi.toFixed(1) + ' kWh azi';
     g.push(el('text', { key: 'd' + i, x, y: top + bh + 39, textAnchor: 'middle', opacity: dim, style: { fontFamily: SANS, fontSize: '10px', fontWeight: 300, fill: TXT3 } }, aziTxt));
@@ -1205,8 +1204,8 @@ function batteryStackSvg(w, d) {
   const cx = bx + bw + (narrow ? 26 : 74);
   const rows = [
     [d.dir.word.toLowerCase() + ' acum', d.dir.sign === 0 ? '0' : fmtFlowPower(d.dir.power).split(' ')[0], d.dir.sign === 0 ? 'W' : fmtFlowPower(d.dir.power).split(' ')[1], GOLD],
-    ['încărcat azi', d.echrAzi === null ? '—' : d.echrAzi.toFixed(1), d.echrAzi === null ? '' : 'kWh', GREEN],
-    ['descărcat azi', d.edisAzi === null ? '—' : d.edisAzi.toFixed(1), d.edisAzi === null ? '' : 'kWh', CYAN],
+    ['încărcat azi', fmtEn(d.echrAzi) ? fmtEn(d.echrAzi).v : '—', fmtEn(d.echrAzi) ? fmtEn(d.echrAzi).u : '', GREEN],
+    ['descărcat azi', fmtEn(d.edisAzi) ? fmtEn(d.edisAzi).v : '—', fmtEn(d.edisAzi) ? fmtEn(d.edisAzi).u : '', CYAN],
     ['module active', d.module === null ? '—' : Math.round(d.module) + ' / ' + Math.round(d.module), '', TXT2]
   ];
   rows.forEach((r, i) => {

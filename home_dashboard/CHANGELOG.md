@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.3.0
+
+Formatare canonică a unităţilor pe toată aplicaţia — un singur modul
+(`design/format.js`), fără logică duplicată. Înainte coexistau PATRU
+formattere de putere (rândurile de tabel nu converteau niciodată W→kW:
+„12300 W”; barele afişau „25.0 kW”; eroul „9.20 kW”; badge-urile
+„12.3 kW”), iar energia apărea ca „9034.4 Wh” pe Acasă şi „57117 kWh”
+la Energie.
+
+Reguli: putere <1000 W în W întregi, 1–10 kW cu 1 zecimală, ≥10 kW
+întregi, apoi MW la fel (var/VA pe aceeaşi scară: kvar/kVA/Mvar/MVA);
+energie <1 kWh în Wh, 1–10 kWh cu 1 zecimală, 10–999 kWh întregi,
+peste — MWh cu 1 zecimală mereu (contoarele cumulative rămân
+comparabile); °C cu 1 zecimală peste tot; V ≥100 întregi / <10 cu 3
+zecimale (celule); A cu 1 zecimală; Hz cu 2; procente şi durate întregi.
+Pragurile se aplică după rotunjire (9999 W → „10 kW”, nu „10.0 kW”).
+
+`E.fmt` auto-formatează după familia unităţii (câştigă în faţa
+zecimalelor per-rând); familiile necunoscute (pH, texte) cad pe euristica
+veche. Toate căile trec prin modul: rând-erou, strip, badge-uri, tabele,
+carduri, inelul de pe Acasă (Wh→kWh), semnăturile SVG (arcul zilei,
+spectrul stringurilor, pachetul APX, Sankey), Contor racord. Separatorul
+zecimal rămâne punctul. Teste: 131 logică (+28) + 44 stil.
+
 ## 1.2.9
 
 Oglinzi-template pentru contorul de racord (create în HA, tiparul

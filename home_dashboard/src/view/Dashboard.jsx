@@ -7,6 +7,7 @@ import {
 import { ic } from '../design/icons.js';
 import { arcGauge, sliderRow, ribbonRing, segmentRing, poolChart } from '../design/graphics.js';
 import { useBreakpoint } from '../design/breakpoints.js';
+import { fmtUnitAuto, fmtTemp } from '../design/format.js';
 import { useHa } from '../ha/context.js';
 import { useEntities, VERIFY, NA, HVAC_LABEL } from '../ha/entities.js';
 import { useHistory, dailyAverage, fillGaps, lastDayLabels } from '../ha/history.js';
@@ -110,7 +111,8 @@ export default function Dashboard({ onOpenMapping }) {
   const forecastRaw = useDailyForecast(weatherId);
   const forecast = formatForecast(forecastRaw, 6);
   const wSt = E.ent('weather.main');
-  const weatherTemp = wSt ? (wSt.attributes.temperature !== undefined ? String(Math.round(wSt.attributes.temperature * 10) / 10) : NA) : VERIFY;
+  // (v1.3.0) Temperaturile măsurate se afişează mereu cu 1 zecimală (format.js).
+  const weatherTemp = wSt ? (wSt.attributes.temperature !== undefined ? fmtTemp(wSt.attributes.temperature).v : NA) : VERIFY;
   const weatherCond = wSt ? COND_RO[wSt.state] || wSt.state : VERIFY;
   const weatherIcon = wSt ? COND_ICON[wSt.state] || 'cloud' : 'cloud';
 
@@ -126,10 +128,11 @@ export default function Dashboard({ onOpenMapping }) {
 
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const monthPct = Math.round(((now.getDate() - 1 + now.getHours() / 24) / daysInMonth) * 100);
-  const energyValue = E.mapped('energy.total_luna')
-    ? (E.num('energy.total_luna') === null ? NA : String(Math.round(E.num('energy.total_luna') * 10) / 10))
-    : VERIFY;
-  const energyUnit = E.attr('energy.total_luna', 'unit_of_measurement') || 'kWh';
+  // (v1.3.0) LG raportează Wh brut — inelul afişa "9034.4 Wh". Formatarea
+  // canonică (format.js) alege singură scara: "9.0 kWh".
+  const energyParts = fmtUnitAuto(E.num('energy.total_luna'), E.attr('energy.total_luna', 'unit_of_measurement') || 'kWh');
+  const energyValue = E.mapped('energy.total_luna') ? (energyParts ? energyParts.v : NA) : VERIFY;
+  const energyUnit = energyParts ? energyParts.u : 'kWh';
 
   const poolSeries = poolId && poolHist.raw ? fillGaps(dailyAverage(poolHist.raw, poolId, 7)) : null;
   const poolLabels = lastDayLabels(7);
@@ -380,7 +383,7 @@ export default function Dashboard({ onOpenMapping }) {
                         <span style={s('font-family:' + SANS + '; font-size:12px; color:' + TXT2 + ';')}>°C</span>
                       </div>
                       <div style={s('font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + TXT3 + '; margin-top:7px;')}>
-                        {'Resimţit ' + (wSt && wSt.attributes.apparent_temperature !== undefined ? Math.round(wSt.attributes.apparent_temperature) + ' °C' : NA) +
+                        {'Resimţit ' + (wSt && wSt.attributes.apparent_temperature !== undefined ? fmtTemp(wSt.attributes.apparent_temperature).v + ' °C' : NA) +
                           ' • Umiditate ' + (wSt && wSt.attributes.humidity !== undefined ? Math.round(wSt.attributes.humidity) + ' %' : NA)}
                       </div>
                     </div>
@@ -662,7 +665,7 @@ function pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energy
     return {
       title: 'Medie casă',
       sub: 'din unităţile mapate',
-      value: houseAvg === null ? VERIFY : String(houseAvg),
+      value: houseAvg === null ? VERIFY : houseAvg.toFixed(1),
       unit: '°C',
       ringEl: ribbonRing(118, pct)
     };
@@ -673,7 +676,7 @@ function pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energy
     return {
       title: 'Temperatură apă',
       sub: E.mapped('sensor.apa_temp') ? 'senzor live' : 'VERIFY · senzor nemapat',
-      value: t === null ? VERIFY : String(Math.round(t * 10) / 10),
+      value: t === null ? VERIFY : t.toFixed(1),
       unit: '°C',
       ringEl: ribbonRing(118, pct)
     };

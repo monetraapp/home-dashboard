@@ -1,6 +1,7 @@
 // Stratul care traduce între sloturile designului și entităţile reale din HA.
 import { useMemo } from 'react';
 import { useHa } from './context.js';
+import { fmtUnitAuto } from '../design/format.js';
 
 export const VERIFY = 'VERIFY';
 export const NA = '—';
@@ -148,17 +149,23 @@ export function useEntities() {
         }
       }
       let n = parseFloat(v);
+      const unit = o.unit !== undefined ? o.unit : st.attributes.unit_of_measurement;
       if (Number.isFinite(n) && String(v).trim() !== '') {
         // scale = factor de AFIŞARE pentru registre publicate brut de Grott
         // (ex. pf=1000 → ×0.001 = "1.00"; mV de celulă → ×0.001 = V). Nu
         // modifică entitatea, doar reprezentarea.
         if (o.scale !== undefined) n = n * o.scale;
+        // (v1.3.0) Formatarea canonică pe familii de unităţi — un singur set
+        // de reguli pentru toată aplicaţia (design/format.js). Câştigă în
+        // faţa zecimalelor per-rând: consecvenţa e scopul. Familiile
+        // necunoscute (pH, '', mm etc.) cad pe euristica veche de mai jos.
+        const auto = fmtUnitAuto(n, unit);
+        if (auto) return auto.v + ' ' + auto.u;
         // valorile întregi rămân întregi ("0" nu devine "0.0")
         const isWholeRaw = Number.isInteger(n) && String(v).indexOf('.') < 0 && o.scale === undefined;
         const d = o.decimals === undefined ? (isWholeRaw ? 0 : Math.abs(n) < 100 ? 1 : 0) : o.decimals;
         v = roundTo(n, d).toFixed(d);
       }
-      const unit = o.unit !== undefined ? o.unit : st.attributes.unit_of_measurement;
       return unit ? v + ' ' + unit : String(v);
     }
 

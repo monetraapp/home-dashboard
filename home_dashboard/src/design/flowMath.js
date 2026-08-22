@@ -6,6 +6,8 @@
 //   la FLOW_MAX (15 kW)   -> viteza maximă a particulelor (puterea nominală
 //                            de 25 kW nu se atinge în practică pe o ramură).
 
+import { fmtPow } from './format.js';
+
 export const FLOW_MIN = 100;
 export const FLOW_MAX = 15000;
 
@@ -43,12 +45,12 @@ export function flowDir(pos, neg) {
   return { sign: 0, power: 0 };
 }
 
-/** "450 W" / "1.2 kW" / "12.3 kW" — formatul badge-urilor. */
+/** "450 W" / "1.2 kW" / "12 kW" — formatul badge-urilor, pe regulile
+ * canonice din format.js (v1.3.0): kW cu 1 zecimală sub 10, întregi peste. */
 export function fmtFlowPower(watts) {
   if (watts === null || !isFinite(watts)) return '—';
-  const w = Math.abs(watts);
-  if (w < 1000) return Math.round(w) + ' W';
-  return (w / 1000).toFixed(w < 10000 ? 2 : 1) + ' kW';
+  const p = fmtPow(Math.abs(watts));
+  return p ? p.v + ' ' + p.u : '—';
 }
 
 /**

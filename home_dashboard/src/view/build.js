@@ -10,6 +10,7 @@ import {
 import { dialTicks, lineChart, barChart } from '../design/graphics.js';
 import { VERIFY, NA, HVAC_SHORT } from '../ha/entities.js';
 import { describe } from '../model/descriptions.js';
+import { fmtPow, fmtText } from '../design/format.js';
 import { resolveAction } from '../model/actions.js';
 import { dailyAverage, dailyLast, fillGaps, timelineSegments, lastDayLabels } from '../ha/history.js';
 
@@ -165,10 +166,10 @@ function monitorValue(E, cell) {
   return { text: t, verify: t === VERIFY };
 }
 
-/** Putere formatată compact: sub 1 kW în W întregi, peste în kW cu o zecimală. */
+/** Putere formatată compact — regulile canonice din design/format.js. */
 function fmtPower(w) {
-  if (w === null) return NA;
-  return Math.abs(w) >= 1000 ? (w / 1000).toFixed(1) + ' kW' : Math.round(w) + ' W';
+  const t = fmtText(fmtPow(w));
+  return t === null ? NA : t;
 }
 
 /** Rândurile unui bloc monitor/expand — partajat, cu dim + tooltip (v1.1.3). */
