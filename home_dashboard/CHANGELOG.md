@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.1
+
+Batch-ul de fix-uri din auditul v1.2.0, în ordinea severităţii.
+
+1. **CRITIC responsive** — Media @360px: rândul din „Redare curentă" îşi
+   împingea badge-ul de stare 3px în afara viewportului; pe mobil rândul
+   se rupe acum (flex-wrap) cu spaţieri reduse.
+2. **CRITIC diagramă** — layoutul vertical: nodul Invertor păstrează doar
+   subtitlul („X % din YY kW"), urcat la poziţia etichetei (nu se mai
+   suprapune cu badge-ul reţelei); badge-ul de consum mutat în afara
+   halo-ului nodului Casă. Layoutul orizontal neatins.
+3. **MEDIU** — ultimele 13 ţinte tactile (siturile ratate de v1.1.8):
+   minis-urile DeviceCard şi pill-ul „Control climat" (hdTapY), −/+ din
+   sliderRow şi butoanele de transport media (hdTap), min-width:44px pe
+   segmentele de perioadă din Energie.
+
 ## 1.2.0
 
 1. **Cardul „Scurtături · Dispozitive urmărite" ELIMINAT** de pe toate
