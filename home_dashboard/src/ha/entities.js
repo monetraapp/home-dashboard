@@ -139,10 +139,22 @@ export function useEntities() {
       let v = useAttr ? st.attributes[useAttr] : st.state;
       if (v === undefined || v === null || v === '') return NA;
       if (o.map && o.map[v] !== undefined) return o.map[v];
-      const n = parseFloat(v);
+      // time (v1.1.3): stări ISO-timestamp (ex. ultimul pachet Grott) — fără
+      // asta parseFloat("2026-08-22T…") ar afişa doar anul.
+      if (o.time) {
+        const t = new Date(v);
+        if (!isNaN(t.getTime())) {
+          return t.toLocaleString('ro-RO', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+        }
+      }
+      let n = parseFloat(v);
       if (Number.isFinite(n) && String(v).trim() !== '') {
+        // scale = factor de AFIŞARE pentru registre publicate brut de Grott
+        // (ex. pf=1000 → ×0.001 = "1.00"; mV de celulă → ×0.001 = V). Nu
+        // modifică entitatea, doar reprezentarea.
+        if (o.scale !== undefined) n = n * o.scale;
         // valorile întregi rămân întregi ("0" nu devine "0.0")
-        const isWholeRaw = Number.isInteger(n) && String(v).indexOf('.') < 0;
+        const isWholeRaw = Number.isInteger(n) && String(v).indexOf('.') < 0 && o.scale === undefined;
         const d = o.decimals === undefined ? (isWholeRaw ? 0 : Math.abs(n) < 100 ? 1 : 0) : o.decimals;
         v = roundTo(n, d).toFixed(d);
       }

@@ -113,9 +113,83 @@ function monitorValue(E, cell) {
     const verify = a === VERIFY && b === VERIFY;
     return { text: 'CPU ' + a + ' · RAM ' + b, verify };
   }
+  // dir (v1.1.3): direcţia netă dintre două sloturi de putere — ex. baterie
+  // (încărcare vs descărcare) sau reţea (export vs import). Pragul de 1 W
+  // taie zgomotul de măsură din jurul lui zero.
+  if (cell.dir) {
+    const d = cell.dir;
+    if (!E.mapped(d.pos) || !E.mapped(d.neg)) return { text: VERIFY, verify: true };
+    const p = E.num(d.pos);
+    const n = E.num(d.neg);
+    if (p === null && n === null) return { text: NA, verify: false };
+    const unit = d.unit || 'W';
+    if ((p || 0) >= 1 && (p || 0) >= (n || 0)) return { text: d.posLabel + ' · ' + Math.round(p) + ' ' + unit, verify: false };
+    if ((n || 0) >= 1) return { text: d.negLabel + ' · ' + Math.round(n) + ' ' + unit, verify: false };
+    return { text: d.zeroLabel, verify: false };
+  }
+  // diff (v1.1.3): diferenţa a două sloturi — ex. dezechilibrul de celule
+  // (tensiune maximă − minimă, în mV brut, aşa cum le publică BMS-ul).
+  if (cell.diff) {
+    const a = cell.diff[0];
+    const b2 = cell.diff[1];
+    if (!E.mapped(a) || !E.mapped(b2)) return { text: VERIFY, verify: true };
+    const va = E.num(a);
+    const vb = E.num(b2);
+    if (va === null || vb === null) return { text: NA, verify: false };
+    const dec = cell.decimals === undefined ? 0 : cell.decimals;
+    const scaled = (va - vb) * (cell.scale === undefined ? 1 : cell.scale);
+    return { text: scaled.toFixed(dec) + (cell.unit ? ' ' + cell.unit : ''), verify: false };
+  }
+  // maxOf (v1.1.3): maximul mai multor sloturi — ex. cea mai mare temperatură
+  // dintre sondele invertorului, ca rezumat al secţiunii.
+  if (cell.maxOf) {
+    if (!cell.maxOf.some((k) => E.mapped(k))) return { text: VERIFY, verify: true };
+    const vals = cell.maxOf.map((k) => E.num(k)).filter((v) => v !== null);
+    if (!vals.length) return { text: NA, verify: false };
+    const m = Math.max.apply(null, vals);
+    return { text: m.toFixed(1) + (cell.unit ? ' ' + cell.unit : ''), verify: false };
+  }
   const t = E.fmt(cell.slot, cell.opts);
   return { text: t, verify: t === VERIFY };
 }
+
+/** Putere formatată compact: sub 1 kW în W întregi, peste în kW cu o zecimală. */
+function fmtPower(w) {
+  if (w === null) return NA;
+  return Math.abs(w) >= 1000 ? (w / 1000).toFixed(1) + ' kW' : Math.round(w) + ' W';
+}
+
+/** Rândurile unui bloc monitor/expand — partajat, cu dim + tooltip (v1.1.3). */
+function monitorRows(E, ui, title, rows, keyCtx) {
+  return rows.map((row, i) => {
+    const cell = row[1] || {};
+    const v = monitorValue(E, cell);
+    const bad = /oprit|offline|indisponibil|eroare|unavailable/i.test(String(v.text));
+    const color = v.verify ? ORANGE : bad ? '#e8a08a' : TXT;
+    const dim = !!(cell.opts && cell.opts.dim);
+    const key = 'mrow:' + (keyCtx || '') + ':' + title + ':' + row[0];
+    const desc = describe(title, row[0]);
+    return {
+      label: row[0],
+      value: v.text,
+      rowStyle: 'position:relative; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 14px;' +
+        (i < rows.length - 1 ? ' border-bottom:1px solid rgba(255,255,255,0.045);' : '') +
+        (dim ? ' opacity:0.55;' : ''),
+      labelStyle: 'display:flex; align-items:center; gap:9px; font-family:' + SANS + '; font-size:12.5px; font-weight:300; color:#bcaf9f; min-width:0;',
+      dotStyle: 'width:5px; height:5px; border-radius:50%; flex-shrink:0; background:' +
+        (v.verify ? 'rgba(240,138,44,0.9)' : bad ? 'rgba(226,120,90,0.8)' : 'rgba(240,138,44,0.55)') + ';',
+      valueStyle: 'font-family:' + SANS + '; font-size:12.5px; font-weight:' + (v.verify ? 600 : 500) + '; color:' + color + '; font-variant-numeric:tabular-nums; white-space:nowrap;',
+      tipText: desc,
+      tipStyle: TOOLTIP,
+      showTip: !!desc && ui.hoverKey === key,
+      onEnter: desc ? () => ui.setHoverKey(key) : noop,
+      onLeave: desc ? () => ui.setHoverKey(null) : noop
+    };
+  });
+}
+
+const MON_WRAP = 'border:1px solid rgba(255,255,255,0.065); border-radius:14px; overflow:hidden; margin-bottom:12px;';
+const MON_CAP = 'display:flex; align-items:center; gap:8px; padding:9px 14px; font-family:' + SANS + '; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + '; background:rgba(255,255,255,0.022);';
 
 export function buildBlock(E, ui, hist, b) {
   if (b.type === 'note') {
@@ -134,25 +208,138 @@ export function buildBlock(E, ui, hist, b) {
     return {
       isMonitor: true,
       title: b.title + ' · doar informativ',
-      wrapStyle: 'border:1px solid rgba(255,255,255,0.065); border-radius:14px; overflow:hidden; margin-bottom:12px;',
-      capStyle: 'display:flex; align-items:center; gap:8px; padding:9px 14px; font-family:' + SANS + '; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + '; background:rgba(255,255,255,0.022);',
+      wrapStyle: MON_WRAP,
+      capStyle: MON_CAP,
       capIconStyle: 'display:flex; color:#6f6558;',
       capIconEl: ic('lock', { size: 12 }),
-      rows: b.rows.map((row, i) => {
-        const v = monitorValue(E, row[1]);
-        const bad = /oprit|offline|indisponibil|eroare|unavailable/i.test(String(v.text));
-        const color = v.verify ? ORANGE : bad ? '#e8a08a' : TXT;
+      rows: monitorRows(E, ui, b.title, b.rows, 'mon')
+    };
+  }
+
+  // ------------------------------------------------------- energie (v1.1.3)
+  if (b.type === 'stats') {
+    const bp = bpOf(ui);
+    return {
+      isStats: true,
+      cols: bp.mob ? 2 : b.items.length,
+      items: b.items.map((it) => {
+        const key = 'stat:' + (it.slot || it.label);
+        let value = it.slot ? E.fmt(it.slot, it.opts) : '';
+        let sub = it.sub || '';
+        let subColor = TXT3;
+        if (it.flow) {
+          const f = it.flow;
+          if (!E.mapped(f.pos) || !E.mapped(f.neg)) {
+            if (it.slot) sub = VERIFY; else value = VERIFY;
+          } else {
+            const p = E.num(f.pos);
+            const n = E.num(f.neg);
+            let dirWord = f.zeroLabel;
+            let power = 0;
+            if ((p || 0) >= 1 && (p || 0) >= (n || 0)) { dirWord = f.posLabel; power = p; subColor = ORANGE; }
+            else if ((n || 0) >= 1) { dirWord = f.negLabel; power = n; subColor = '#8FA7C8'; }
+            if (it.slot) {
+              sub = power >= 1 ? dirWord + ' · ' + fmtPower(power) : dirWord;
+            } else {
+              // tile fără slot principal: fluxul ESTE valoarea (ex. Reţea)
+              value = power >= 1 ? fmtPower(power) : '0 W';
+              sub = dirWord;
+            }
+          }
+        }
+        const desc = describe('Energie', it.label);
         return {
-          label: row[0],
-          value: v.text,
-          rowStyle: 'display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 14px;' +
-            (i < b.rows.length - 1 ? ' border-bottom:1px solid rgba(255,255,255,0.045);' : ''),
-          labelStyle: 'display:flex; align-items:center; gap:9px; font-family:' + SANS + '; font-size:12.5px; font-weight:300; color:#bcaf9f; min-width:0;',
-          dotStyle: 'width:5px; height:5px; border-radius:50%; flex-shrink:0; background:' +
-            (v.verify ? 'rgba(240,138,44,0.9)' : bad ? 'rgba(226,120,90,0.8)' : 'rgba(240,138,44,0.55)') + ';',
-          valueStyle: 'font-family:' + SANS + '; font-size:12.5px; font-weight:' + (v.verify ? 600 : 500) + '; color:' + color + '; font-variant-numeric:tabular-nums; white-space:nowrap;'
+          key,
+          iconEl: ic(it.icon, { size: 15, color: TXT2 }),
+          label: it.label,
+          value,
+          sub,
+          wrapStyle: 'position:relative; display:flex; min-width:0;',
+          tileStyle: 'flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; padding:14px 16px; border:1px solid rgba(255,255,255,0.07); border-radius:14px; background:rgba(255,255,255,0.02);',
+          headStyle: 'display:flex; align-items:center; gap:8px; font-family:' + SANS + '; font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:' + TXT3 + ';',
+          valueStyle: 'font-family:' + DOTO + '; font-size:' + (bp.mob ? 22 : 26) + 'px; font-weight:600; color:' + (value === VERIFY ? ORANGE : TXT) + '; font-variant-numeric:tabular-nums; line-height:1.1; white-space:nowrap;',
+          subStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:400; color:' + subColor + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
+          tipText: desc || (it.label + ' · ' + value + ' — doar informativ'),
+          tipStyle: TOOLTIP,
+          showTip: ui.hoverKey === key,
+          onEnter: () => ui.setHoverKey(key),
+          onLeave: () => ui.setHoverKey(null)
         };
       })
+    };
+  }
+
+  if (b.type === 'flowbar') {
+    const segs = b.segments.map((sg) => {
+      let w = null;
+      let dirWord = '';
+      if (sg.flow) {
+        const f = sg.flow;
+        const p = E.num(f.pos);
+        const n = E.num(f.neg);
+        if ((p || 0) >= 1 && (p || 0) >= (n || 0)) { w = p; dirWord = f.posLabel; }
+        else if ((n || 0) >= 1) { w = n; dirWord = f.negLabel; }
+        else { w = 0; dirWord = f.zeroLabel; }
+      } else {
+        w = E.num(sg.slot);
+      }
+      return { label: sg.label, color: sg.color, w: w === null ? 0 : Math.abs(w), text: w === null ? NA : fmtPower(Math.abs(w)), dirWord };
+    });
+    const total = segs.reduce((acc, sg) => acc + sg.w, 0) || 1;
+    return {
+      isFlowbar: true,
+      wrapStyle: 'display:flex; gap:10px; margin-bottom:14px;',
+      segs: segs.map((sg) => ({
+        label: sg.label,
+        text: sg.dirWord ? sg.dirWord + ' · ' + sg.text : sg.text,
+        // min 12%: un segment cu putere ~0 rămâne lizibil, nu dispare
+        flex: Math.max(0.12, sg.w / total).toFixed(3),
+        barStyle: 'height:5px; border-radius:3px; background:' + sg.color + '; opacity:' + (sg.w < 1 ? 0.25 : 0.9) + ';',
+        segStyle: 'display:flex; flex-direction:column; gap:6px; min-width:0;',
+        labelStyle: 'font-family:' + SANS + '; font-size:10.5px; text-transform:uppercase; letter-spacing:0.07em; color:' + TXT3 + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
+        valueStyle: 'font-family:' + SANS + '; font-size:12px; font-weight:500; color:' + (sg.w < 1 ? TXT3 : TXT) + '; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;'
+      }))
+    };
+  }
+
+  if (b.type === 'bars') {
+    const vals = b.items.map((it) => E.num(it.slot));
+    const max = Math.max.apply(null, vals.map((v) => (v === null ? 0 : Math.abs(v))).concat([1]));
+    return {
+      isBars: true,
+      title: b.title,
+      wrapStyle: 'display:flex; flex-direction:column; gap:8px; padding:12px 14px; border:1px solid rgba(255,255,255,0.065); border-radius:14px; margin-bottom:12px;',
+      titleStyle: 'font-family:' + SANS + '; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + ';',
+      rows: b.items.map((it, i) => {
+        const v = vals[i];
+        return {
+          label: it.label,
+          text: v === null ? NA : fmtPower(v),
+          rowStyle: 'display:flex; align-items:center; gap:10px;',
+          labelStyle: 'flex:0 0 52px; font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:#bcaf9f;',
+          trackStyle: 'flex:1; height:5px; border-radius:3px; background:rgba(255,255,255,0.05); overflow:hidden;',
+          fillStyle: 'height:100%; border-radius:3px; background:' + ORANGE + '; opacity:0.85; width:' + (v === null ? 0 : Math.round((Math.abs(v) / max) * 100)) + '%;',
+          valueStyle: 'flex:0 0 76px; text-align:right; font-family:' + SANS + '; font-size:12px; font-weight:500; color:' + TXT + '; font-variant-numeric:tabular-nums;'
+        };
+      })
+    };
+  }
+
+  if (b.type === 'expand') {
+    return {
+      isExpand: true,
+      key: b.key,
+      title: b.title + ' · doar informativ',
+      wrapStyle: MON_WRAP,
+      capStyle: MON_CAP,
+      capIconStyle: 'display:flex; color:#6f6558;',
+      capIconEl: ic('lock', { size: 12 }),
+      summary: monitorRows(E, ui, b.title, b.summary, 'sum'),
+      detail: monitorRows(E, ui, b.title, b.detail, 'det'),
+      moreLabel: 'Detalii (' + b.detail.length + ')',
+      lessLabel: 'Ascunde detaliile',
+      toggleStyle: 'display:flex; align-items:center; justify-content:center; gap:6px; width:100%; padding:8px 14px; border:none; border-top:1px solid rgba(255,255,255,0.045); background:rgba(255,255,255,0.015); color:' + TXT3 + '; font-family:' + SANS + '; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer;',
+      chevEl: ic('chevronDown', { size: 13 })
     };
   }
 

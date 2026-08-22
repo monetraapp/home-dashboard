@@ -21,6 +21,20 @@ export const chart = (title, hint, series, unit, kind, yMin, yMax) => ({
 export const timeline = (title, hint, rows, legend) => ({ type: 'timeline', title, hint, rows, legend });
 export const accordion = (items) => ({ type: 'accordion', items });
 
+// ---------------------------------------------------------- energie (v1.1.3)
+/** Rând-erou: valori mari. items = [{icon, label, slot, opts, flow}] unde
+ * `flow` = {pos, neg, posLabel, negLabel, zeroLabel, unit} afişează sub valoare
+ * direcţia netă dintre două sloturi de putere (ex. încărcare vs descărcare). */
+export const stats = (items) => ({ type: 'stats', items });
+/** Bară de flux orizontală: segments = [{icon, label, slot | flow, color}].
+ * Lăţimea fiecărui segment e proporţională cu puterea lui (W). */
+export const flowbar = (segments) => ({ type: 'flowbar', segments });
+/** Bare comparate vizual (ex. echilibrul celor 3 faze): items = [{label, slot}]. */
+export const bars = (title, items, unit) => ({ type: 'bars', title, items, unit });
+/** Secţiune cu rezumat vizibil şi detaliu extensibil. summary/detail = rânduri
+ * de monitor ([etichetă, {slot, opts}]). `key` identifică starea deschis/închis. */
+export const expand = (title, summary, detail, key) => ({ type: 'expand', title, summary, detail, key: key || title });
+
 /** Secţiune din interiorul unui rând de acordeon. */
 export const sec = (title, cols, items) => ({ title, cols, items });
 /** Element de control dintr-o secţiune de acordeon (acţiune reală pe entitate). */

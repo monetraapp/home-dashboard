@@ -8,13 +8,13 @@
 
 import {
   ro, txt, sw, grid, monitor, note, slots, nowPlaying, cameraGrid, chart, timeline,
-  accordion, sec, act, spClimate, spNumber
+  accordion, sec, act, spClimate, spNumber, stats, flowbar, bars, expand
 } from './blocks.js';
 import { CLIMAT_ACCORDION, PISCINA_ACCORDION } from './accordions.js';
 
 export {
   ro, txt, sw, grid, monitor, note, slots, nowPlaying, cameraGrid, chart, timeline,
-  accordion, sec, act, spClimate, spNumber
+  accordion, sec, act, spClimate, spNumber, stats, flowbar, bars, expand
 };
 
 export const ORANGE_SERIES = '#F08A2C';
@@ -384,14 +384,242 @@ export const PAGES = {
     ]
   },
 
+  // Pagina Energie (v1.1.3): invertorul hibrid Growatt 25 kW (device MQTT
+  // KNN2E3S00W prin Grott). Se mapează EXCLUSIV entităţile validate de auditul
+  // de coerenţă fizică din 2026-08-22 — registrele scalate greşit de layout
+  // (bmsbatteryavgtemp, esystotal, ipf, iso, dcit…) sau nepopulate de firmware
+  // (eloadtoday/total, bmscyclecnt, temp4, dcv) NU au slot şi nu apar aici.
   energie: {
-    eyebrow: 'Consum şi producţie',
+    eyebrow: 'Fotovoltaic, baterie şi reţea',
     title: 'Energie',
     chips: [
-      { icon: 'bolt', slot: 'energy.ac_etaj_luna', prefix: 'Luna curentă ' },
-      { icon: 'barChart', slot: 'energy.ac_etaj_ieri', prefix: 'Ieri ' }
+      { icon: 'sun', slot: 'gw.pv_in', opts: { scale: 0.001, decimals: 1, unit: 'kW' }, prefix: 'Producţie ' },
+      { icon: 'phoneBattery', slot: 'gw.soc', opts: { unit: '%', decimals: 0 }, prefix: 'Baterie ' }
     ],
     cards: [
+      {
+        title: 'Growatt 25 kW · acum',
+        wide: true,
+        order: 0,
+        blocks: [
+          stats([
+            { icon: 'sun', label: 'Producţie', slot: 'gw.pv_in', opts: { scale: 0.001, decimals: 2, unit: 'kW' } },
+            { icon: 'home', label: 'Consum casă', slot: 'gw.p_casa', opts: { scale: 0.001, decimals: 2, unit: 'kW' } },
+            {
+              icon: 'batteryCharging', label: 'Baterie', slot: 'gw.soc', opts: { unit: '%', decimals: 0 },
+              flow: { pos: 'gw.p_chr', neg: 'gw.p_dischr', posLabel: 'Încărcare', negLabel: 'Descărcare', zeroLabel: 'În repaus' }
+            },
+            {
+              icon: 'utilityPole', label: 'Reţea',
+              flow: { pos: 'gw.p_export', neg: 'gw.p_import', posLabel: 'Export', negLabel: 'Import', zeroLabel: 'Echilibru' }
+            }
+          ]),
+          flowbar([
+            { label: 'Soare', color: ORANGE_SERIES, slot: 'gw.pv_in' },
+            { label: 'Casă', color: SAND_SERIES, slot: 'gw.p_casa' },
+            {
+              label: 'Baterie', color: BLUE_SERIES,
+              flow: { pos: 'gw.p_chr', neg: 'gw.p_dischr', posLabel: 'Încărcare', negLabel: 'Descărcare', zeroLabel: 'Repaus' }
+            },
+            {
+              label: 'Reţea', color: '#9a8f80',
+              flow: { pos: 'gw.p_export', neg: 'gw.p_import', posLabel: 'Export', negLabel: 'Import', zeroLabel: 'Echilibru' }
+            }
+          ])
+        ]
+      },
+      {
+        title: 'Producţie fotovoltaică',
+        blocks: [
+          expand('Producţie', [
+            r('Putere PV totală', 'gw.pv_in', { unit: 'W', decimals: 0 }),
+            r('Putere după conversie', 'gw.pv_out', { unit: 'W', decimals: 0 }),
+            r('Energie solară azi', 'gw.sol_azi', { unit: 'kWh' })
+          ], [
+            r('String PV1 · putere', 'gw.pv1_w', { unit: 'W', decimals: 0 }),
+            r('String PV2 · putere', 'gw.pv2_w', { unit: 'W', decimals: 0 }),
+            r('String PV3 · putere', 'gw.pv3_w', { unit: 'W', decimals: 0 }),
+            r('String PV1 · tensiune', 'gw.pv1_v', { unit: 'V' }),
+            r('String PV2 · tensiune', 'gw.pv2_v', { unit: 'V' }),
+            r('String PV3 · tensiune', 'gw.pv3_v', { unit: 'V' }),
+            r('String PV1 · curent', 'gw.pv1_a', { unit: 'A' }),
+            r('String PV2 · curent', 'gw.pv2_a', { unit: 'A' }),
+            r('String PV3 · curent', 'gw.pv3_a', { unit: 'A' }),
+            r('PV1 · energie azi', 'gw.pv1_azi', { unit: 'kWh' }),
+            r('PV2 · energie azi', 'gw.pv2_azi', { unit: 'kWh' }),
+            r('PV3 · energie azi', 'gw.pv3_azi', { unit: 'kWh' }),
+            r('PV1 · energie totală', 'gw.pv1_tot', { unit: 'kWh' }),
+            r('PV2 · energie totală', 'gw.pv2_tot', { unit: 'kWh' }),
+            r('PV3 · energie totală', 'gw.pv3_tot', { unit: 'kWh' }),
+            r('Energie generată azi (AC)', 'gw.gen_azi', { unit: 'kWh' }),
+            r('Energie generată total (AC)', 'gw.gen_tot', { unit: 'kWh' }),
+            r('Energie solară totală (DC)', 'gw.pv_tot', { unit: 'kWh' }),
+            // String PV4 nu există fizic (3 stringuri active) — valorile 0 se
+            // afişează estompat, aceeaşi convenţie ca setpoint-ul persistent.
+            r('String PV4 · putere', 'gw.pv4_w', { unit: 'W', decimals: 0, dim: true }),
+            r('String PV4 · tensiune', 'gw.pv4_v', { unit: 'V', dim: true }),
+            r('String PV4 · curent', 'gw.pv4_a', { unit: 'A', dim: true }),
+            r('PV4 · energie azi', 'gw.pv4_azi', { unit: 'kWh', dim: true }),
+            r('PV4 · energie totală', 'gw.pv4_tot', { unit: 'kWh', dim: true })
+          ])
+        ]
+      },
+      {
+        title: 'AC trifazat',
+        blocks: [
+          bars('Echilibru faze', [
+            { label: 'L1', slot: 'gw.f1_p' },
+            { label: 'L2', slot: 'gw.f2_p' },
+            { label: 'L3', slot: 'gw.f3_p' }
+          ]),
+          expand('AC trifazat', [
+            r('Putere AC totală', 'gw.pac', { unit: 'W', decimals: 0 })
+          ], [
+            r('Faza 1 · tensiune', 'gw.f1_v', { unit: 'V' }),
+            r('Faza 2 · tensiune', 'gw.f2_v', { unit: 'V' }),
+            r('Faza 3 · tensiune', 'gw.f3_v', { unit: 'V' }),
+            r('Faza 1 · curent', 'gw.f1_a', { unit: 'A' }),
+            r('Faza 2 · curent', 'gw.f2_a', { unit: 'A' }),
+            r('Faza 3 · curent', 'gw.f3_a', { unit: 'A' }),
+            r('Faza 1 · putere', 'gw.f1_p', { unit: 'W', decimals: 0 }),
+            r('Faza 2 · putere', 'gw.f2_p', { unit: 'W', decimals: 0 }),
+            r('Faza 3 · putere', 'gw.f3_p', { unit: 'W', decimals: 0 }),
+            r('Tensiune linie R-S', 'gw.v_rs', { unit: 'V' }),
+            r('Tensiune linie S-T', 'gw.v_st', { unit: 'V' }),
+            r('Tensiune linie T-R', 'gw.v_tr', { unit: 'V' }),
+            r('Frecvenţă reţea', 'gw.frecv', { unit: 'Hz', decimals: 2 }),
+            r('Frecvenţă invertor', 'gw.frecv_pv', { unit: 'Hz', decimals: 2 }),
+            r('Putere reactivă', 'gw.qac', { unit: 'var', decimals: 0 }),
+            r('Grad de încărcare', 'gw.sarcina', { unit: PCT, decimals: 0 }),
+            r('Putere nominală', 'gw.p_nominal', { unit: 'W', decimals: 0 })
+          ])
+        ]
+      },
+      {
+        title: 'Baterie APX',
+        blocks: [
+          expand('Baterie APX', [
+            r('Stare de încărcare (SOC)', 'gw.soc', { unit: PCT, decimals: 0 }),
+            r('Sănătate baterie (SOH)', 'gw.soh', { unit: PCT, decimals: 0 }),
+            ['Baterie acum', { dir: { pos: 'gw.p_chr', neg: 'gw.p_dischr', posLabel: 'Încărcare', negLabel: 'Descărcare', zeroLabel: 'În repaus' } }]
+          ], [
+            r('Încărcată azi', 'gw.echr_azi', { unit: 'kWh' }),
+            r('Încărcată total', 'gw.echr_tot', { unit: 'kWh' }),
+            r('Descărcată azi', 'gw.edis_azi', { unit: 'kWh' }),
+            r('Descărcată total', 'gw.edis_tot', { unit: 'kWh' }),
+            r('Module instalate', 'gw.module', { unit: '', decimals: 0 }),
+            r('Curent maxim încărcare', 'gw.i_chr_max', { unit: 'A' }),
+            r('Curent maxim descărcare', 'gw.i_dis_max', { unit: 'A' }),
+            r('Temperatură baterie', 'gw.bat_temp', { unit: C }),
+            r('Temperatură maximă celulă', 'gw.cel_temp_max', { unit: C }),
+            r('Temperatură medie baterie', 'gw.bat_temp_med', { unit: C }),
+            // BMS-ul publică tensiunile de celulă în mV — se afişează în V
+            // (raw/1000), conform auditului (3336 mV = 3.336 V/celulă LFP).
+            r('Tensiune maximă celulă', 'gw.cel_v_max', { scale: 0.001, decimals: 3, unit: 'V' }),
+            r('Tensiune minimă celulă', 'gw.cel_v_min', { scale: 0.001, decimals: 3, unit: 'V' }),
+            ['Dezechilibru celule', { diff: ['gw.cel_v_max', 'gw.cel_v_min'], unit: 'mV', decimals: 0 }],
+            r('Celula cu tensiune maximă', 'gw.cel_nr_max', { unit: '', decimals: 0 }),
+            r('Celula cu tensiune minimă', 'gw.cel_nr_min', { unit: '', decimals: 0 }),
+            r('Curent baterie', 'gw.i_bat', { unit: 'A' }),
+            r('Curent buck-boost', 'gw.i_bb', { unit: 'A' }),
+            r('Curent LLC', 'gw.i_llc', { unit: 'A' }),
+            r('Convertor baterie (BDC)', 'gw.bdc', { map: { '1.0': 'Pornit', '0.0': 'Oprit', 1: 'Pornit', 0: 'Oprit' } }),
+            r('Cerere de încărcare', 'gw.cerere_chr', { map: { '1.0': 'Da', '0.0': 'Nu', 1: 'Da', 0: 'Nu' } })
+          ])
+        ]
+      },
+      {
+        title: 'Reţea',
+        blocks: [
+          expand('Reţea', [
+            ['Reţea acum', { dir: { pos: 'gw.p_export', neg: 'gw.p_import', posLabel: 'Export', negLabel: 'Import', zeroLabel: 'Echilibru' } }],
+            r('Consum casă', 'gw.p_casa', { unit: 'W', decimals: 0 })
+          ], [
+            r('Export azi', 'gw.exp_azi', { unit: 'kWh' }),
+            r('Export total', 'gw.exp_tot', { unit: 'kWh' }),
+            r('Import azi', 'gw.imp_azi', { unit: 'kWh' }),
+            r('Import total', 'gw.imp_tot', { unit: 'kWh' }),
+            r('Autoconsum azi', 'gw.self_azi', { unit: 'kWh' }),
+            r('Autoconsum total', 'gw.self_tot', { unit: 'kWh' }),
+            r('Energie sistem azi', 'gw.sys_azi', { unit: 'kWh' })
+          ])
+        ]
+      },
+      {
+        title: 'Backup EPS',
+        blocks: [
+          expand('Backup EPS', [
+            // Nu e text fix: dacă EPS-ul ar porni vreodată, rândul ar arăta
+            // "Activ · X W" în loc de "Inactiv".
+            ['Stare', { dir: { pos: 'gw.eps_p', neg: 'gw.eps_p', posLabel: 'Activ', negLabel: 'Activ', zeroLabel: 'Inactiv' } }]
+          ], [
+            r('Frecvenţă EPS', 'gw.eps_f', { unit: 'Hz', decimals: 2, dim: true }),
+            r('Faza 1 · tensiune', 'gw.eps_v1', { unit: 'V', dim: true }),
+            r('Faza 2 · tensiune', 'gw.eps_v2', { unit: 'V', dim: true }),
+            r('Faza 3 · tensiune', 'gw.eps_v3', { unit: 'V', dim: true }),
+            r('Faza 1 · curent', 'gw.eps_a1', { unit: 'A', dim: true }),
+            r('Faza 2 · curent', 'gw.eps_a2', { unit: 'A', dim: true }),
+            r('Faza 3 · curent', 'gw.eps_a3', { unit: 'A', dim: true }),
+            r('Faza 1 · putere', 'gw.eps_p1', { unit: 'W', decimals: 0, dim: true }),
+            r('Faza 2 · putere', 'gw.eps_p2', { unit: 'W', decimals: 0, dim: true }),
+            r('Faza 3 · putere', 'gw.eps_p3', { unit: 'W', decimals: 0, dim: true }),
+            r('Putere totală EPS', 'gw.eps_p', { unit: 'W', decimals: 0, dim: true }),
+            r('Grad de încărcare EPS', 'gw.eps_sarcina', { unit: PCT, decimals: 0, dim: true })
+          ])
+        ]
+      },
+      {
+        title: 'Stare invertor',
+        blocks: [
+          expand('Stare invertor', [
+            ['Temperatură maximă', { maxOf: ['gw.t_inv', 'gw.t_ipm', 'gw.t_pvimp', 'gw.t_boost', 'gw.t_com'], unit: C }]
+          ], [
+            r('Temperatură invertor', 'gw.t_inv', { unit: C }),
+            r('Temperatură IPM', 'gw.t_ipm', { unit: C }),
+            r('Temperatură etaj PV', 'gw.t_pvimp', { unit: C }),
+            r('Temperatură boost', 'gw.t_boost', { unit: C }),
+            r('Temperatură placă comunicaţie', 'gw.t_com', { unit: C }),
+            r('Temperatură senzor A', 'gw.t_a', { unit: C }),
+            r('Temperatură senzor B', 'gw.t_b', { unit: C }),
+            r('Tensiune bus DC', 'gw.v_bus', { unit: 'V' }),
+            r('Tensiune bus pozitiv', 'gw.v_bus_p', { unit: 'V' }),
+            r('Tensiune bus negativ', 'gw.v_bus_n', { unit: 'V' }),
+            r('Tensiune bus 1', 'gw.v_bus1', { unit: 'V' }),
+            r('Tensiune bus 2', 'gw.v_bus2', { unit: 'V' }),
+            r('Tensiune bus 2 (low)', 'gw.v_bus2low', { unit: 'V' }),
+            r('Ore de funcţionare', 'gw.ore', { unit: 'h', decimals: 0 }),
+            r('Curent de scurgere (GFCI)', 'gw.gfci', { unit: 'mA', decimals: 0 }),
+            // Registrul pf e publicat brut ×1000 (1000 = 1.00) — afişat scalat.
+            r('Factor de putere', 'gw.pf', { scale: 0.001, decimals: 2, unit: '' }),
+            r('Întârziere pornire', 'gw.delay', { unit: 's', decimals: 0 }),
+            r('Încărcare din AC azi', 'gw.eac_chr_azi', { unit: 'kWh' }),
+            r('Încărcare din AC total', 'gw.eac_chr_tot', { unit: 'kWh' }),
+            r('Serie invertor', 'gw.serial', { unit: '' }),
+            r('Serie datalogger', 'gw.dl_serial', { unit: '' }),
+            r('Ultimul pachet de date', 'gw.push', { time: true })
+          ])
+        ]
+      },
+      {
+        title: 'Consum măsurat separat',
+        blocks: [
+          monitor('AC Etaj LG', [
+            r('Azi', 'energy.ac_etaj_azi'),
+            r('Ieri', 'energy.ac_etaj_ieri'),
+            r('Luna curentă', 'energy.ac_etaj_luna'),
+            r('Luna trecută', 'energy.ac_etaj_luna_trecuta')
+          ])
+        ]
+      },
+      {
+        title: 'Rezervat pentru extindere',
+        blocks: [
+          slots([
+            { icon: 'car', name: 'EV THOR', hint: 'Încărcător maşină · neinstalat' }
+          ]),
+          note('Încărcătorul THOR nu e instalat încă. Slotul se populează când dispozitivul apare în HA şi îl mapezi din ecranul „Mapare entităţi".')
+        ]
+      },
       {
         title: 'Evoluţie consum',
         wide: true,
@@ -399,35 +627,7 @@ export const PAGES = {
         blocks: [
           chart('AC Etaj LG · consum zilnic', 'ultimele 7 zile', [
             { name: 'Consum', color: ORANGE_SERIES, slot: 'energy.ac_etaj_azi', agg: 'last' }
-          ], 'Wh', 'bars'),
-          note('Graficul se completează automat pe măsură ce mapezi contorul general, PV, bateria sau priza EV.')
-        ]
-      },
-      {
-        title: 'Consum măsurat',
-        blocks: [
-          monitor('AC Etaj LG', [
-            r('Azi', 'energy.ac_etaj_azi'),
-            r('Ieri', 'energy.ac_etaj_ieri'),
-            r('Luna curentă', 'energy.ac_etaj_luna'),
-            r('Luna trecută', 'energy.ac_etaj_luna_trecuta')
-          ]),
-          // Nu există contor general al casei — singura energie măsurată e AC
-          // Etaj LG, iar eticheta o spune explicit ca să nu mintă.
-          monitor('Total măsurat', [r('Doar AC Etaj · luna curentă', 'energy.total_luna')])
-        ]
-      },
-      {
-        title: 'Rezervat pentru extindere',
-        wide: true,
-        blocks: [
-          slots([
-            { icon: 'barChart', name: 'Grid', hint: 'Import / export reţea' },
-            { icon: 'sun', name: 'PV Growatt', hint: 'Producţie fotovoltaică' },
-            { icon: 'phoneBattery', name: 'Baterie APX', hint: 'Stocare · SoC' },
-            { icon: 'plug', name: 'EV THOR', hint: 'Priză încărcare maşină' }
-          ]),
-          note('Sloturile se populează când adaugi dispozitivele în HA şi le mapezi din ecranul „Mapare entităţi".')
+          ], 'Wh', 'bars')
         ]
       }
     ]
@@ -542,6 +742,6 @@ export const PAGE_HERO = {
   media: ['Media', 'Opt televizoare, patru zone'],
   camere: ['Supraveghere', 'Cinci camere, perimetru complet'],
   retea: ['Reţea', 'Infrastructură şi conectivitate'],
-  energie: ['Energie', 'Consum măsurat şi capacitate viitoare'],
+  energie: ['Energie', 'Producţie, stocare şi consum'],
   mentenanta: ['Mentenanţă', 'Starea sistemului sub control']
 };

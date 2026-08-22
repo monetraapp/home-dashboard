@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.1.3
+
+Pagina Energie, reconstruită în jurul invertorului hibrid Growatt 25 kW
+(device MQTT KNN2E3S00W, prin Grott). 111 sloturi noi, toate mapate pe
+entity_id-uri confirmate live şi validate de auditul de coerenţă fizică
+din 2026-08-22.
+
+1. **Rând-erou cu 4 valori mari** — Producţie (PV total), Consum casă,
+   Baterie (SOC + indicator încărcare/descărcare din pchr/pdischr) şi
+   Reţea (direcţie export/import/echilibru din ptogridtotal/ptousertotal).
+2. **Bară de flux orizontală** soare → casă → baterie → reţea, cu lăţimea
+   segmentelor proporţională cu puterea instantanee.
+3. **Şase secţiuni cu rezumat vizibil + detaliu extensibil** (bloc nou
+   `expand`): Producţie fotovoltaică, AC trifazat (cu bare de echilibru al
+   fazelor), Baterie APX, Reţea, Backup EPS, Stare invertor. Detaliile se
+   deschid dintr-un buton "Detalii (N)".
+4. **Zerourile valide se afişează estompat** (opacity 0.55): string PV4 şi
+   ieşirea EPS — hardware inexistent/inactiv, nu senzori defecţi.
+5. **Valori scalate la afişare** (opţiunea nouă `scale` din `fmt`): factorul
+   de putere brut ×1000 → 1.00, tensiunile de celulă din mV → V; rând
+   calculat "Dezechilibru celule" (max−min, în mV).
+6. **Registrele respinse de audit NU sunt mapate** (bmsbatteryavgtemp,
+   esystotal ×10, ipf, iso negativ, eload* nepopulate, pchrxxxl etc.) —
+   verificat şi de un test dedicat.
+7. **Descrieri RO noi (~60)** pentru toate rândurile Growatt + tooltip-uri pe
+   rândurile de monitor (portal, long-press pe mobil), iconuri Lucide noi
+   (battery-charging, utility-pole, activity, car-front).
+8. Cardul "AC Etaj LG" şi graficul de consum rămân pe pagină; slotul
+   rezervat s-a restrâns la încărcătorul EV THOR (neinstalat).
+
 ## 1.1.2
 
 Şase ajustări punctuale din turul vizual al v1.1.1.

@@ -898,7 +898,78 @@ function PageCard({ card }) {
 }
 
 function Block({ b }) {
+  // Starea deschis/închis a secţiunilor extensibile (energie, v1.1.3).
+  // Hook-ul stă înaintea oricărui return ca să respecte regulile React.
+  const [open, setOpen] = useState(false);
+
   if (b.isNote) return <div style={s(b.noteStyle)}>{b.text}</div>;
+
+  if (b.isStats)
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + b.cols + ',minmax(0,1fr))', gap: 10, marginBottom: 14 }}>
+        {b.items.map((it, i) => (
+          <div key={i} style={s(it.wrapStyle)} onMouseEnter={it.onEnter} onMouseLeave={it.onLeave}>
+            <div style={s(it.tileStyle)} {...pressProps(it.onEnter, it.onLeave, () => {})}>
+              <div style={s(it.headStyle)}>{it.iconEl}{it.label}</div>
+              <div style={s(it.valueStyle)}>{it.value}</div>
+              {it.sub ? <div style={s(it.subStyle)}>{it.sub}</div> : null}
+            </div>
+            {it.showTip ? <Tip text={it.tipText} /> : null}
+          </div>
+        ))}
+      </div>
+    );
+
+  if (b.isFlowbar)
+    return (
+      <div style={s(b.wrapStyle)}>
+        {b.segs.map((sg, i) => (
+          <div key={i} style={{ ...s(sg.segStyle), flex: sg.flex + ' 1 0%' }}>
+            <div style={s(sg.barStyle)} />
+            <div style={s(sg.labelStyle)}>{sg.label}</div>
+            <div style={s(sg.valueStyle)}>{sg.text}</div>
+          </div>
+        ))}
+      </div>
+    );
+
+  if (b.isBars)
+    return (
+      <div style={s(b.wrapStyle)}>
+        <div style={s(b.titleStyle)}>{b.title}</div>
+        {b.rows.map((row, i) => (
+          <div key={i} style={s(row.rowStyle)}>
+            <div style={s(row.labelStyle)}>{row.label}</div>
+            <div style={s(row.trackStyle)}><div style={s(row.fillStyle)} /></div>
+            <div style={s(row.valueStyle)}>{row.text}</div>
+          </div>
+        ))}
+      </div>
+    );
+
+  if (b.isExpand)
+    return (
+      <div style={s(b.wrapStyle)}>
+        <div style={s(b.capStyle)}>
+          <span style={s(b.capIconStyle)}>{b.capIconEl}</span>
+          {b.title}
+        </div>
+        {b.summary.concat(open ? b.detail : []).map((row, i) => (
+          <div key={i} style={s(row.rowStyle)} onMouseEnter={row.onEnter} onMouseLeave={row.onLeave} {...pressProps(row.onEnter, row.onLeave, () => {})}>
+            <div style={s(row.labelStyle)}>
+              <span style={s(row.dotStyle)} />
+              {row.label}
+            </div>
+            <div style={s(row.valueStyle)}>{row.value}</div>
+            {row.showTip ? <Tip text={row.tipText} /> : null}
+          </div>
+        ))}
+        <button type="button" style={s(b.toggleStyle)} onClick={() => setOpen(!open)}>
+          <span style={{ display: 'flex', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }}>{b.chevEl}</span>
+          {open ? b.lessLabel : b.moreLabel}
+        </button>
+      </div>
+    );
 
   if (b.isGrid)
     return (
@@ -926,12 +997,13 @@ function Block({ b }) {
           {b.title}
         </div>
         {b.rows.map((row, i) => (
-          <div key={i} style={s(row.rowStyle)}>
+          <div key={i} style={s(row.rowStyle)} onMouseEnter={row.onEnter} onMouseLeave={row.onLeave} {...pressProps(row.onEnter, row.onLeave, () => {})}>
             <div style={s(row.labelStyle)}>
               <span style={s(row.dotStyle)} />
               {row.label}
             </div>
             <div style={s(row.valueStyle)}>{row.value}</div>
+            {row.showTip ? <Tip text={row.tipText} /> : null}
           </div>
         ))}
       </div>

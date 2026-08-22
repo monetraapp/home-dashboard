@@ -13,7 +13,8 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, Cloud, CloudSun, Download,
   GripVertical, BatteryMedium, Thermometer, Rocket, Wifi, Wrench, Archive,
   Armchair, CalendarMinus, CalendarPlus, Minus, Plus, DropletOff, HeartPulse,
-  Cable, VolumeX, Clapperboard
+  Cable, VolumeX, Clapperboard, BatteryCharging, UtilityPole, Activity,
+  CarFront
 } from 'lucide-react';
 
 // nume istoric -> componenta Lucide (maparea semantică, nu aproximativă)
@@ -34,7 +35,10 @@ const LUCIDE = {
   wifi: Wifi, wrench: Wrench, archive: Archive, sofa: Armchair,
   calDown: CalendarMinus, calUp: CalendarPlus, minus: Minus, plus: Plus,
   dropletOff: DropletOff, heartPulse: HeartPulse, cable: Cable,
-  volumeX: VolumeX, clapperboard: Clapperboard
+  volumeX: VolumeX, clapperboard: Clapperboard,
+  // energie (v1.1.3)
+  batteryCharging: BatteryCharging, utilityPole: UtilityPole,
+  activity: Activity, car: CarFront
 };
 
 export function el(tag, props, children) {

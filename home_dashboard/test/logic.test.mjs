@@ -245,8 +245,41 @@ eq('niciun control interzis nu e mapat (PoE, reboot, Aux1/Aux2)',
 eq('sloturile ramase au toate un motiv explicit',
    SLOTS.filter((x) => !SUGGESTED_MAP[x.key] && !UNMAPPED_REASONS[x.key]).map((x) => x.key), []);
 
-eq('total: 136 mapate din 136 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [136, 136]);
+eq('total: 247 mapate din 247 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [247, 247]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
+
+// ---- energie Growatt (v1.1.3) ----------------------------------------------
+console.log('energie Growatt:');
+const gwKeys = propuse.filter((k) => k.startsWith('gw.'));
+eq('111 sloturi Growatt, toate mapate', gwKeys.length, 111);
+eq('toate sloturile gw.* tintesc device-ul KNN2E3S00W',
+   gwKeys.filter((k) => !SUGGESTED_MAP[k].startsWith('sensor.knn2e3s00w_')), []);
+
+// Registrele respinse de auditul de coerenta fizica (2026-08-22): scalate
+// gresit de layout, nepopulate de firmware sau flag-uri nedocumentate.
+// NICIUNUL nu are voie sa fie mapat, indiferent de slot.
+const GW_INTERZISE = [
+  'bmsbatteryavgtemp', 'bmsbatteryavgtemp3', 'bmsmaxcelltemp2', 'bmsbatteryvolt',
+  'battery_voltage', 'bmschargevoltlimit', 'bmsdischargevoltlimit', 'batloadvolt',
+  'esystotal', 'eloadtoday', 'eloadtotal', 'iso', 'dcit', 'ipf', 'bmscyclecnt',
+  'pchrxxxl', 'dcir', 'dcis', 'dcv', 'temp4',
+  'bmsstatus', 'sysstatemode', 'warncode', 'bdcderatingmode', 'bdc1flag', 'priority'
+].map((sfx) => 'sensor.knn2e3s00w_' + sfx);
+eq('niciun registru Growatt respins de audit nu e mapat',
+   propuse.filter((k) => GW_INTERZISE.indexOf(SUGGESTED_MAP[k]) >= 0), []);
+
+// bmsbatteryavgtemp2 (validat) ramane mapat desi numele contine prefixul
+// registrului interzis bmsbatteryavgtemp — verificarea de mai sus e pe id exact.
+eq('bmsbatteryavgtemp2 (validat) este mapat',
+   SUGGESTED_MAP['gw.bat_temp_med'], 'sensor.knn2e3s00w_bmsbatteryavgtemp2');
+
+// Fiecare entitate Growatt e folosita o singura data (fara dubluri de slot).
+eq('entitatile Growatt sunt unice pe sloturi',
+   (() => {
+     const seen = {};
+     gwKeys.forEach((k) => { seen[SUGGESTED_MAP[k]] = (seen[SUGGESTED_MAP[k]] || 0) + 1; });
+     return Object.keys(seen).filter((id) => seen[id] > 1);
+   })(), []);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);
