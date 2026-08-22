@@ -86,8 +86,9 @@ export function sliderRow(fraction, onMinus, onPlus) {
     const on = i / 44 <= fraction;
     ticks.push(el('div', { key: i, style: cssToObj('width:1.5px; height:' + (i % 4 === 0 ? '12px' : '7px') + '; border-radius:1px; background:' + (on ? 'rgba(240,138,44,0.75)' : 'rgba(255,255,255,0.14)') + ';') }));
   }
+  // hdTap (v1.2.1): 30×30 vizual, zonă de atingere ≥44 prin ::after
   const btn = (key, label, fn) =>
-    el('div', { key, onClick: fn, style: cssToObj('width:30px; height:30px; flex-shrink:0; border-radius:10px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:' + SANS + '; font-size:15px; font-weight:500; color:#cfc3b4;') }, label);
+    el('div', { key, onClick: fn, className: 'hdTap', style: cssToObj('width:30px; height:30px; flex-shrink:0; border-radius:10px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:' + SANS + '; font-size:15px; font-weight:500; color:#cfc3b4;') }, label);
   // glife SVG in loc de caractere text — centrare optica exacta (v1.1.0, bug 0.3)
   return el('div', { style: cssToObj('display:flex; align-items:center; gap:12px; margin-top:14px;') }, [
     btn('minus', ic('minus', { size: 15, sw: 2 }), onMinus),

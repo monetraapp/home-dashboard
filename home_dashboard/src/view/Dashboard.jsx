@@ -447,6 +447,7 @@ export default function Dashboard({ onOpenMapping }) {
                         {acUnit ? E.fmt(acUnit.slot, { attr: 'current_temperature', unit: '°C' }) : NA}
                       </span>
                       <div
+                        className="hdTapY"
                         style={s(togglePill(acOn))}
                         onClick={() => acUnit && E.mapped(acUnit.slot) && E.toggle(acUnit.slot)}
                       >
@@ -811,7 +812,7 @@ function DeviceCard({ c }) {
               <span style={s(mt.iconStyle)}>{mt.iconEl}</span>
               {mt.label}
             </div>
-            <div style={s(mt.trackStyle)} {...pressProps(mt.onEnter, mt.onLeave, mt.onToggle)}>
+            <div className="hdTapY" style={s(mt.trackStyle)} {...pressProps(mt.onEnter, mt.onLeave, mt.onToggle)}>
               <div style={s(mt.knobStyle)} />
             </div>
             {mt.showTip ? <Tip text={mt.tipText} /> : null}
@@ -1135,7 +1136,7 @@ function Block({ b }) {
         </div>
         <div style={s(b.ctrlRowStyle)}>
           {b.ctrls.map((ct, i) => (
-            <div key={i} style={s(ct.style)} onClick={ct.onClick} title={ct.label}>
+            <div key={i} className="hdTap" style={s(ct.style)} onClick={ct.onClick} title={ct.label}>
               {ct.iconEl}
             </div>
           ))}
