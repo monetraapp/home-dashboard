@@ -489,8 +489,10 @@ export default function Dashboard({ onOpenMapping }) {
                   </div>
                 </div>
 
-                {/* temperatură piscină */}
-                <div style={s(glassCard() + ' flex:1 1 auto; min-height:210px; display:flex; flex-direction:column; justify-content:space-between;')}>
+                {/* temperatură piscină — cardul se întinde (egalizează coloana);
+                    graficul umple spaţiul rămas prin FitPoolChart (v1.3.2),
+                    nu mai stă ţintuit jos cu gol deasupra */}
+                <div style={s(glassCard() + ' flex:1 1 auto; min-height:210px; display:flex; flex-direction:column;')}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <div>
                       <div style={s(cardTitleStyle)}>Temperatură piscină</div>
@@ -506,7 +508,9 @@ export default function Dashboard({ onOpenMapping }) {
                       {E.mapped('sensor.apa_temp') ? (E.num('sensor.apa_temp') === null ? NA : Math.round(E.num('sensor.apa_temp')) + '°') : VERIFY}
                     </div>
                   </div>
-                  {poolSeries ? poolChart(poolSeries, poolLabels, 6, (poolDelta >= 0 ? '+' : '') + poolDelta + '°') : <div style={{ height: 118 }} />}
+                  {poolSeries
+                    ? <FitPoolChart series={poolSeries} labels={poolLabels} hi={6} delta={(poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°'} />
+                    : <div style={{ height: 118 }} />}
                 </div>
               </>
             ) : (
@@ -1271,6 +1275,32 @@ function Picker({ tracked, setTracked, dragId, setDragId, onClose }) {
   );
 }
 
+// -------------------------------------------------- grafic piscină (v1.3.2)
+// Cardul piscinei se întinde (flex:1, egalizează coloana cu cea din stânga);
+// graficul avea 118px ficşi şi stătea ţintuit la bază, cu gol mare deasupra.
+// Componenta măsoară spaţiul alocat şi redă graficul la înălţimea reală.
+function FitPoolChart({ series, labels, hi, delta }) {
+  const ref = useRef(null);
+  const [h, setH] = useState(118);
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node) return undefined;
+    const measure = () => {
+      // minus marginile interne ale graficului (14px sus) şi rândul de etichete
+      const avail = node.clientHeight - 36;
+      if (avail >= 118) setH(avail);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+  return (
+    <div ref={ref} style={{ flex: '1 1 auto', minHeight: 152, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      {poolChart(series, labels, hi, delta, h)}
+    </div>
+  );
+}
+
 // -------------------------------------------------------------------- modal
 function Modal({ m, onClose }) {
   const { mob } = useBreakpoint();
@@ -1301,12 +1331,13 @@ function Modal({ m, onClose }) {
           <div style={s(m.targetWrapStyle)}>
             <div style={s(m.targetCapStyle)}>{m.targetLabel}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 8 }}>
-              <div style={s(m.stepBtnStyle)} onClick={m.onMinus}>{ic('minus', { size: 18, sw: 2 })}</div>
+              {/* v1.3.2: fără −/+ când valoarea nu e controlabilă (Hisense) */}
+              {m.targetStatic ? null : <div style={s(m.stepBtnStyle)} onClick={m.onMinus}>{ic('minus', { size: 18, sw: 2 })}</div>}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 <span style={s(m.targetValStyle)}>{m.targetVal}</span>
-                <span style={s(m.targetUnitStyle)}>{m.targetUnit}</span>
+                {m.targetUnit ? <span style={s(m.targetUnitStyle)}>{m.targetUnit}</span> : null}
               </div>
-              <div style={s(m.stepBtnStyle)} onClick={m.onPlus}>{ic('plus', { size: 18, sw: 2 })}</div>
+              {m.targetStatic ? null : <div style={s(m.stepBtnStyle)} onClick={m.onPlus}>{ic('plus', { size: 18, sw: 2 })}</div>}
             </div>
             <div style={s(m.targetHintStyle)}>{m.targetHint}</div>
           </div>

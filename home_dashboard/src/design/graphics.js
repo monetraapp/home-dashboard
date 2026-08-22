@@ -340,8 +340,11 @@ export function barChart(values, labels, unit, hoverIdx, onHover, mob) {
     style: { display: 'block', width: '100%', height: 'auto', cursor: onHover ? 'crosshair' : 'default' } }, nodes);
 }
 
-export function poolChart(values, labels, highlightIdx, deltaLabel) {
-  const w = 320, h = 118, n = values.length, colW = w / n;
+// (v1.3.2) `hPx` — înălţimea reală disponibilă în card: cardul piscinei se
+// întinde (flex:1) ca să egalizeze coloana, iar graficul îşi ia toată
+// înălţimea în loc să rămână ţintuit jos la 118px fix, cu gol deasupra.
+export function poolChart(values, labels, highlightIdx, deltaLabel, hPx) {
+  const w = 320, h = Math.max(118, hPx || 118), n = values.length, colW = w / n;
   // v1.1.6: scala veche forţa un span de minim 3° (min−1.5 … max+1.5), aşa că
   // o apă stabilă (variaţie <1°) aşeza toate marcajele la acelaşi nivel şi
   // graficul părea gol. Acum spanul urmăreşte variaţia reală (minim 2°), iar
