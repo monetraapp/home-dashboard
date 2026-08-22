@@ -678,7 +678,10 @@ function buildNowPlaying(E, ui) {
       onClick: c.onClick,
       style: 'width:36px; height:36px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; background:' + (c.primary ? PILL_ON : 'rgba(255,255,255,0.05)') + '; border:1px solid ' + (c.primary ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.09)') + ';'
     })),
-    wrapStyle: 'display:flex; align-items:center; gap:14px; padding:16px; border-radius:18px; background:' + (np ? 'linear-gradient(158deg, rgba(240,138,44,0.1), rgba(255,255,255,0.02))' : 'rgba(255,255,255,0.03)') + '; border:1px solid ' + (np ? 'rgba(240,138,44,0.22)' : 'rgba(255,255,255,0.065)') + ';',
+    // pe mobil rândul are voie să se rupă — la 360px icon + titlu + 4 butoane
+    // + badge-ul de stare împingeau badge-ul 3px în afara viewportului
+    // (singura problemă reală de responsive din auditul v1.2.0)
+    wrapStyle: 'display:flex; align-items:center; gap:' + (bpOf(ui).mob ? '10px' : '14px') + '; padding:' + (bpOf(ui).mob ? '13px 12px' : '16px') + ';' + (bpOf(ui).mob ? ' flex-wrap:wrap;' : '') + ' border-radius:18px; background:' + (np ? 'linear-gradient(158deg, rgba(240,138,44,0.1), rgba(255,255,255,0.02))' : 'rgba(255,255,255,0.03)') + '; border:1px solid ' + (np ? 'rgba(240,138,44,0.22)' : 'rgba(255,255,255,0.065)') + ';',
     iconWrapStyle: 'width:46px; height:46px; flex-shrink:0; border-radius:14px; display:flex; align-items:center; justify-content:center; color:' + (np ? '#2a1608' : TXT2) + '; background:' + (np ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(255,255,255,0.055)') + ';',
     iconEl: ic('playCircle', { size: 20 }),
     titleStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + ';',
