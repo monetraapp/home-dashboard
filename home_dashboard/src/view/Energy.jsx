@@ -166,7 +166,12 @@ const GEO_V = {
     // explicit, aşa că rămâne doar subtitlul, urcat la poziţia etichetei.
     inv: { x: 180, y: 164, r: 26, icon: 'bolt', label: 'Invertor', subOnly: true },
     bat: { x: 54, y: 164, r: 22, icon: 'batteryCharging', label: 'Baterie' },
-    house: { x: 306, y: 164, r: 22, icon: 'home', label: 'Casă' },
+    // noSub: subtitlul „autoconsum NN %" întindea bbox-ul nodului până la
+    // x≈256 şi făcea IMPOSIBILĂ plasarea badge-ului de consum oriunde pe
+    // culoarul traseului (218–256 = 38px < orice badge). Pe vertical,
+    // informaţia e dublată de celula „Autoconsum" din strip, imediat sub
+    // diagramă; pe orizontal (desktop/tabletă) subtitlul rămâne.
+    house: { x: 306, y: 164, r: 22, icon: 'home', label: 'Casă', noSub: true },
     grid: { x: 180, y: 282, r: 22, icon: 'utilityPole', label: 'Reţea' }
   },
   view: '0 0 360 330',
@@ -293,7 +298,7 @@ export function FlowDiagram({ flows, anim, layout, subs }) {
       : F[flowKey].active;
     const color = flowKey === null ? GOLD_HI : FLOW_COLORS[flowKey];
     const iconName = nd.icon;
-    const sub = subs && subs[k];
+    const sub = nd.noSub ? null : subs && subs[k];
     return el('g', { key: k, opacity: active ? 1 : 0.55 }, [
       active ? el('circle', { key: 'h', cx: nd.x, cy: nd.y, r: nd.r + 8, fill: color, opacity: 0.2, style: { filter: 'blur(7px)' } }) : null,
       el('circle', { key: 'b', cx: nd.x, cy: nd.y, r: nd.r, fill: 'rgba(18,12,7,0.92)', stroke: color, strokeWidth: active ? 1.8 : 1.2 }),

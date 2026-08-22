@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.5
+
+Suprapunerea din diagrama verticală, închisă de-adevăratelea. Cauza pe
+care mutările de badge n-o puteau ocoli: subtitlul „autoconsum NN %" al
+nodului Casă întindea bbox-ul grupului până la x≈256, lăsând un culoar de
+38px — mai îngust decât orice badge. Pe vertical, nodul Casă nu mai are
+subtitlu (informaţia e dublată de celula „Autoconsum" din strip, imediat
+sub diagramă); pe orizontal rămâne. Verificat cu valori late REALE pe
+ecran (12.3/11.3/9.99 kW — dovada de randare face parte din verificare,
+după ce verificarea anterioară măsurase badge-uri goale „—"): zero
+suprapuneri ≥25%.
+
+
 ## 1.2.4
 
 Ultima problemă din auditul complet (1 CRITIC, restul zero): badge-ul de
