@@ -888,7 +888,7 @@ export function EnergyInstrument({ anim }) {
           {PERIODS.map((p) => {
             const on = p[0] === per;
             return (
-              <div key={p[0]}
+              <div key={p[0]} className="hdTapY"
                 style={s('padding:' + (mob ? '7px 0' : '7px 14px') + '; border-radius:8px; cursor:pointer; text-align:center; font-family:' + SANS + '; font-size:11.5px; font-weight:' + (on ? 600 : 400) + '; color:' + (on ? '#2a1403' : TXT2) + '; background:' + (on ? 'linear-gradient(150deg,#FFC46B,#EE9A24)' : 'transparent') + ';' + (mob ? ' flex:1;' : ''))}
                 onClick={() => setPer(p[0])}>
                 {p[1]}

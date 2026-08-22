@@ -313,7 +313,7 @@ export function buildBlock(E, ui, hist, b) {
       detail: monitorRows(E, ui, b.title, b.detail, 'det'),
       moreLabel: 'Detalii (' + b.detail.length + ')',
       lessLabel: 'Ascunde detaliile',
-      toggleStyle: 'display:flex; align-items:center; justify-content:center; gap:6px; width:100%; padding:8px 14px; border:none; border-top:1px solid rgba(255,255,255,0.045); background:rgba(255,255,255,0.015); color:' + TXT3 + '; font-family:' + SANS + '; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer;',
+      toggleStyle: 'display:flex; align-items:center; justify-content:center; gap:6px; width:100%; min-height:44px; padding:8px 14px; border:none; border-top:1px solid rgba(255,255,255,0.045); background:rgba(255,255,255,0.015); color:' + TXT3 + '; font-family:' + SANS + '; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer;',
       chevEl: ic('chevronDown', { size: 13 })
     };
   }
@@ -871,7 +871,7 @@ export function buildDeviceCard(E, ui, def) {
         onToggle: (e) => { stop(e); if (b.res.supported) b.res.run(); }
       };
     }),
-    advBtnStyle: 'display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:10px; border-radius:13px; cursor:pointer; font-family:' + SANS + '; font-size:12px; font-weight:400; color:#c8bcae; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.075);',
+    advBtnStyle: 'min-height:44px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:10px; border-radius:13px; cursor:pointer; font-family:' + SANS + '; font-size:12px; font-weight:400; color:#c8bcae; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.075);',
     advIconStyle: 'display:flex; color:' + ORANGE + ';',
     advIconEl: ic('sliders', { size: 16 }),
     onOpen: () => ui.setModalId(def.id),

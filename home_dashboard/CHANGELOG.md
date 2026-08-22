@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.1.8
+
+Toate problemele CRITICE şi MEDII din auditul responsive (134 distincte,
+652 apariţii pe 8 pagini × 8 lăţimi).
+
+1. **CRITIC — suprapunere în diagrama de flux** (telefon): eticheta
+   „Soare / 3 stringuri" stătea peste badge-ul de putere PV pe layoutul
+   vertical — mutată în stânga nodului (aranjamentul v1.1.4).
+2. **MEDIU — 133 de ţinte tactile sub 44×44px**, toate interactive reale:
+   - clase globale `hdTap` (+7px pe toate laturile) şi `hdTapY` (+8px doar
+     vertical) — pseudo-elemente `::after` care extind zona de atingere FĂRĂ
+     nicio schimbare vizuală; varianta doar-verticală acolo unde vecinii sunt
+     lipiţi orizontal (pill-uri, chips-uri, segmente de perioadă);
+   - hdTapY: toggle-urile pill (46×25, 69×36) din Scurtături / carduri /
+     acordeoane / modal, chips-urile de zonă Media (72×31), segmentele
+     Oră–An din Energie (55×29);
+   - hdTap: săgeţile caruselului AC (30×30), butoanele −/+ ale cadranelor pe
+     desktop (30×30), IR + ştergător pe camere (34×34);
+   - min-height 44 direct: „Detalii (N)" (Energie), „Setări avansate"
+     (acordeoane), „Gestionează" (Acasă), butoanele din banda offline
+     („Reîncearcă" / „Schimbă datele", 83×21 → ≥44).
+   Tokens.js nu a fost atins — testul de fidelitate a stilului compară cu
+   designul original şi rămâne verde.
+3. Auditul măsoară de acum zona efectivă de atingere (elementul + expansiunea
+   `::after`), nu doar dreptunghiul elementului.
+
 ## 1.1.7
 
 Bug real găsit de auditul Playwright: banda „Deconectat / Se reconectează"

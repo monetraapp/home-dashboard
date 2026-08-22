@@ -278,7 +278,13 @@ export default function Dashboard({ onOpenMapping }) {
     h >= 11 && h < 18 ? 'Bună ziua,' :
     h >= 18 && h < 22 ? 'Bună seara,' : 'Noapte bună,';
 
-  const tipKeyframes = '@keyframes hdTipIn{from{opacity:0; transform:translateY(4px);}to{opacity:1; transform:translateY(0);}} @keyframes hdFadeIn{from{opacity:0;}to{opacity:1;}}';
+  const tipKeyframes = '@keyframes hdTipIn{from{opacity:0; transform:translateY(4px);}to{opacity:1; transform:translateY(0);}} @keyframes hdFadeIn{from{opacity:0;}to{opacity:1;}}'
+  // v1.1.8: extinderea zonei de atingere fara schimbare vizuala — ::after
+  // participa la hit-testing pentru parinte. hdTap = +7px pe toate laturile
+  // (30/34px -> >=44); hdTapY = doar vertical (pill-uri/chips-uri late dar
+  // scunde; expandarea orizontala ar fura tap-uri elementelor vecine).
+  + ' .hdTap{position:relative;} .hdTap::after{content:""; position:absolute; inset:-7px;}'
+  + ' .hdTapY{position:relative;} .hdTapY::after{content:""; position:absolute; left:0; right:0; top:-8px; bottom:-8px;}';
 
   return (
     <div style={s(deskStyle)}>
@@ -402,10 +408,10 @@ export default function Dashboard({ onOpenMapping }) {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                      <div style={s(arrowBtn)} onClick={() => setAcIndex((i) => (i - 1 + acUnits.length) % acUnits.length)}>
+                      <div className="hdTap" style={s(arrowBtn)} onClick={() => setAcIndex((i) => (i - 1 + acUnits.length) % acUnits.length)}>
                         {ic('chevLeft', { size: 15, sw: 1.7 })}
                       </div>
-                      <div style={s(arrowBtn)} onClick={() => setAcIndex((i) => (i + 1) % acUnits.length)}>
+                      <div className="hdTap" style={s(arrowBtn)} onClick={() => setAcIndex((i) => (i + 1) % acUnits.length)}>
                         {ic('chevRight', { size: 15, sw: 1.7 })}
                       </div>
                     </div>
@@ -527,7 +533,7 @@ export default function Dashboard({ onOpenMapping }) {
                             <div style={s(sd.metaStyle)}>{sd.model}</div>
                             <div style={s(sd.ambientStyle)}>{sd.ambient}</div>
                           </div>
-                          <div style={s(sd.togglePillStyle)} onClick={sd.onToggle}>
+                          <div className="hdTapY" style={s(sd.togglePillStyle)} onClick={sd.onToggle}>
                             <div style={s(sd.toggleKnobStyle)}>{sd.toggleIconEl}</div>
                           </div>
                         </div>
@@ -562,7 +568,7 @@ export default function Dashboard({ onOpenMapping }) {
                             <div style={s(d.quickStatusStyle)}>{d.status}</div>
                           </div>
                         </div>
-                        <div style={s(d.togglePillStyle)} onClick={d.onToggle}>
+                        <div className="hdTapY" style={s(d.togglePillStyle)} onClick={d.onToggle}>
                           <div style={s(d.toggleKnobStyle)}>{d.toggleIconEl}</div>
                           <span style={s(d.toggleTextStyle)}>{d.toggleText}</span>
                         </div>
@@ -589,7 +595,7 @@ export default function Dashboard({ onOpenMapping }) {
                   </div>
                   {isAcasa ? (
                     <div
-                      style={s('display:flex; align-items:center; gap:8px; padding:9px 15px; border-radius:100px; cursor:pointer; flex-shrink:0; font-family:' + SANS + '; font-size:12px; font-weight:400; color:#d8ccbe; background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.085);')}
+                      style={s('display:flex; align-items:center; gap:8px; padding:9px 15px; min-height:44px; border-radius:100px; cursor:pointer; flex-shrink:0; font-family:' + SANS + '; font-size:12px; font-weight:400; color:#d8ccbe; background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.085);')}
                       onClick={() => setPickerOpen(true)}
                     >
                       <span style={s('display:flex; color:' + ORANGE + ';')}>{ic('plus', { size: 15 })}</span>
@@ -603,6 +609,7 @@ export default function Dashboard({ onOpenMapping }) {
                         const count = z === 'Toate' ? 8 : Object.keys(MEDIA_ZONE_OF).filter((k) => MEDIA_ZONE_OF[k] === z).length;
                         return (
                           <div
+                            className="hdTapY"
                             key={z}
                             style={s('display:flex; align-items:center; gap:7px; padding:7px 13px; border-radius:100px; cursor:pointer; white-space:nowrap; font-family:' + SANS + '; font-size:11.5px; font-weight:' + (act ? 500 : 400) + '; color:' + (act ? '#3a1c06' : '#bdb1a4') + '; background:' + (act ? PILL_ON : 'rgba(255,255,255,0.045)') + '; border:1px solid ' + (act ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.085)') + ';' + (act ? ' box-shadow:0 4px 12px -6px rgba(226,121,58,0.5), inset 0 1px 0 rgba(255,255,255,0.4);' : ''))}
                             onClick={() => setMediaZone(z)}
@@ -731,7 +738,7 @@ function OfflineBanner() {
     : 'Comanda nu a ajuns la HA: ' + lastCallError;
   const color = connecting ? '#f0c79b' : '#e8a08a';
   const btn =
-    'padding:3px 11px; border-radius:100px; cursor:pointer; font-family:' + SANS +
+    'padding:13px 16px; border-radius:100px; cursor:pointer; display:inline-flex; align-items:center; font-family:' + SANS +
     '; font-size:11px; font-weight:600; color:#f4e6d8; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16);';
   return (
     <div
@@ -787,7 +794,7 @@ function DeviceCard({ c }) {
             <div style={s(c.modelStyle)}>{c.model}</div>
           </div>
         </div>
-        <div style={s(c.togglePillStyle)} onClick={c.onToggle} title={c.toggleTitle}>
+        <div className="hdTapY" style={s(c.togglePillStyle)} onClick={c.onToggle} title={c.toggleTitle}>
           <div style={s(c.toggleKnobStyle)}>{c.toggleIconEl}</div>
         </div>
       </div>
@@ -801,7 +808,7 @@ function DeviceCard({ c }) {
            butoane: ţinta dubla valoarea din centrul cadranului, iar pasul e
            comunicat prin tooltip-ul butoanelor (title). */
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 2 }}>
-          <div style={s(c.roundBtnStyle)} onClick={c.onMinus} title={c.stepTitle}>{ic('minus', { size: 16, sw: 2 })}</div>
+          <div className="hdTap" style={s(c.roundBtnStyle)} onClick={c.onMinus} title={c.stepTitle}>{ic('minus', { size: 16, sw: 2 })}</div>
           <div style={s(c.dialWrapStyle)}>
             {c.dialTicksEl}
             <div style={s(c.knobStyle)}>
@@ -809,7 +816,7 @@ function DeviceCard({ c }) {
               <span style={s(c.knobUnitStyle)}>{c.dialUnit}</span>
             </div>
           </div>
-          <div style={s(c.roundBtnStyle)} onClick={c.onPlus} title={c.stepTitle}>{ic('plus', { size: 16, sw: 2 })}</div>
+          <div className="hdTap" style={s(c.roundBtnStyle)} onClick={c.onPlus} title={c.stepTitle}>{ic('plus', { size: 16, sw: 2 })}</div>
         </div>
       ) : (
         <div style={s(c.noDialWrapStyle)}>
@@ -996,9 +1003,9 @@ function Block({ b }) {
               <div style={s(cam.statusStyle)}>{cam.status}</div>
             </div>
             <div style={s(cam.ctrlRowStyle)}>
-              <div style={s(cam.irStyle)} onClick={cam.onIr} title={cam.irTitle}>{cam.irIconEl}</div>
+              <div className="hdTap" style={s(cam.irStyle)} onClick={cam.onIr} title={cam.irTitle}>{cam.irIconEl}</div>
               {cam.hasWiper ? (
-                <div style={s(cam.wiperStyle)} onClick={cam.onWiper} title={cam.wiperTitle}>{cam.wiperIconEl}</div>
+                <div className="hdTap" style={s(cam.wiperStyle)} onClick={cam.onWiper} title={cam.wiperTitle}>{cam.wiperIconEl}</div>
               ) : null}
             </div>
           </div>
@@ -1078,7 +1085,7 @@ function Block({ b }) {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                <div style={s(acc.togglePillStyle)} onClick={acc.onPower}>
+                <div className="hdTapY" style={s(acc.togglePillStyle)} onClick={acc.onPower}>
                   <div style={s(acc.toggleKnobStyle)}>{acc.toggleIconEl}</div>
                 </div>
                 <div style={s(acc.chevStyle)}>
@@ -1276,7 +1283,7 @@ function Modal({ m, onClose }) {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <div style={s(m.togglePillStyle)} onClick={m.onToggle}>
+            <div className="hdTapY" style={s(m.togglePillStyle)} onClick={m.onToggle}>
               <div style={s(m.toggleKnobStyle)}>{m.toggleIconEl}</div>
               <span style={s(m.toggleTextStyle)}>{m.toggleText}</span>
             </div>
