@@ -181,8 +181,22 @@ function auditPage() {
     const parent = el.parentElement;
     if (parent && (cs(parent).cursor === 'pointer' || parent.tagName === 'BUTTON')) continue; // interiorul unui buton mai mare
     const r = el.getBoundingClientRect();
-    if (r.width < 43.5 || r.height < 43.5) {
-      out.touch.push({ el: ident(el), detail: Math.round(r.width) + '×' + Math.round(r.height) + 'px (minim 44×44)' });
+    // Zona EFECTIVĂ de atingere: elementul + expansiunea ::after (tehnica
+    // hdTap/hdTapY din v1.1.8 — pseudo-elementul participă la hit-testing
+    // pentru părinte, deci măsurăm ce poate apăsa degetul, nu doar cutia).
+    let w = r.width;
+    let h = r.height;
+    const ps = window.getComputedStyle(el, '::after');
+    if (ps && ps.content !== 'none' && ps.position === 'absolute') {
+      const t = parseFloat(ps.top) || 0;
+      const b2 = parseFloat(ps.bottom) || 0;
+      const l = parseFloat(ps.left) || 0;
+      const rr = parseFloat(ps.right) || 0;
+      w += Math.max(0, -l) + Math.max(0, -rr);
+      h += Math.max(0, -t) + Math.max(0, -b2);
+    }
+    if (w < 43.5 || h < 43.5) {
+      out.touch.push({ el: ident(el), detail: Math.round(w) + '×' + Math.round(h) + 'px zonă efectivă (minim 44×44)' });
     }
   }
 
