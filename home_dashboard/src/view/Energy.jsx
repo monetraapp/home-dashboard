@@ -385,9 +385,12 @@ const HIST_SLOTS = [
   'gw.sol_azi', 'gw.exp_azi', 'gw.imp_azi', 'gw.self_azi', 'gw.echr_azi', 'gw.edis_azi'
 ];
 // Sursele de statistici pe termen lung (doar entităţi cu state_class).
+// stat_ctr_* (v1.2.9): oglinzile contorului de racord — permit comparaţia
+// pe Săpt/Lună/An între invertor (saldo vectorial) şi contor (per fază).
 const STAT_SLOTS = [
   'gw.gen_tot', 'energie.stat_import', 'energie.stat_export', 'energie.stat_chr',
-  'energie.stat_dischr', 'energie.stat_soc', 'gw.t_inv', 'gw.t_ipm', 'gw.pv1_tot', 'gw.pv2_tot'
+  'energie.stat_dischr', 'energie.stat_soc', 'gw.t_inv', 'gw.t_ipm', 'gw.pv1_tot', 'gw.pv2_tot',
+  'energie.stat_ctr_imp', 'energie.stat_ctr_exp'
 ];
 
 const RO_DAYS = ['Du', 'Lu', 'Ma', 'Mi', 'Jo', 'Vi', 'Sâ'];
@@ -600,10 +603,24 @@ export function EnergyInstrument({ anim }) {
         const net = e && i2 ? e.map((v, ix) => (v === null || i2[ix] === null ? null : Math.round(v - i2[ix]) )) : (e || null);
         return { title: 'Import / export', unit: 'W', series: [{ name: 'Reţea', color: GRID_O, values: net || [] }], bars: true, zero: true };
       }
+      // (v1.2.9) Pe perioadele de statistici, graficul devine comparaţia
+      // invertor vs contor: net = export − import pe fiecare sursă. Linii în
+      // loc de bare (barele redau o singură serie); seria contorului apare
+      // singură pe măsură ce i se strâng statistici — până atunci doar
+      // invertorul (filtrul de serii goale o ascunde, nu inventăm valori).
       const e = statEnergy('energie.stat_export');
       const i2 = statEnergy('energie.stat_import');
       const net = e.map((v, ix) => (v === null || i2[ix] === null ? null : Math.round((v - i2[ix]) * 10) / 10));
-      return { title: 'Import / export', unit: 'kWh', series: [{ name: 'Reţea', color: GRID_O, values: net }], bars: true, zero: true };
+      const ec = statEnergy('energie.stat_ctr_exp');
+      const ic = statEnergy('energie.stat_ctr_imp');
+      const netC = ec.map((v, ix) => (v === null || ic[ix] === null ? null : Math.round((v - ic[ix]) * 10) / 10));
+      return {
+        title: 'Import / export · invertor vs contor', unit: 'kWh', zero: true,
+        series: [
+          { name: 'Net invertor', color: GRID_O, values: net },
+          { name: 'Net contor', color: CYAN, values: netC }
+        ]
+      };
     }
     // invertor
     if (live) {

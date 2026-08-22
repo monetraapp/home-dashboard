@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.9
+
+Oglinzi-template pentru contorul de racord (create în HA, tiparul
+oglinzilor Growatt): `contor_import_total` / `contor_export_total`
+(kWh, energy, total_increasing) şi `contor_faza_1/2/3_putere` (W, power,
+measurement) — registrele brute GPG0A450ZS nu au `state_class`, deci HA
+nu le agrega. Sloturi noi `energie.stat_ctr_*` (288 → 293).
+
+Pe categoria Reţea a instrumentului, graficul de Săpt/Lună/An devine
+comparaţia „Import / export · invertor vs contor”: două linii de net
+(export − import) — invertorul face saldo vectorial, contorul contorizează
+per fază, iar diferenţa dintre linii e chiar mărimea schimbului
+între faze. Seria contorului apare singură pe măsură ce se strâng
+statisticile (fără valori inventate până atunci).
+
+Cardul Contor racord primeşte graficul „Faze · medie zilnică” (7 zile,
+L1/L2/L3) pe oglinzi. Teste: 103 logică + 44 stil.
+
 ## 1.2.8
 
 Contorul inteligent de la racord (GPG0A450ZS) intră în dashboard: card nou

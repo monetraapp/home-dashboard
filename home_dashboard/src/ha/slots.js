@@ -403,6 +403,15 @@ export const SLOTS = [
   slot('energie.stat_chr', 'Statistici · baterie încărcare total', 'energie', ['sensor']),
   slot('energie.stat_dischr', 'Statistici · baterie descărcare total', 'energie', ['sensor']),
   slot('energie.stat_soc', 'Statistici · baterie SOC', 'energie', ['sensor']),
+  // (v1.2.9) Oglinzile-template ale contorului de racord (create 2026-08-23,
+  // acelaşi tipar ca oglinzile Growatt): registrele brute GPG0A450ZS nu au
+  // state_class, deci HA nu le agregă — oglinzile alimentează Săpt/Lună/An
+  // şi comparaţia lunară invertor (saldo vectorial) vs contor (per fază).
+  slot('energie.stat_ctr_imp', 'Statistici · contor import total', 'energie', ['sensor']),
+  slot('energie.stat_ctr_exp', 'Statistici · contor export total', 'energie', ['sensor']),
+  slot('energie.stat_ctr_f1', 'Statistici · contor faza 1 putere', 'energie', ['sensor']),
+  slot('energie.stat_ctr_f2', 'Statistici · contor faza 2 putere', 'energie', ['sensor']),
+  slot('energie.stat_ctr_f3', 'Statistici · contor faza 3 putere', 'energie', ['sensor']),
   // -------------------------------------------------------------- GENERAL
   slot('weather.main', 'Vreme', 'general', ['weather'], {
     note: 'VERIFY — nu mi-ai dat entity_id pentru weather.'

@@ -258,7 +258,7 @@ eq('niciun control interzis nu e mapat (PoE, reboot, Aux1/Aux2)',
 eq('sloturile ramase au toate un motiv explicit',
    SLOTS.filter((x) => !SUGGESTED_MAP[x.key] && !UNMAPPED_REASONS[x.key]).map((x) => x.key), []);
 
-eq('total: 288 mapate din 288 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [288, 288]);
+eq('total: 293 mapate din 293 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [293, 293]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------
@@ -322,6 +322,14 @@ eq('entitatile contorului sunt unice pe sloturi',
      ctrKeys.forEach((k) => { seen[SUGGESTED_MAP[k]] = (seen[SUGGESTED_MAP[k]] || 0) + 1; });
      return Object.keys(seen).filter((id) => seen[id] > 1);
    })(), []);
+
+// Oglinzile-template ale contorului (v1.2.9): singurele surse cu state_class,
+// deci singurele care pot alimenta Sapt/Luna/An si comparatia cu invertorul.
+eq('oglinzile contorului sunt mapate pe template-urile create',
+   ['energie.stat_ctr_imp', 'energie.stat_ctr_exp', 'energie.stat_ctr_f1', 'energie.stat_ctr_f2', 'energie.stat_ctr_f3']
+     .map((k) => SUGGESTED_MAP[k]),
+   ['sensor.contor_import_total', 'sensor.contor_export_total',
+    'sensor.contor_faza_1_putere', 'sensor.contor_faza_2_putere', 'sensor.contor_faza_3_putere']);
 
 // ---- diagrama de flux energetic (v1.1.4) -----------------------------------
 console.log('diagrama de flux:');

@@ -600,6 +600,13 @@ export const PAGES = {
             { label: 'L2', slot: 'ctr.f2_p' },
             { label: 'L3', slot: 'ctr.f3_p' }
           ]),
+          // (v1.2.9) Trendul fazelor pe oglinzile-template (au istoric identic
+          // cu registrele brute, dar şi statistici pe termen lung în HA).
+          chart('Faze · medie zilnică', 'putere activă pe fază · 7 zile', [
+            { name: 'L1', color: ORANGE_SERIES, slot: 'energie.stat_ctr_f1' },
+            { name: 'L2', color: SAND_SERIES, slot: 'energie.stat_ctr_f2' },
+            { name: 'L3', color: BLUE_SERIES, slot: 'energie.stat_ctr_f3' }
+          ], 'W'),
           expand('Contor racord', [
             // Un singur registru semnat: pozitiv = import, negativ = export
             // (verificat încrucişat cu invertorul: ±1.5% pe ambele sensuri).

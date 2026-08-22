@@ -345,6 +345,13 @@ export const SUGGESTED_MAP = {
   'energie.stat_chr': 'sensor.growatt_baterie_incarcare_total',
   'energie.stat_dischr': 'sensor.growatt_baterie_descarcare_total',
   'energie.stat_soc': 'sensor.growatt_baterie_soc',
+  // (v1.2.9) Oglinzile contorului de racord — create şi verificate 2026-08-23
+  // (device_class/state_class/unit confirmate pe stările live).
+  'energie.stat_ctr_imp': 'sensor.contor_import_total',
+  'energie.stat_ctr_exp': 'sensor.contor_export_total',
+  'energie.stat_ctr_f1': 'sensor.contor_faza_1_putere',
+  'energie.stat_ctr_f2': 'sensor.contor_faza_2_putere',
+  'energie.stat_ctr_f3': 'sensor.contor_faza_3_putere',
   // -------------------------------------------------------------- GENERAL
   'weather.main': 'weather.forecast_home',
   'sensor.baterie_telefon': 'sensor.s26_ultra_battery_level',
