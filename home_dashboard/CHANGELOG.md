@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.3.2
+
+Modalul respectă acum aceleaşi reguli de feature-gating ca şi cardul.
+`resolveAction` distinge nesuportatul STRUCTURAL (integrarea nu expune
+funcţia deloc: bit `supported_features` lipsă, mod/sursă absente din
+listele entităţii) de cel TRANZITORIU (TV în standby, entitate
+indisponibilă). Modalul ELIMINĂ structuralele — pe Hisense dispar
+TV/YouTube/Netflix (HomeKit nu le expune) — păstrează tranzitoriile
+dezactivate cu motivul în tooltip, iar eticheta VERIFY rămâne doar
+pentru sloturi nemapate. Secţiunile goale dispar („Opţiuni” la toate
+cele 8 TV-uri, ambele la pompa de filtrare). Volumul fără VOLUME_SET
+(Hisense) devine bloc static cu sursa curentă — fără −/+ şi fără
+„pas 1 · interval 0–100” care promiteau un control inexistent.
+Lista de surse se verifică înaintea standby-ului (nevidă), ca butonul
+inexistent să nu reapară cu TV-ul stins.
+
+Acasă: graficul „Temperatură piscină” umple cardul — cardul se
+întinde deliberat (egalizează coloana), dar graficul avea 118px ficşi
+ţintuiţi la bază, cu gol mare sub titlu; FitPoolChart măsoară spaţiul
+alocat şi redă graficul la înălţimea reală.
+
+Teste: 137 logică (+4 pe structural/tranzitoriu) + 44 stil.
+
 ## 1.3.1
 
 Separatorul zecimal devine VIRGULA pe toată aplicaţia — interfaţa e
