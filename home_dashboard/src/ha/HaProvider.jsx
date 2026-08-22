@@ -19,10 +19,28 @@ export function HaProvider({ children }) {
   const [error, setError] = useState(null);
   const [states, setStates] = useState({});
   const [entityMap, setEntityMapState] = useState(() => loadMap());
-  const [lastCallError, setLastCallError] = useState(null);
+  const [lastCallError, setLastCallErrorRaw] = useState(null);
   const [retryTick, setRetryTick] = useState(0);
   const connRef = useRef(null);
   const seededRef = useRef(false);
+  const callErrTimer = useRef(null);
+
+  // v1.1.9: lastCallError se curăţa DOAR la o comandă ulterioară reuşită sau
+  // la închiderea manuală — o eroare tranzitorie lăsa banda pe ecran la
+  // nesfârşit (bug găsit investigând banda din audit). Acum expiră singură
+  // după 12s şi se şterge şi la revenirea conexiunii (listener 'ready').
+  const setLastCallError = useCallback((msg) => {
+    if (callErrTimer.current) clearTimeout(callErrTimer.current);
+    callErrTimer.current = null;
+    setLastCallErrorRaw(msg);
+    if (msg) {
+      callErrTimer.current = setTimeout(() => {
+        setLastCallErrorRaw(null);
+        callErrTimer.current = null;
+      }, 12000);
+    }
+  }, []);
+  useEffect(() => () => { if (callErrTimer.current) clearTimeout(callErrTimer.current); }, []);
 
   // Ultima temperatură-ţintă non-null văzută pentru fiecare entitate climate.
   // Unele integrări (LG ThinQ) raportează temperature:null cât timp unitatea e
@@ -159,7 +177,11 @@ export function HaProvider({ children }) {
         setStatus('connected');
 
         conn.addEventListener('ready', () => {
-          if (!disposed) setStatus('connected');
+          if (!disposed) {
+            setStatus('connected');
+            // reconectare reuşită — o eroare de comandă din timpul căderii e stală
+            setLastCallError(null);
+          }
         });
         conn.addEventListener('disconnected', () => {
           if (!disposed) setStatus('disconnected');

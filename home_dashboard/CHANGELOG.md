@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.9
+
+Bug confirmat investigând banda offline din audit: `lastCallError` („Comanda
+nu a ajuns la HA") se curăţa DOAR la o comandă ulterioară reuşită sau la
+închiderea manuală — o eroare tranzitorie de reţea lăsa banda pe ecran la
+nesfârşit. Acum expiră singură după 12 secunde şi se şterge la revenirea
+conexiunii (evenimentul 'ready'). Butonul de închidere manuală rămâne.
+
+Notă: banda văzută în audit NU era aceasta, ci varianta „Deconectat" —
+aplicaţia din browserul de audit nu s-a putut conecta deloc la HA (TCP
+refuzat pe 192.168.0.100:8123 de pe PC, cauză externă aplicaţiei).
+
 ## 1.1.8
 
 Toate problemele CRITICE şi MEDII din auditul responsive (134 distincte,
