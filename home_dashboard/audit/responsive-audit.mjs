@@ -88,6 +88,13 @@ async function gotoPage(pg, key, label) {
 }
 // Lăţimile — graniţele din breakpoints.js + 360/390/414 cerute + 1440 desktop.
 const WIDTHS = [360, 390, 414, 759, 760, 1179, 1180, 1440];
+// Ramura de TABLETA (v1.2.2): aceleasi pagini la latimi de tableta, dar cu
+// hasTouch — Chromium raporteaza atunci `pointer: coarse`, exact ca tableta
+// montata pe perete. Valideaza deciziile care depind de tipul de input
+// (tintele 44px pe coarse), invizibile pentru rularea desktop (pointer: fine).
+// Emularea se VERIFICA in pagina inainte de audit; daca nu a produs coarse,
+// ramura se marcheaza ca nevalidata in loc sa minta.
+const TOUCH_WIDTHS = [760, 1180];
 
 /* ------------------------------------------------------------ audit în pagină */
 // Rulează în browser (page.evaluate). Întoarce liste de probleme brute;
@@ -393,8 +400,13 @@ async function main() {
       return;
     }
 
-    for (const width of WIDTHS) {
-      const ctx = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: 1 });
+    const COMBOS = WIDTHS.map((w) => ({ width: w, touch: false }))
+      .concat(TOUCH_WIDTHS.map((w) => ({ width: w, touch: true })));
+    for (const combo of COMBOS) {
+      const width = combo.width;
+      const touch = combo.touch;
+      const tag = touch ? 't' : '';
+      const ctx = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: 1, hasTouch: touch });
       await ctx.addInitScript(([url, token]) => {
         localStorage.setItem('hd.ha.config', JSON.stringify({ url, token }));
         // animaţiile oprite -> capturi stabile şi audit determinist
@@ -433,33 +445,43 @@ async function main() {
       }
       await pg.waitForTimeout(3000); // istoric + statistici + fonturi
 
+      if (touch) {
+        const coarse = await pg.evaluate(() => window.matchMedia('(pointer: coarse)').matches);
+        if (!coarse) {
+          findings.push({ page: 'toate', width, touch, type: 'nav', el: 'emulare touch', detail: 'hasTouch nu a produs pointer:coarse la ' + width + 'px — ramura de tableta NEVALIDATA (rezultatele ar fi fost cele de desktop)' });
+          console.log('  TABLETA @ ' + width + 'px — emularea nu a produs pointer:coarse; sar peste ramura');
+          await ctx.close();
+          continue;
+        }
+      }
+
       for (const [key, label] of PAGES) {
         if (key !== 'acasa') {
           const nav = await gotoPage(pg, key, label);
           // clickul normal blocat de un element = problemă reală de UI, chiar
           // dacă fallback-ul programatic a mers — o raportăm separat
           if (nav.intercepted) {
-            findings.push({ page: key, width, type: 'navBlocked', el: 'tabul „' + label + '"', detail: 'clickul normal a fost interceptat (' + nav.intercepted.trim() + '); a mers doar clickul programatic' });
+            findings.push({ page: key, width, touch, type: 'navBlocked', el: 'tabul „' + label + '"', detail: 'clickul normal a fost interceptat (' + nav.intercepted.trim() + '); a mers doar clickul programatic' });
           }
           if (!nav.ok) {
-            findings.push({ page: key, width, type: 'nav', el: 'navigaţie', detail: 'combinaţie nenavigabilă — ' + nav.reason });
-            try { await pg.screenshot({ path: path.join(SHOTS, key + '_' + width + '_nenavigabil.png'), fullPage: false }); } catch (e) { /* măcar am încercat */ }
+            findings.push({ page: key, width, touch, type: 'nav', el: 'navigaţie', detail: 'combinaţie nenavigabilă — ' + nav.reason });
+            try { await pg.screenshot({ path: path.join(SHOTS, key + '_' + width + tag + '_nenavigabil.png'), fullPage: false }); } catch (e) { /* măcar am încercat */ }
             console.log('  ' + key + ' @ ' + width + 'px — NENAVIGABILĂ (' + nav.reason + ')');
             continue;
           }
         }
         try {
           const res = await pg.evaluate(auditPage);
-          const shot = key + '_' + width + '.png';
+          const shot = key + '_' + width + tag + '.png';
           await pg.screenshot({ path: path.join(SHOTS, shot), fullPage: true });
           for (const [type, list] of Object.entries(res)) {
             for (const item of list) {
-              findings.push({ page: key, width, type, el: item.el || 'body', detail: item.detail });
+              findings.push({ page: key, width, touch, type, el: item.el || 'body', detail: item.detail });
             }
           }
-          console.log('  ' + key + ' @ ' + width + 'px — ' + Object.values(res).reduce((a, l) => a + l.length, 0) + ' probleme, captura ' + shot);
+          console.log('  ' + key + ' @ ' + width + 'px' + (touch ? ' (touch)' : '') + ' — ' + Object.values(res).reduce((a, l) => a + l.length, 0) + ' probleme, captura ' + shot);
         } catch (e) {
-          findings.push({ page: key, width, type: 'nav', el: 'audit', detail: 'auditul paginii a eşuat: ' + e.message.split('\n')[0] });
+          findings.push({ page: key, width, touch, type: 'nav', el: 'audit', detail: 'auditul paginii a eşuat: ' + e.message.split('\n')[0] });
           console.log('  ' + key + ' @ ' + width + 'px — AUDIT EŞUAT (' + e.message.split('\n')[0] + ')');
         }
       }
@@ -478,7 +500,7 @@ async function main() {
   // agregare: aceeaşi problemă (pagină+tip+element) pe mai multe lăţimi -> un rând
   const byKey = new Map();
   for (const f of findings) {
-    const k = f.page + '|' + f.type + '|' + f.el + '|' + f.detail.replace(/\d+/g, '#');
+    const k = f.page + '|' + (f.touch ? 'T|' : '') + f.type + '|' + f.el + '|' + f.detail.replace(/\d+/g, '#');
     if (!byKey.has(k)) byKey.set(k, { ...f, widths: [] });
     byKey.get(k).widths.push(f.width);
   }
@@ -489,14 +511,14 @@ async function main() {
   writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(rows, null, 2));
 
   let md = '# Audit responsive — ' + new Date().toISOString().slice(0, 16).replace('T', ' ') + '\n\n';
-  md += 'Matrice: ' + PAGES.length + ' pagini × ' + WIDTHS.length + ' lăţimi (' + WIDTHS.join(', ') + 'px). ';
+  md += 'Matrice: ' + PAGES.length + ' pagini × ' + WIDTHS.length + ' lăţimi (' + WIDTHS.join(', ') + 'px) + ramura de tabletă cu touch (' + TOUCH_WIDTHS.join(', ') + 'px, pointer: coarse). ';
   md += 'Total: ' + rows.length + ' probleme distincte (' + findings.length + ' apariţii).\n';
   for (const sev of ['CRITIC', 'MEDIU', 'MINOR']) {
     const group = rows.filter((r) => SEVERITY[r.type][0] === sev);
     md += '\n## ' + sev + ' (' + group.length + ')\n\n';
     if (!group.length) { md += '_nimic_\n'; continue; }
     for (const r of group) {
-      md += '- **' + r.page + '** @ ' + Array.from(new Set(r.widths)).sort((a, b) => a - b).join('/') + 'px · ' + SEVERITY[r.type][1] + '\n';
+      md += '- **' + r.page + '** @ ' + Array.from(new Set(r.widths)).sort((a, b) => a - b).join('/') + 'px' + (r.touch ? ' · TABLETA (touch)' : '') + ' · ' + SEVERITY[r.type][1] + '\n';
       md += '  `' + r.el + '`\n  ' + r.detail + '\n';
     }
   }
