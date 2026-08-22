@@ -23,7 +23,7 @@
 
 import { chromium } from 'playwright';
 import { spawn, execSync } from 'node:child_process';
-import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -376,13 +376,20 @@ async function main() {
   }
 
   mkdirSync(SHOTS, { recursive: true });
-  if (!existsSync(path.join(ROOT, 'dist', 'index.html'))) {
-    console.log('dist/ lipseşte — rulez build-ul...');
-    await new Promise((res, rej) => {
-      const b = spawn('npx', ['vite', 'build'], { cwd: ROOT, shell: true, stdio: 'inherit' });
-      b.on('exit', (c) => (c === 0 ? res() : rej(new Error('build eşuat'))));
-    });
-  }
+
+  // Build NECONDITIONAT (lectia din 22.08, a doua unealta care a raportat cu
+  // incredere pe date gresite in aceeasi zi: auditul a masurat un dist vechi
+  // v1.2.1 si a 'infirmat' un fix v1.2.2 care functiona). Build-ul dureaza
+  // ~1.5s; trasabilitatea nu e optionala.
+  console.log('build proaspat...');
+  await new Promise((res, rej) => {
+    const b = spawn('npx', ['vite', 'build'], { cwd: ROOT, shell: true, stdio: 'ignore' });
+    b.on('exit', (c) => (c === 0 ? res() : rej(new Error('build esuat (cod ' + c + ')'))));
+  });
+  const cfgTxt = readFileSync(path.join(ROOT, 'config.yaml'), 'utf8');
+  const appVersion = (cfgTxt.match(/version: "([^"]+)"/) || [])[1] || 'necunoscuta';
+  const bundleFile = readdirSync(path.join(ROOT, 'dist', 'assets')).find((f) => f.startsWith('index-') && f.endsWith('.js')) || 'necunoscut';
+  console.log('aplicatie v' + appVersion + ' · bundle ' + bundleFile);
 
   const server = await startPreview();
   const browser = await chromium.launch({ headless: true });
@@ -511,6 +518,7 @@ async function main() {
   writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(rows, null, 2));
 
   let md = '# Audit responsive — ' + new Date().toISOString().slice(0, 16).replace('T', ' ') + '\n\n';
+  md += '**Aplicatie v' + appVersion + ' · bundle `' + bundleFile + '` (build proaspat la rulare).**' + '\n\n';
   md += 'Matrice: ' + PAGES.length + ' pagini × ' + WIDTHS.length + ' lăţimi (' + WIDTHS.join(', ') + 'px) + ramura de tabletă cu touch (' + TOUCH_WIDTHS.join(', ') + 'px, pointer: coarse). ';
   md += 'Total: ' + rows.length + ' probleme distincte (' + findings.length + ' apariţii).\n';
   for (const sev of ['CRITIC', 'MEDIU', 'MINOR']) {
