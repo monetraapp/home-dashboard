@@ -290,6 +290,16 @@ export const SUGGESTED_MAP = {
   'gw.serial': 'sensor.knn2e3s00w_serial',
   'gw.dl_serial': 'sensor.knn2e3s00w_datalogger_serial',
   'gw.push': 'sensor.knn2e3s00w_grott_last_data_push',
+  // ------------------------------------- ENERGIE · INSTRUMENT (v1.1.5)
+  // sun.sun verificat live 2026-08-22 (next_rising/next_setting prezente).
+  'energie.soare': 'sun.sun',
+  // Senzorii-oglindă template (creaţi + verificaţi 2026-08-22 la configurarea
+  // Energy dashboard) — singurii cu state_class, deci cu statistici orare.
+  'energie.stat_import': 'sensor.growatt_import_retea_total',
+  'energie.stat_export': 'sensor.growatt_export_retea_total',
+  'energie.stat_chr': 'sensor.growatt_baterie_incarcare_total',
+  'energie.stat_dischr': 'sensor.growatt_baterie_descarcare_total',
+  'energie.stat_soc': 'sensor.growatt_baterie_soc',
   // -------------------------------------------------------------- GENERAL
   'weather.main': 'weather.forecast_home',
   'sensor.baterie_telefon': 'sensor.s26_ultra_battery_level',

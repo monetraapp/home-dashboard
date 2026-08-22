@@ -147,7 +147,25 @@ const D = {
   'Întârziere pornire': 'Câte secunde aşteaptă invertorul după revenirea reţelei înainte să pornească.',
   'Încărcare din AC azi': 'Energia băgată în baterie din reţea (nu din soare) azi — normal rară.',
   'Încărcare din AC total': 'Toată energia băgată în baterie din reţea de la instalare.',
-  'Ultimul pachet de date': 'Când a trimis datalogger-ul ultima transmisie prin Grott. Normal la ~5 minute.'
+  'Ultimul pachet de date': 'Când a trimis datalogger-ul ultima transmisie prin Grott. Normal la ~5 minute.',
+
+  // -------------------------------------------- instrument Energie (v1.1.5)
+  'Energie|Producţie acum': 'Puterea produsă de panouri chiar acum, pe toate stringurile.',
+  'Energie|Stare de încărcare': 'Cât din capacitatea bateriei APX e disponibilă acum.',
+  'Energie|Temperatură maximă': 'Cea mai caldă dintre cele cinci sonde principale ale invertorului.',
+  'Energie|Export acum': 'Puterea trimisă în reţea chiar acum — surplusul de după casă şi baterie.',
+  'Energie|Import acum': 'Puterea luată din reţea chiar acum — ce nu acoperă soarele şi bateria.',
+  'Energie|Vârf azi': 'Cea mai mare putere atinsă azi, calculată din istoricul zilei. Gol până se adună date.',
+  'Energie|Energie azi': 'Energia produsă de panouri de la miezul nopţii încoace.',
+  'Energie|După conversie': 'Cât rămâne din puterea panourilor după conversia în curent alternativ.',
+  'Energie|Autoconsum': 'Cât din producţia de azi a rămas în casă: autoconsum ÷ (autoconsum + export).',
+  'Bilanţ azi|Consum casă': 'Cât a consumat casa azi. Calculat: autoconsum + import — contorul intern de consum al invertorului nu raportează.',
+  'Bilanţ azi|Baterie ciclat': 'Suma energiei intrate şi ieşite din baterie azi (încărcat + descărcat).',
+  'Schimb cumulat|Raport export/import': 'De câte ori e mai mare exportul total decât importul total. „—" cât timp importul e zero.',
+  'Sistem|Factor de putere': 'Raportul dintre puterea utilă şi cea totală — 1.00 înseamnă transfer perfect. Registrul brut e ×1000.',
+  'Arcul zilei': 'Soarele de la răsărit la apus: grosimea benzii urmăreşte producţia, linia interioară e consumul casei.',
+  'Spectrul stringurilor': 'Puterea fiecărui string acum, faţă de vârful lui de azi, plus cota din energia zilei.',
+  'Unde merge energia': 'Repartiţia producţiei în acest moment. PV→casă = putere după conversie − export − încărcare baterie.'
 };
 
 /**

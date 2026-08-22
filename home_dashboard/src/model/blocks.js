@@ -26,13 +26,11 @@ export const accordion = (items) => ({ type: 'accordion', items });
  * `flow` = {pos, neg, posLabel, negLabel, zeroLabel, unit} afişează sub valoare
  * direcţia netă dintre două sloturi de putere (ex. încărcare vs descărcare). */
 export const stats = (items) => ({ type: 'stats', items });
-/** Diagramă de flux energetic (v1.1.4, înlocuieşte bara orizontală):
- * 5 noduri (soare/invertor/baterie/casă/reţea) cu trasee SVG animate.
- * cfg = { pv, load, soc, chr, dischr, exp, imp } — chei de slot. */
-export const flowdiagram = (cfg) => ({ type: 'flowdiagram', cfg });
-/** Curbă de producţie pe ziua curentă (arie umplută, ore pe axa X).
- * slot = senzorul de putere din care se agregă istoricul recorder. */
-export const daychart = (title, hint, slot, color) => ({ type: 'daychart', title, hint, slot, color });
+/** Instrumentul Energie (v1.1.5): scenă-erou cu KPI + diagramă de flux,
+ * strip de KPI secundare, navigaţie pe categorii, grafice per perioadă şi
+ * "Bilanţ azi". Se randează integral de componenta EnergyInstrument
+ * (src/view/Energy.jsx), care îşi aduce singură datele (history + statistici). */
+export const instrument = () => ({ type: 'instrument' });
 /** Bare comparate vizual (ex. echilibrul celor 3 faze): items = [{label, slot}]. */
 export const bars = (title, items, unit) => ({ type: 'bars', title, items, unit });
 /** Secţiune cu rezumat vizibil şi detaliu extensibil. summary/detail = rânduri

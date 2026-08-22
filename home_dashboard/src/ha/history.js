@@ -61,3 +61,56 @@ export function useHistory(entityIds, days) {
   return state;
 }
 
+/**
+ * Statistici pe termen lung (v1.1.5): recorder/statistics_during_period.
+ * Spre deosebire de history, statisticile sunt agregate orar/zilnic/lunar de
+ * HA şi supravieţuiesc epurării recorder-ului — sursa pentru Săptămână/Lună/An.
+ * Doar entităţile cu state_class au statistici; restul întorc liste goale,
+ * iar UI-ul afişează "—".
+ * Întoarce { stats, loading, error } — stats = { statistic_id: [rânduri] }.
+ */
+export function useStatistics(statisticIds, startMs, endMs, period) {
+  const { sendMessagePromise, connected } = useHa();
+  const [state, setState] = useState({ stats: null, loading: false, error: null });
+  const key = (statisticIds || []).filter(Boolean).sort().join(',') + '|' + startMs + '|' + period;
+  const reqRef = useRef(0);
+
+  useEffect(() => {
+    if (!connected || !statisticIds || !statisticIds.length) {
+      setState({ stats: null, loading: false, error: null });
+      return undefined;
+    }
+    let cancelled = false;
+    const myReq = ++reqRef.current;
+    setState((s) => ({ stats: s.stats, loading: true, error: null }));
+
+    sendMessagePromise({
+      type: 'recorder/statistics_during_period',
+      start_time: new Date(startMs).toISOString(),
+      end_time: new Date(endMs).toISOString(),
+      statistic_ids: statisticIds.filter(Boolean),
+      period: period,
+      types: ['sum', 'mean']
+    })
+      .then((res) => {
+        if (cancelled || myReq !== reqRef.current) return;
+        setState({ stats: res || {}, loading: false, error: null });
+      })
+      .catch((err) => {
+        if (cancelled || myReq !== reqRef.current) return;
+        setState({
+          stats: null,
+          loading: false,
+          error: err && err.message ? err.message : 'Statisticile nu au putut fi citite'
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, connected, sendMessagePromise]);
+
+  return state;
+}
+

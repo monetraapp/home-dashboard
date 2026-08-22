@@ -9,6 +9,10 @@ import { SUGGESTED_MAP, UNMAPPED_REASONS } from '../src/ha/suggestedMap.js';
 import {
   particleSpeed, strokeWidth, flowDir, fmtFlowPower, dayCurve, dayHourLabels
 } from '../src/design/flowMath.js';
+import {
+  consumCasaAzi, autoconsumPct, sankeyLanes, exportImportRatio, deltaPct, fmtDelta,
+  valueAt, peakOf, hourCurve, statEnergySeries, statMeanSeries, sumOrNull
+} from '../src/design/energyMath.js';
 
 let pass = 0, fail = 0;
 function eq(name, got, want) {
@@ -248,7 +252,7 @@ eq('niciun control interzis nu e mapat (PoE, reboot, Aux1/Aux2)',
 eq('sloturile ramase au toate un motiv explicit',
    SLOTS.filter((x) => !SUGGESTED_MAP[x.key] && !UNMAPPED_REASONS[x.key]).map((x) => x.key), []);
 
-eq('total: 247 mapate din 247 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [247, 247]);
+eq('total: 253 mapate din 253 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [253, 253]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------
@@ -317,6 +321,62 @@ eq('dayCurve: cosul orei 2', dc.values[2], 500);
 eq('dayCurve: lastIdx la "acum"', dc.lastIdx, 3);
 eq('dayCurve: dupa "acum" ramane null', dc.values[4], null);
 eq('etichete de ore din 4 in 4', dayHourLabels(4), ['00', '04', '08', '12', '16', '20', '24']);
+
+// ---- instrumentul Energie (v1.1.5) -----------------------------------------
+console.log('instrument Energie:');
+// Sloturile noi: sun.sun + oglinzile-template cu statistici (create 2026-08-22).
+eq('slotul soare tinteste sun.sun', SUGGESTED_MAP['energie.soare'], 'sun.sun');
+eq('sursele de statistici sunt oglinzile template',
+   ['energie.stat_import', 'energie.stat_export', 'energie.stat_chr', 'energie.stat_dischr', 'energie.stat_soc']
+     .map((k) => SUGGESTED_MAP[k]),
+   ['sensor.growatt_import_retea_total', 'sensor.growatt_export_retea_total',
+    'sensor.growatt_baterie_incarcare_total', 'sensor.growatt_baterie_descarcare_total',
+    'sensor.growatt_baterie_soc']);
+
+// Formulele derivate aprobate.
+eq('consum casa = autoconsum + import', consumCasaAzi(33.1, 3.3), 36.4);
+eq('consum casa fara date -> null (nu zero)', consumCasaAzi(null, 3.3), null);
+eq('autoconsum 96%', autoconsumPct(96, 4), 96);
+eq('autoconsum fara productie -> null', autoconsumPct(0, 0), null);
+// Corectia aprobata: PV->casa scade si incarcarea bateriei (dimineata).
+eq('sankey dimineata: PV->casa = pvOut - export - incarcare',
+   sankeyLanes(10000, 100, 3000, 0), { pvToHouse: 6900, batToHouse: 0, pvToGrid: 100 });
+eq('sankey descarcare: bateria alimenteaza casa',
+   sankeyLanes(12161, 1065, 0, 1940), { pvToHouse: 11096, batToHouse: 1940, pvToGrid: 1065 });
+eq('sankey nu coboara sub zero', sankeyLanes(1000, 500, 800, 0).pvToHouse, 0);
+eq('raport export/import', exportImportRatio(33422, 12206), 2.7);
+eq('raport cu import zero -> null ("—")', exportImportRatio(100, 0), null);
+eq('delta procentuala', deltaPct(110, 100), 10);
+eq('delta fara referinta -> null', deltaPct(110, null), null);
+eq('fmtDelta null -> "—" fara sageata', fmtDelta(null), { txt: '—', dir: 0 });
+eq('fmtDelta pozitiv', fmtDelta(9.8), { txt: '▲ 9.8%', dir: 1 });
+
+// valueAt: ultimul esantion dinaintea momentului, in toleranta de 30 min.
+const vs = [{ lu: 100, s: '5' }, { lu: 200, s: '7' }, { lu: 4000, s: '9' }];
+eq('valueAt ia ultimul esantion dinainte', valueAt(vs, 250 * 1000), 7);
+eq('valueAt in afara tolerantei -> null', valueAt(vs, 200 * 1000 + 31 * 60 * 1000), null);
+
+// peakOf: varful zilei; fara esantioane numerice -> null.
+eq('peakOf gaseste varful', peakOf([{ lu: 10, s: '3' }, { lu: 20, s: '8' }, { lu: 30, s: '5' }], 0), { v: 8, t: 20000 });
+eq('peakOf fara date -> null', peakOf([], 0), null);
+
+// hourCurve: 12 cosuri de 5 min pe ultima ora.
+const hc = hourCurve([{ lu: 3300, s: '10' }, { lu: 3400, s: '20' }], 3600 * 1000, 12);
+eq('hourCurve pune media in cosul corect', hc[11], 15);
+eq('hourCurve fara esantioane -> null', hourCurve([], 3600 * 1000, 12), null);
+
+// statistici: energia pe cos = diferentele campului cumulativ `sum`.
+const DAYMS = 86400000;
+const srows = [
+  { start: 0, sum: 100 },          // referinta (inainte de fereastra)
+  { start: DAYMS, sum: 110 },      // ziua 0: +10
+  { start: 2 * DAYMS, sum: 125 }   // ziua 1: +15
+];
+eq('statEnergySeries face diferente de sum', statEnergySeries(srows, 2, DAYMS, DAYMS), [10, 15]);
+eq('statEnergySeries fara rânduri -> null-uri', statEnergySeries([], 2, DAYMS, DAYMS), [null, null]);
+eq('statMeanSeries plaseaza mediile', statMeanSeries([{ start: DAYMS, mean: 50.04 }], 2, DAYMS, DAYMS), [50, null]);
+eq('sumOrNull ignora null-urile', sumOrNull([10, null, 5]), 15);
+eq('sumOrNull cu totul gol -> null', sumOrNull([null, null]), null);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

@@ -8,13 +8,13 @@
 
 import {
   ro, txt, sw, grid, monitor, note, slots, nowPlaying, cameraGrid, chart, timeline,
-  accordion, sec, act, spClimate, spNumber, stats, flowdiagram, daychart, bars, expand
+  accordion, sec, act, spClimate, spNumber, stats, instrument, bars, expand
 } from './blocks.js';
 import { CLIMAT_ACCORDION, PISCINA_ACCORDION } from './accordions.js';
 
 export {
   ro, txt, sw, grid, monitor, note, slots, nowPlaying, cameraGrid, chart, timeline,
-  accordion, sec, act, spClimate, spNumber, stats, flowdiagram, daychart, bars, expand
+  accordion, sec, act, spClimate, spNumber, stats, instrument, bars, expand
 };
 
 export const ORANGE_SERIES = '#F08A2C';
@@ -398,31 +398,13 @@ export const PAGES = {
     ],
     cards: [
       {
-        title: 'Growatt 25 kW · acum',
+        title: 'Growatt 25 kW · APX 20 kWh',
         wide: true,
         order: 0,
-        blocks: [
-          stats([
-            { icon: 'sun', label: 'Producţie', slot: 'gw.pv_in', opts: { scale: 0.001, decimals: 2, unit: 'kW' } },
-            { icon: 'home', label: 'Consum casă', slot: 'gw.p_casa', opts: { scale: 0.001, decimals: 2, unit: 'kW' } },
-            {
-              icon: 'batteryCharging', label: 'Baterie', slot: 'gw.soc', opts: { unit: '%', decimals: 0 },
-              flow: { pos: 'gw.p_chr', neg: 'gw.p_dischr', posLabel: 'Încărcare', negLabel: 'Descărcare', zeroLabel: 'În repaus' }
-            },
-            {
-              icon: 'utilityPole', label: 'Reţea',
-              flow: { pos: 'gw.p_export', neg: 'gw.p_import', posLabel: 'Export', negLabel: 'Import', zeroLabel: 'Echilibru' }
-            }
-          ]),
-          // Diagrama de flux (v1.1.4): 5 noduri, particule direcţionale,
-          // grosime şi viteză proporţionale cu puterea reală.
-          flowdiagram({
-            pv: 'gw.pv_in', load: 'gw.p_casa', soc: 'gw.soc',
-            chr: 'gw.p_chr', dischr: 'gw.p_dischr',
-            exp: 'gw.p_export', imp: 'gw.p_import'
-          }),
-          daychart('Producţie azi', 'puterea PV pe ziua curentă', 'gw.pv_in', ORANGE_SERIES)
-        ]
+        // Instrumentul v1.1.5 (design "Energie Redesign v2"): erou + flux +
+        // strip + navigaţie pe categorii + grafice + Bilanţ azi. Panoul
+        // "Ce se întâmplă acum" e amânat pentru v1.1.6.
+        blocks: [instrument()]
       },
       {
         title: 'Producţie fotovoltaică',

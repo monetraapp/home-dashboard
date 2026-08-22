@@ -7,12 +7,11 @@ import {
   PILL_ON, PILL_OFF, PILL_SHADOW_ON, PILL_SHADOW_OFF, KNOB_ON, KNOB_OFF, KNOB_SHADOW,
   TIP_STYLE, STATE_COLORS, noop
 } from '../design/tokens.js';
-import { dialTicks, lineChart, barChart, dayAreaChart } from '../design/graphics.js';
+import { dialTicks, lineChart, barChart } from '../design/graphics.js';
 import { VERIFY, NA, HVAC_SHORT } from '../ha/entities.js';
 import { describe } from '../model/descriptions.js';
 import { resolveAction } from '../model/actions.js';
 import { dailyAverage, dailyLast, fillGaps, timelineSegments, lastDayLabels } from '../ha/history.js';
-import { flowDir, fmtFlowPower, dayCurve } from '../design/flowMath.js';
 
 const DAYS7 = 7;
 
@@ -271,73 +270,11 @@ export function buildBlock(E, ui, hist, b) {
     };
   }
 
-  // Diagrama de flux energetic (v1.1.4). Aici se calculează DOAR datele —
-  // randarea şi animaţia (rAF, particule) stau în componenta FlowDiagram din
-  // Dashboard.jsx, ca să nu re-randăm React la fiecare cadru.
-  if (b.type === 'flowdiagram') {
-    const c = b.cfg;
-    const val = (k) => (E.mapped(k) ? E.num(k) : null);
-    const pv = val(c.pv);
-    const load = val(c.load);
-    const soc = val(c.soc);
-    const bat = flowDir(val(c.chr), val(c.dischr));   // +1 = încărcare
-    const grid = flowDir(val(c.exp), val(c.imp));     // +1 = export
-    return {
-      isFlowDiagram: true,
-      anim: ui.anim !== false,
-      flows: {
-        pv: { w: pv === null ? 0 : pv, text: fmtFlowPower(pv), active: (pv || 0) >= 1 },
-        load: { w: load === null ? 0 : load, text: fmtFlowPower(load), active: (load || 0) >= 1 },
-        bat: {
-          w: bat.power, sign: bat.sign, text: fmtFlowPower(bat.sign === 0 ? null : bat.power),
-          dirWord: bat.sign > 0 ? 'Încărcare' : bat.sign < 0 ? 'Descărcare' : 'Repaus',
-          active: bat.sign !== 0,
-          soc: soc === null ? null : Math.round(soc)
-        },
-        grid: {
-          w: grid.power, sign: grid.sign, text: fmtFlowPower(grid.sign === 0 ? null : grid.power),
-          dirWord: grid.sign > 0 ? 'Export' : grid.sign < 0 ? 'Import' : 'Echilibru',
-          active: grid.sign !== 0
-        }
-      }
-    };
-  }
-
-  // Curba de producţie pe ziua curentă (v1.1.4). Sursa: recorder-ul, fetch cu
-  // no_attributes:true — deci DOAR starea unui sensor, niciodată un atribut
-  // (lecţia v1.1.1 cu seriile permanent goale).
-  if (b.type === 'daychart') {
-    const id = E.idOf(b.slot);
-    const samples = id && hist.raw ? hist.raw[id] : null;
-    const nowMs = Date.now();
-    const mid = new Date(nowMs);
-    mid.setHours(0, 0, 0, 0);
-    const curve = samples && samples.length ? dayCurve(samples, mid.getTime(), nowMs, 96) : null;
-    const hasData = !!(curve && curve.lastIdx >= 0);
-    return {
-      isChart: true,
-      title: b.title,
-      hint: hist.loading ? 'se încarcă istoricul…' : hasData ? b.hint : 'fără date în recorder',
-      hasData,
-      emptyText: hist.error
-        ? 'Istoricul nu a putut fi citit: ' + hist.error
-        : 'Fără date pe ziua curentă — graficul porneşte după primele eşantioane din recorder.',
-      emptyStyle: 'padding:34px 16px; text-align:center; border-radius:14px; font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT3 + '; background:repeating-linear-gradient(135deg, rgba(255,255,255,0.02) 0 8px, transparent 8px 16px); border:1px dashed rgba(255,255,255,0.11);',
-      wrapStyle: 'margin-bottom:8px;',
-      capStyle: 'display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:10px;',
-      capTitleStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:500; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + ';',
-      capHintStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:#8a7c6c;',
-      chartEl: hasData ? dayAreaChart(curve.values, curve.lastIdx, b.color, 'W', bpOf(ui).mob) : null,
-      legendStyle: 'display:flex; flex-wrap:wrap; gap:16px; margin-top:12px;',
-      legend: hasData ? [{
-        label: 'Acum',
-        value: fmtFlowPower(curve.values[curve.lastIdx]),
-        rowStyle: 'display:flex; align-items:center; gap:7px;',
-        dotStyle: 'width:8px; height:8px; border-radius:50%; flex-shrink:0; background:' + b.color + ';',
-        labelStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:400; color:#bdb1a4;',
-        valueStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:500; color:' + TXT + '; font-variant-numeric:tabular-nums;'
-      }] : []
-    };
+  // Instrumentul Energie (v1.1.5): componenta EnergyInstrument îşi aduce
+  // singură datele (useEntities + history + statistics) — aici doar semnalăm
+  // tipul şi transmitem starea comutatorului de animaţii.
+  if (b.type === 'instrument') {
+    return { isInstrument: true, anim: ui.anim !== false };
   }
 
   if (b.type === 'bars') {

@@ -335,6 +335,18 @@ export const SLOTS = [
   slot('gw.serial', 'Growatt · serie invertor', 'energie', ['sensor']),
   slot('gw.dl_serial', 'Growatt · serie datalogger', 'energie', ['sensor']),
   slot('gw.push', 'Growatt · ultimul pachet de date', 'energie', ['sensor']),
+  // ------------------------------------- ENERGIE · INSTRUMENT (v1.1.5)
+  // Răsărit/apus pentru "Arcul zilei" — atribute live (next_rising/next_setting),
+  // niciodată istoric (recorder-ul nu redă atribute).
+  slot('energie.soare', 'Soare · răsărit şi apus', 'energie', ['sun']),
+  // Sursele de statistici pe termen lung (Săptămână/Lună/An): senzorii-oglindă
+  // template creaţi la configurarea Energy dashboard (2026-08-22) — au
+  // state_class, deci HA le agregă orar; registrele brute Grott nu au.
+  slot('energie.stat_import', 'Statistici · import reţea total', 'energie', ['sensor']),
+  slot('energie.stat_export', 'Statistici · export reţea total', 'energie', ['sensor']),
+  slot('energie.stat_chr', 'Statistici · baterie încărcare total', 'energie', ['sensor']),
+  slot('energie.stat_dischr', 'Statistici · baterie descărcare total', 'energie', ['sensor']),
+  slot('energie.stat_soc', 'Statistici · baterie SOC', 'energie', ['sensor']),
   // -------------------------------------------------------------- GENERAL
   slot('weather.main', 'Vreme', 'general', ['weather'], {
     note: 'VERIFY — nu mi-ai dat entity_id pentru weather.'

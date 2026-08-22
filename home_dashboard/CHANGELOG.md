@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.1.5
+
+Pagina Energie, reconstruită după designul "Energie Redesign v2"
+(claude.ai/design): instrument cu scenă-erou, categorii şi grafică proprie
+per categorie. 6 sloturi noi (total 253, toate mapate).
+
+1. **Layout nou complet**: KPI-erou cu context (bara de capacitate din
+   `opfullwatt`, nu constante), diagrama de flux în scenă-erou (orizontală pe
+   desktop/tabletă, verticală pe telefon), rând de 4 KPI secundare, navigaţie
+   pe 5 categorii (Prezentare · Producţie · Baterie · Reţea · Invertor) cu
+   valori live, tabelele detaliate rămase jos ca secţiune "doar informativ".
+2. **KPI-ul principal urmează categoria şi perioada** (Prezentare/Producţie =
+   producţie, Baterie = SOC, Reţea = direcţia schimbului, Invertor =
+   temperatura maximă).
+3. **Selector de perioadă Oră · Zi · Săpt. · Lună · An**: Oră/Zi din
+   `history_during_period` (rezoluţie fină), Săptămână/Lună/An din
+   `recorder/statistics_during_period` (hook nou `useStatistics`) — sursele
+   sunt oglinzile-template cu `state_class` + senzorii Growatt curaţi;
+   perioadele fără statistici încă afişează starea goală şi se populează
+   singure.
+4. **Grafică per categorie**: "Arcul zilei" (răsărit–apus din `sun.sun`,
+   grosimea = producţia, linia interioară = consumul), "Producţie vs consum"
+   suprapuse cu arie, "Spectrul stringurilor" (PV1–PV4 cu marcaj de vârf din
+   istoric, PV4 estompat), "Pachet APX" (SOC + dezechilibru celule),
+   "Unde merge energia" (formula corectată: PV→casă = pv_out − export −
+   încărcare baterie), "Harta termică" FĂRĂ prag inventat (85 °C eliminat).
+5. **Valori derivate cu comportament strict**: delta "vs ieri aceeaşi oră",
+   "vârf azi la ora X" şi sparkline-urile din "Bilanţ azi" se calculează din
+   recorder; datele lipsă = "—", niciodată zero inventat. Consumul casei =
+   autoconsum + import (formula în tooltip); raport export/import = "—" la
+   import zero.
+6. **Panoul "Ce se întâmplă acum" NU e implementat** (motor de analiză —
+   v1.1.6); rail-ul păstrează doar "Bilanţ azi".
+7. Se păstrează din v1.1.4: logica particulelor (proporţionale, direcţie
+   dinamică), pauza la `visibilitychange` + `prefers-reduced-motion`,
+   comutatorul "Animaţii", tooltips prin portal cu long-press, opacity 0.55
+   pentru zerouri valide. `Tip`/`Roll`/`pressProps` extrase în `overlay.jsx`.
+
 ## 1.1.4
 
 Diagrama de flux energetic — piesa centrală a paginii Energie, în locul
