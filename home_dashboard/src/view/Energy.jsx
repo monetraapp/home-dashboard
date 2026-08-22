@@ -157,7 +157,10 @@ function sparkSvg(values, color, w, h) {
 // desenare al traseului (bateria e desenată baterie→invertor).
 const GEO_V = {
   nodes: {
-    sun: { x: 180, y: 46, r: 22, icon: 'sun', label: 'Soare' },
+    // labelSide 'left': pe layoutul vertical eticheta+subtitlul nodului Soare
+    // stăteau SUB nod, exact peste badge-ul de putere PV (suprapunere 58%,
+    // găsită de auditul responsive) — le mutăm în stânga nodului, ca în v1.1.4.
+    sun: { x: 180, y: 46, r: 22, icon: 'sun', label: 'Soare', labelSide: 'left' },
     inv: { x: 180, y: 164, r: 26, icon: 'bolt', label: 'Invertor' },
     bat: { x: 54, y: 164, r: 22, icon: 'batteryCharging', label: 'Baterie' },
     house: { x: 306, y: 164, r: 22, icon: 'home', label: 'Casă' },
@@ -286,8 +289,20 @@ export function FlowDiagram({ flows, anim, layout, subs }) {
       active ? el('circle', { key: 'h', cx: nd.x, cy: nd.y, r: nd.r + 8, fill: color, opacity: 0.2, style: { filter: 'blur(7px)' } }) : null,
       el('circle', { key: 'b', cx: nd.x, cy: nd.y, r: nd.r, fill: 'rgba(18,12,7,0.92)', stroke: color, strokeWidth: active ? 1.8 : 1.2 }),
       el('g', { key: 'i', transform: 'translate(' + (nd.x - 11) + ',' + (nd.y - 11) + ')' }, icEl(iconName, 22, active ? color : '#8a7c6c')),
-      el('text', { key: 'l', x: nd.x, y: nd.y + nd.r + 17, textAnchor: 'middle', style: { fontFamily: SANS, fontSize: '12px', fontWeight: 400, fill: '#cdc1b3' } }, nd.label),
-      sub ? el('text', { key: 's', x: nd.x, y: nd.y + nd.r + 32, textAnchor: 'middle', style: { fontFamily: SANS, fontSize: '10.5px', fontWeight: 300, fill: TXT3 } }, sub) : null
+      el('text', {
+        key: 'l',
+        x: nd.labelSide === 'left' ? nd.x - nd.r - 10 : nd.x,
+        y: nd.labelSide === 'left' ? nd.y + 1 : nd.y + nd.r + 17,
+        textAnchor: nd.labelSide === 'left' ? 'end' : 'middle',
+        style: { fontFamily: SANS, fontSize: '12px', fontWeight: 400, fill: '#cdc1b3' }
+      }, nd.label),
+      sub ? el('text', {
+        key: 's',
+        x: nd.labelSide === 'left' ? nd.x - nd.r - 10 : nd.x,
+        y: nd.labelSide === 'left' ? nd.y + 16 : nd.y + nd.r + 32,
+        textAnchor: nd.labelSide === 'left' ? 'end' : 'middle',
+        style: { fontFamily: SANS, fontSize: '10.5px', fontWeight: 300, fill: TXT3 }
+      }, sub) : null
     ]);
   };
 
