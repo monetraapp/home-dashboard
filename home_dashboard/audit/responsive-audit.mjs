@@ -1,7 +1,7 @@
 // Audit automat de responsive (v1.1.6) — DOAR inventar, nu repară nimic.
 //
 // Rulare:
-//   HD_HA_URL=http://192.168.0.100:8123 HD_HA_TOKEN=<token> npm run audit:responsive
+//   HD_HA_URL=http://192.168.0.100 HD_HA_TOKEN=<token> npm run audit:responsive
 //   (pe Windows/PowerShell: $env:HD_HA_TOKEN='...'; npm run audit:responsive)
 //
 // Token-ul se citeşte EXCLUSIV din variabila de mediu — nu se scrie nicăieri
@@ -34,7 +34,10 @@ const PORT = 4317;
 const BASE = 'http://127.0.0.1:' + PORT;
 
 const SMOKE = process.argv.includes('--smoke');
-const HA_URL = process.env.HD_HA_URL || 'http://192.168.0.100:8123';
+// HA serveşte direct pe portul 80 (aplicaţia se conectează la
+// http://192.168.0.100, fără port). 8123 NU ascultă nimic — default-ul
+// greşit :8123 a irosit o rundă întreagă de audit pe 22.08.
+const HA_URL = process.env.HD_HA_URL || 'http://192.168.0.100';
 const HA_TOKEN = process.env.HD_HA_TOKEN || '';
 
 // Paginile — aceleaşi chei şi etichete ca în src/model/devices.js (NAV).
@@ -332,9 +335,21 @@ const SEVERITY = {
 async function main() {
   if (!SMOKE && !HA_TOKEN) {
     console.error('\nLipseşte HD_HA_TOKEN. Auditul are nevoie de un token HA valid ca să treacă de ecranul de login.');
-    console.error('PowerShell:  $env:HD_HA_URL="http://192.168.0.100:8123"; $env:HD_HA_TOKEN="<token>"; npm run audit:responsive');
+    console.error('PowerShell:  $env:HD_HA_URL="http://192.168.0.100"; $env:HD_HA_TOKEN="<token>"; npm run audit:responsive');
     console.error('Token-ul rămâne doar în mediul procesului — nu se scrie pe disc şi nu intră în repo.');
     console.error('Pentru un test al instalării fără token: npm run audit:responsive -- --smoke\n');
+    process.exit(2);
+  }
+
+  // Preflight (adăugat după runda irosită din 22.08): confirmăm că HA chiar
+  // răspunde pe HD_HA_URL ÎNAINTE de a porni matricea — /auth/providers nu
+  // cere autentificare şi identifică un URL/port greşit în 2 secunde.
+  try {
+    const pre = await fetch(HA_URL + '/auth/providers', { signal: AbortSignal.timeout(5000) });
+    if (!pre.ok) throw new Error('HTTP ' + pre.status);
+  } catch (e) {
+    console.error('\nPREFLIGHT EŞUAT: HA nu răspunde la ' + HA_URL + ' (' + (e.cause && e.cause.code ? e.cause.code : e.message) + ').');
+    console.error('Verifică HD_HA_URL — aplicaţia reală se conectează la http://192.168.0.100 (port 80, fără :8123).');
     process.exit(2);
   }
 
@@ -385,6 +400,21 @@ async function main() {
           throw new Error('Aplicaţia a rămas pe ecranul de Setup — token-ul din HD_HA_TOKEN pare respins de HA.');
         }
         throw new Error('Dashboard-ul nu s-a încărcat în 30s la lăţimea ' + width + 'px.');
+      }
+      // Verificare timpurie de conectare (lecţia 22.08: 64 de combinaţii au
+      // fost auditate pe o aplicaţie deconectată). Dashboard-ul vizibil NU
+      // înseamnă conectat — aşteptăm să dispară banda offline; dacă nu
+      // dispare în 20s, oprim TOATĂ rularea cu mesaj explicit.
+      try {
+        await pg.waitForFunction(
+          () => !document.body.innerText.includes('Deconectat de la Home Assistant') &&
+                !document.body.innerText.includes('Nu mă pot conecta') &&
+                !document.body.innerText.includes('Se reconectează'),
+          { timeout: 20000 }
+        );
+      } catch (e) {
+        throw new Error('Aplicaţia NU s-a conectat la HA (' + HA_URL + ') — banda offline e încă pe ecran după 20s. ' +
+          'Verifică HD_HA_URL şi HD_HA_TOKEN. Auditul se opreşte ca să nu măsoare o aplicaţie deconectată.');
       }
       await pg.waitForTimeout(3000); // istoric + statistici + fonturi
 
