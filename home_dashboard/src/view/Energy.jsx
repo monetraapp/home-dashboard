@@ -172,8 +172,12 @@ const GEO_V = {
   view: '0 0 360 330',
   paths: { pv: 'M 180 74 L 180 132', load: 'M 212 164 L 278 164', bat: 'M 148 164 L 82 164', grid: 'M 180 196 L 180 254' },
   flip: { pv: 1, load: 1, bat: 1, grid: 1 },
-  // load 245→237: la 237 badge-ul se termină înainte de halo-ul nodului Casă
-  badges: { pv: [192, 108, 'start'], load: [237, 150, 'middle'], bat: [115, 150, 'middle'], grid: [192, 224, 'start'] },
+  // load SUB traseu (y 186), nu deasupra: la y 150 nu există loc orizontal —
+  // între bbox-ul halo-ului Invertorului (până la x≈214) şi cel al Casei
+  // (de la x≈276) încap doar ~62px, mai puţin decât lăţimea badge-ului.
+  // Mutarea pe orizontală (audit v1.2.x) doar plimba suprapunerea dintr-un
+  // halo în celălalt; sub traseu culoarul e liber.
+  badges: { pv: [192, 108, 'start'], load: [246, 186, 'middle'], bat: [115, 150, 'middle'], grid: [192, 224, 'start'] },
   dirWords: { bat: [115, 185, 'middle'], grid: [192, 242, 'start'] },
   font: 19
 };
