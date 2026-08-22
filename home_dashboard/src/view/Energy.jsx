@@ -161,7 +161,10 @@ const GEO_V = {
     // stăteau SUB nod, exact peste badge-ul de putere PV (suprapunere 58%,
     // găsită de auditul responsive) — le mutăm în stânga nodului, ca în v1.1.4.
     sun: { x: 180, y: 46, r: 22, icon: 'sun', label: 'Soare', labelSide: 'left' },
-    inv: { x: 180, y: 164, r: 26, icon: 'bolt', label: 'Invertor' },
+    // subOnly: pe vertical, eticheta 'Invertor' + subtitlul coborau peste
+    // badge-ul reţelei (suprapunere 38%, audit v1.2.0). Iconul fulger e
+    // explicit, aşa că rămâne doar subtitlul, urcat la poziţia etichetei.
+    inv: { x: 180, y: 164, r: 26, icon: 'bolt', label: 'Invertor', subOnly: true },
     bat: { x: 54, y: 164, r: 22, icon: 'batteryCharging', label: 'Baterie' },
     house: { x: 306, y: 164, r: 22, icon: 'home', label: 'Casă' },
     grid: { x: 180, y: 282, r: 22, icon: 'utilityPole', label: 'Reţea' }
@@ -169,7 +172,8 @@ const GEO_V = {
   view: '0 0 360 330',
   paths: { pv: 'M 180 74 L 180 132', load: 'M 212 164 L 278 164', bat: 'M 148 164 L 82 164', grid: 'M 180 196 L 180 254' },
   flip: { pv: 1, load: 1, bat: 1, grid: 1 },
-  badges: { pv: [192, 108, 'start'], load: [245, 150, 'middle'], bat: [115, 150, 'middle'], grid: [192, 224, 'start'] },
+  // load 245→237: la 237 badge-ul se termină înainte de halo-ul nodului Casă
+  badges: { pv: [192, 108, 'start'], load: [237, 150, 'middle'], bat: [115, 150, 'middle'], grid: [192, 224, 'start'] },
   dirWords: { bat: [115, 185, 'middle'], grid: [192, 242, 'start'] },
   font: 19
 };
@@ -289,7 +293,7 @@ export function FlowDiagram({ flows, anim, layout, subs }) {
       active ? el('circle', { key: 'h', cx: nd.x, cy: nd.y, r: nd.r + 8, fill: color, opacity: 0.2, style: { filter: 'blur(7px)' } }) : null,
       el('circle', { key: 'b', cx: nd.x, cy: nd.y, r: nd.r, fill: 'rgba(18,12,7,0.92)', stroke: color, strokeWidth: active ? 1.8 : 1.2 }),
       el('g', { key: 'i', transform: 'translate(' + (nd.x - 11) + ',' + (nd.y - 11) + ')' }, icEl(iconName, 22, active ? color : '#8a7c6c')),
-      el('text', {
+      nd.subOnly ? null : el('text', {
         key: 'l',
         x: nd.labelSide === 'left' ? nd.x - nd.r - 10 : nd.x,
         y: nd.labelSide === 'left' ? nd.y + 1 : nd.y + nd.r + 17,
@@ -299,7 +303,7 @@ export function FlowDiagram({ flows, anim, layout, subs }) {
       sub ? el('text', {
         key: 's',
         x: nd.labelSide === 'left' ? nd.x - nd.r - 10 : nd.x,
-        y: nd.labelSide === 'left' ? nd.y + 16 : nd.y + nd.r + 32,
+        y: nd.labelSide === 'left' ? nd.y + 16 : nd.subOnly ? nd.y + nd.r + 17 : nd.y + nd.r + 32,
         textAnchor: nd.labelSide === 'left' ? 'end' : 'middle',
         style: { fontFamily: SANS, fontSize: '10.5px', fontWeight: 300, fill: TXT3 }
       }, sub) : null
