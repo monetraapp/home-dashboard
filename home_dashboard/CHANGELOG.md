@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.6
+
+Cardul TV Hisense (Dormitor Etaj) păstrează silueta grilei Media: în locul
+zonei goale (icon + „Pornit"), un cadran static identic ca dimensiune —
+inel estompat 0.55, sursa curentă (sau Standby) în centru, spacer-e de
+lăţimea butoanelor −/+ pentru aliniere cu celelalte 7 carduri. Nu e
+clickabil (Hisense/HomeKit nu expune VOLUME_SET); tooltip-ul explică.
+Mute prin switch-ul dedicat şi butoanele de sursă rămân funcţionale.
+
+
 ## 1.2.5
 
 Suprapunerea din diagrama verticală, închisă de-adevăratelea. Cauza pe
