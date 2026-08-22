@@ -290,6 +290,39 @@ export const SUGGESTED_MAP = {
   'gw.serial': 'sensor.knn2e3s00w_serial',
   'gw.dl_serial': 'sensor.knn2e3s00w_datalogger_serial',
   'gw.push': 'sensor.knn2e3s00w_grott_last_data_push',
+  // --------------------------------- ENERGIE · CONTOR RACORD (v1.2.8)
+  // Entity_id-urile provin din registrul de entităţi al device-ului MQTT
+  // GPG0A450ZS (30 de senzori, citire 2026-08-23) — mapate DOAR cele 27
+  // validate de auditul de coerenţă. pos_act_power / rev_act_power (dubluri
+  // bit-cu-bit ale lui pos_rev_act_power, verificat pe istoric 36h) şi
+  // power_factor total (0.833 raportat vs 0.79 = P/S calculat) NU au slot.
+  'ctr.p_net': 'sensor.gpg0a450zs_pos_rev_act_power',
+  'ctr.imp_tot': 'sensor.gpg0a450zs_pos_act_energy',
+  'ctr.exp_tot': 'sensor.gpg0a450zs_rev_act_energy',
+  'ctr.s_tot': 'sensor.gpg0a450zs_app_power',
+  'ctr.q_tot': 'sensor.gpg0a450zs_react_power',
+  'ctr.frecv': 'sensor.gpg0a450zs_grid_frequency',
+  'ctr.f1_v': 'sensor.gpg0a450zs_phase1_voltage',
+  'ctr.f2_v': 'sensor.gpg0a450zs_phase2_voltage',
+  'ctr.f3_v': 'sensor.gpg0a450zs_phase3_voltage',
+  'ctr.f1_a': 'sensor.gpg0a450zs_phase1_current',
+  'ctr.f2_a': 'sensor.gpg0a450zs_phase2_current',
+  'ctr.f3_a': 'sensor.gpg0a450zs_phase3_current',
+  'ctr.f1_p': 'sensor.gpg0a450zs_active_power_l1',
+  'ctr.f2_p': 'sensor.gpg0a450zs_active_power_l2',
+  'ctr.f3_p': 'sensor.gpg0a450zs_active_power_l3',
+  'ctr.f1_s': 'sensor.gpg0a450zs_apparent_power_l1',
+  'ctr.f2_s': 'sensor.gpg0a450zs_apparent_power_l2',
+  'ctr.f3_s': 'sensor.gpg0a450zs_apparent_power_l3',
+  'ctr.f1_q': 'sensor.gpg0a450zs_reactive_power_l1',
+  'ctr.f2_q': 'sensor.gpg0a450zs_reactive_power_l2',
+  'ctr.f3_q': 'sensor.gpg0a450zs_reactive_power_l3',
+  'ctr.f1_pf': 'sensor.gpg0a450zs_power_factor_l1',
+  'ctr.f2_pf': 'sensor.gpg0a450zs_power_factor_l2',
+  'ctr.f3_pf': 'sensor.gpg0a450zs_power_factor_l3',
+  'ctr.serial': 'sensor.gpg0a450zs_serial',
+  'ctr.dl_serial': 'sensor.gpg0a450zs_datalogger_serial',
+  'ctr.push': 'sensor.gpg0a450zs_grott_last_data_push',
   // ------------------------------------- ENERGIE · INSTRUMENT (v1.1.5)
   // sun.sun verificat live 2026-08-22 (next_rising/next_setting prezente).
   'energie.soare': 'sun.sun',

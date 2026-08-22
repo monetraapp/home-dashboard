@@ -165,7 +165,17 @@ const D = {
   'Sistem|Factor de putere': 'Raportul dintre puterea utilă şi cea totală — 1.00 înseamnă transfer perfect. Registrul brut e ×1000.',
   'Arcul zilei': 'Soarele de la răsărit la apus: grosimea benzii urmăreşte producţia, linia interioară e consumul casei.',
   'Spectrul stringurilor': 'Puterea fiecărui string acum, faţă de vârful lui de azi, plus cota din energia zilei.',
-  'Unde merge energia': 'Repartiţia producţiei în acest moment. PV→casă = putere după conversie − export − încărcare baterie.'
+  'Unde merge energia': 'Repartiţia producţiei în acest moment. PV→casă = putere după conversie − export − încărcare baterie.',
+
+  // ------------------------------------------- contor racord (v1.2.8)
+  'Contor racord|Net la racord': 'Saldo-ul măsurat de contorul de la racord, independent de invertor: Import când casa trage din reţea, Export când împinge surplus.',
+  'Contor racord|Import total (contor)': 'Energia importată, contorizată PER FAZĂ: suma fazelor care trag din reţea, chiar dacă altele exportă simultan. De aceea diferă de registrul invertorului.',
+  'Contor racord|Export total (contor)': 'Energia exportată, contorizată PER FAZĂ: suma fazelor care împing în reţea. Diferă de registrul invertorului, care face saldo pe toate fazele.',
+  'Contor racord|Putere aparentă totală': 'Puterea totală vehiculată prin racord (V×A), inclusiv componenta reactivă care nu produce lucru util.',
+  'Contor racord|Putere reactivă totală': 'Componenta care oscilează între reţea şi casă fără să producă lucru util. Negativă = caracter capacitiv.',
+  'Contor racord|Frecvenţă la racord': 'Frecvenţa reţelei măsurată de contor — a doua opinie faţă de invertor.',
+  'Contor racord|Invertor asociat': 'Seria invertorului pe care contorul îl deserveşte, aşa cum o raportează contorul.',
+  'Faze la racord': 'Puterea activă pe fiecare fază, măsurată de contorul de la racord. Semnul poate diferi între faze: una poate importa în timp ce alta exportă.'
 };
 
 /**

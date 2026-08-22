@@ -258,7 +258,7 @@ eq('niciun control interzis nu e mapat (PoE, reboot, Aux1/Aux2)',
 eq('sloturile ramase au toate un motiv explicit',
    SLOTS.filter((x) => !SUGGESTED_MAP[x.key] && !UNMAPPED_REASONS[x.key]).map((x) => x.key), []);
 
-eq('total: 253 mapate din 253 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [253, 253]);
+eq('total: 280 mapate din 280 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [280, 280]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------
@@ -291,6 +291,35 @@ eq('entitatile Growatt sunt unice pe sloturi',
    (() => {
      const seen = {};
      gwKeys.forEach((k) => { seen[SUGGESTED_MAP[k]] = (seen[SUGGESTED_MAP[k]] || 0) + 1; });
+     return Object.keys(seen).filter((id) => seen[id] > 1);
+   })(), []);
+
+// ---- contor racord GPG0A450ZS (v1.2.8) -------------------------------------
+console.log('contor racord:');
+const ctrKeys = propuse.filter((k) => k.startsWith('ctr.'));
+eq('27 sloturi de contor, toate mapate', ctrKeys.length, 27);
+eq('toate sloturile ctr.* tintesc device-ul GPG0A450ZS',
+   ctrKeys.filter((k) => !SUGGESTED_MAP[k].startsWith('sensor.gpg0a450zs_')), []);
+
+// Registrele respinse de auditul de coerenta din 2026-08-23:
+// pos_act_power si rev_act_power sunt dubluri bit-cu-bit ale registrului net
+// semnat pos_rev_act_power (verificat pe istoric 36h — identice la fiecare
+// esantion), deci etichetele lor mint; power_factor total nu se inchide pe
+// P/S (0.833 raportat vs 0.79 calculat), desi cele per faza se inchid ±1%.
+const CTR_INTERZISE = ['pos_act_power', 'rev_act_power', 'power_factor']
+  .map((sfx) => 'sensor.gpg0a450zs_' + sfx);
+eq('niciun registru de contor respins de audit nu e mapat',
+   propuse.filter((k) => CTR_INTERZISE.indexOf(SUGGESTED_MAP[k]) >= 0), []);
+
+// power_factor_l1..l3 (validate, P/S per faza) raman mapate desi numele
+// contine prefixul registrului interzis power_factor — verificarea e pe id exact.
+eq('power_factor_l1 (validat) este mapat',
+   SUGGESTED_MAP['ctr.f1_pf'], 'sensor.gpg0a450zs_power_factor_l1');
+
+eq('entitatile contorului sunt unice pe sloturi',
+   (() => {
+     const seen = {};
+     ctrKeys.forEach((k) => { seen[SUGGESTED_MAP[k]] = (seen[SUGGESTED_MAP[k]] || 0) + 1; });
      return Object.keys(seen).filter((id) => seen[id] > 1);
    })(), []);
 

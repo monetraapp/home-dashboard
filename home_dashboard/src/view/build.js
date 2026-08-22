@@ -127,6 +127,18 @@ function monitorValue(E, cell) {
     if ((n || 0) >= 1) return { text: d.negLabel + ' · ' + Math.round(n) + ' ' + unit, verify: false };
     return { text: d.zeroLabel, verify: false };
   }
+  // sdir (v1.2.8): direcţia netă dintr-UN singur slot semnat — contorul de
+  // racord publică saldo-ul într-un registru unic (pozitiv = import,
+  // negativ = export), spre deosebire de invertor, care are registre separate.
+  if (cell.sdir) {
+    const d2 = cell.sdir;
+    if (!E.mapped(d2.slot)) return { text: VERIFY, verify: true };
+    const v2 = E.num(d2.slot);
+    if (v2 === null) return { text: NA, verify: false };
+    if (v2 >= 1) return { text: d2.posLabel + ' · ' + fmtPower(v2), verify: false };
+    if (v2 <= -1) return { text: d2.negLabel + ' · ' + fmtPower(-v2), verify: false };
+    return { text: d2.zeroLabel, verify: false };
+  }
   // diff (v1.1.3): diferenţa a două sloturi — ex. dezechilibrul de celule
   // (tensiune maximă − minimă, în mV brut, aşa cum le publică BMS-ul).
   if (cell.diff) {

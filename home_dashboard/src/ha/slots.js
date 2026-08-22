@@ -335,6 +335,47 @@ export const SLOTS = [
   slot('gw.serial', 'Growatt · serie invertor', 'energie', ['sensor']),
   slot('gw.dl_serial', 'Growatt · serie datalogger', 'energie', ['sensor']),
   slot('gw.push', 'Growatt · ultimul pachet de date', 'energie', ['sensor']),
+  // --------------------------------- ENERGIE · CONTOR RACORD (v1.2.8)
+  // Contorul inteligent Growatt de la punctul de racord (device MQTT
+  // GPG0A450ZS prin Grott) — măsurare independentă faţă de invertor.
+  // Lista provine EXCLUSIV din cele 27 de registre validate de auditul de
+  // coerenţă din 2026-08-23 (Σ faze ≈ total ±2%, PF=P/S per fază ±1%,
+  // cross-check cu invertorul ±1.5%, delta-check pe contoarele de energie).
+  // Respinse (FĂRĂ slot): pos_act_power şi rev_act_power (dubluri identice
+  // ale registrului net semnat) şi power_factor total (nu se închide pe P/S).
+  slot('ctr.p_net', 'Contor · putere netă la racord (semnată)', 'energie', ['sensor'], {
+    note: 'Un singur registru semnat: pozitiv = import, negativ = export.'
+  }),
+  slot('ctr.imp_tot', 'Contor · import total', 'energie', ['sensor'], {
+    note: 'Contorizare PER FAZĂ (suma fazelor care trag din reţea) — nu saldo vectorial, deci nu coincide cu registrul invertorului.'
+  }),
+  slot('ctr.exp_tot', 'Contor · export total', 'energie', ['sensor'], {
+    note: 'Contorizare PER FAZĂ (suma fazelor care împing în reţea).'
+  }),
+  slot('ctr.s_tot', 'Contor · putere aparentă totală', 'energie', ['sensor']),
+  slot('ctr.q_tot', 'Contor · putere reactivă totală', 'energie', ['sensor']),
+  slot('ctr.frecv', 'Contor · frecvenţă la racord', 'energie', ['sensor']),
+  slot('ctr.f1_v', 'Contor · faza 1 tensiune', 'energie', ['sensor']),
+  slot('ctr.f2_v', 'Contor · faza 2 tensiune', 'energie', ['sensor']),
+  slot('ctr.f3_v', 'Contor · faza 3 tensiune', 'energie', ['sensor']),
+  slot('ctr.f1_a', 'Contor · faza 1 curent', 'energie', ['sensor']),
+  slot('ctr.f2_a', 'Contor · faza 2 curent', 'energie', ['sensor']),
+  slot('ctr.f3_a', 'Contor · faza 3 curent', 'energie', ['sensor']),
+  slot('ctr.f1_p', 'Contor · faza 1 putere activă', 'energie', ['sensor']),
+  slot('ctr.f2_p', 'Contor · faza 2 putere activă', 'energie', ['sensor']),
+  slot('ctr.f3_p', 'Contor · faza 3 putere activă', 'energie', ['sensor']),
+  slot('ctr.f1_s', 'Contor · faza 1 putere aparentă', 'energie', ['sensor']),
+  slot('ctr.f2_s', 'Contor · faza 2 putere aparentă', 'energie', ['sensor']),
+  slot('ctr.f3_s', 'Contor · faza 3 putere aparentă', 'energie', ['sensor']),
+  slot('ctr.f1_q', 'Contor · faza 1 putere reactivă', 'energie', ['sensor']),
+  slot('ctr.f2_q', 'Contor · faza 2 putere reactivă', 'energie', ['sensor']),
+  slot('ctr.f3_q', 'Contor · faza 3 putere reactivă', 'energie', ['sensor']),
+  slot('ctr.f1_pf', 'Contor · faza 1 factor de putere', 'energie', ['sensor']),
+  slot('ctr.f2_pf', 'Contor · faza 2 factor de putere', 'energie', ['sensor']),
+  slot('ctr.f3_pf', 'Contor · faza 3 factor de putere', 'energie', ['sensor']),
+  slot('ctr.serial', 'Contor · invertor asociat', 'energie', ['sensor']),
+  slot('ctr.dl_serial', 'Contor · serie datalogger', 'energie', ['sensor']),
+  slot('ctr.push', 'Contor · ultimul pachet de date', 'energie', ['sensor']),
   // ------------------------------------- ENERGIE · INSTRUMENT (v1.1.5)
   // Răsărit/apus pentru "Arcul zilei" — atribute live (next_rising/next_setting),
   // niciodată istoric (recorder-ul nu redă atribute).

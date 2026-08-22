@@ -579,6 +579,53 @@ export const PAGES = {
         ]
       },
       {
+        // Contorul inteligent de la punctul de racord (v1.2.8) — măsurare
+        // independentă faţă de invertor. Doar cele 27 de registre validate de
+        // auditul de coerenţă din 2026-08-23; pos/rev_act_power (dubluri) şi
+        // power_factor total (nu se închide pe P/S) au rămas fără slot.
+        title: 'Contor racord · GPG0A450ZS',
+        blocks: [
+          bars('Faze la racord', [
+            { label: 'L1', slot: 'ctr.f1_p' },
+            { label: 'L2', slot: 'ctr.f2_p' },
+            { label: 'L3', slot: 'ctr.f3_p' }
+          ]),
+          expand('Contor racord', [
+            // Un singur registru semnat: pozitiv = import, negativ = export
+            // (verificat încrucişat cu invertorul: ±1.5% pe ambele sensuri).
+            ['Net la racord', { sdir: { slot: 'ctr.p_net', posLabel: 'Import', negLabel: 'Export', zeroLabel: 'Echilibru' } }],
+            r('Import total (contor)', 'ctr.imp_tot', { unit: 'kWh' }),
+            r('Export total (contor)', 'ctr.exp_tot', { unit: 'kWh' })
+          ], [
+            r('Faza 1 · tensiune', 'ctr.f1_v', { unit: 'V' }),
+            r('Faza 2 · tensiune', 'ctr.f2_v', { unit: 'V' }),
+            r('Faza 3 · tensiune', 'ctr.f3_v', { unit: 'V' }),
+            r('Faza 1 · curent', 'ctr.f1_a', { unit: 'A' }),
+            r('Faza 2 · curent', 'ctr.f2_a', { unit: 'A' }),
+            r('Faza 3 · curent', 'ctr.f3_a', { unit: 'A' }),
+            r('Faza 1 · putere activă', 'ctr.f1_p', { unit: 'W', decimals: 0 }),
+            r('Faza 2 · putere activă', 'ctr.f2_p', { unit: 'W', decimals: 0 }),
+            r('Faza 3 · putere activă', 'ctr.f3_p', { unit: 'W', decimals: 0 }),
+            r('Faza 1 · putere aparentă', 'ctr.f1_s', { unit: 'VA', decimals: 0 }),
+            r('Faza 2 · putere aparentă', 'ctr.f2_s', { unit: 'VA', decimals: 0 }),
+            r('Faza 3 · putere aparentă', 'ctr.f3_s', { unit: 'VA', decimals: 0 }),
+            r('Faza 1 · putere reactivă', 'ctr.f1_q', { unit: 'var', decimals: 0 }),
+            r('Faza 2 · putere reactivă', 'ctr.f2_q', { unit: 'var', decimals: 0 }),
+            r('Faza 3 · putere reactivă', 'ctr.f3_q', { unit: 'var', decimals: 0 }),
+            r('Faza 1 · factor de putere', 'ctr.f1_pf', { unit: '', decimals: 2 }),
+            r('Faza 2 · factor de putere', 'ctr.f2_pf', { unit: '', decimals: 2 }),
+            r('Faza 3 · factor de putere', 'ctr.f3_pf', { unit: '', decimals: 2 }),
+            r('Putere aparentă totală', 'ctr.s_tot', { unit: 'VA', decimals: 0 }),
+            r('Putere reactivă totală', 'ctr.q_tot', { unit: 'var', decimals: 0 }),
+            r('Frecvenţă la racord', 'ctr.frecv', { unit: 'Hz', decimals: 2 }),
+            r('Invertor asociat', 'ctr.serial', { unit: '' }),
+            r('Serie datalogger', 'ctr.dl_serial', { unit: '' }),
+            r('Ultimul pachet de date', 'ctr.push', { time: true })
+          ]),
+          note('Contorul măsoară independent de invertor, la punctul de racord. Atenţie la totaluri: contorizează PER FAZĂ — importul e suma fazelor care trag din reţea, exportul suma celor care împing, posibile simultan. De aceea nu coincid cu registrele invertorului, care fac saldo pe toate fazele.')
+        ]
+      },
+      {
         title: 'Consum măsurat separat',
         blocks: [
           monitor('AC Etaj LG', [
