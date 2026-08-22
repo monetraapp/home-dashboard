@@ -911,29 +911,6 @@ export function buildSidebarDevice(E, ui, def) {
   };
 }
 
-/** Rând compact „Scurtături" din coloana din stânga. */
-export function buildQuickRow(E, ui, def) {
-  const a = E.mapped(def.slot) && E.isOn(def.slot);
-  const canToggle = E.mapped(def.slot) && E.available(def.slot);
-  const status = !E.mapped(def.slot) ? VERIFY : !E.available(def.slot) ? NA : a ? 'Pornit' : 'Oprit';
-  return {
-    id: def.id,
-    label: def.label,
-    status,
-    iconEl: ic(def.icon, { size: 15, color: a ? ORANGE : TXT2 }),
-    iconWrapStyle: 'width:34px; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:' + (a ? 'rgba(240,138,44,0.13)' : 'rgba(255,255,255,0.045)') + '; border:1px solid ' + (a ? 'rgba(240,138,44,0.28)' : 'rgba(255,255,255,0.06)') + ';',
-    quickRowStyle: 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 11px; border-radius:14px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.06);',
-    quickNameStyle: 'font-family:' + SANS + '; font-size:12px; font-weight:400; color:' + TXT + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
-    quickStatusStyle: 'font-family:' + SANS + '; font-size:10.5px; color:' + (status === VERIFY ? ORANGE : a ? '#c8a173' : TXT3) + ';',
-    togglePillStyle: togglePill(a) + ' opacity:' + (canToggle ? 1 : 0.55) + ';',
-    toggleKnobStyle: toggleKnob(a),
-    toggleTextStyle: toggleText(a),
-    toggleText: a ? 'on' : 'off',
-    toggleIconEl: ic('power', { size: 13, color: a ? '#2a1608' : '#8f8272', sw: 2 }),
-    onToggle: () => { if (canToggle) E.toggle(def.slot); }
-  };
-}
-
 // -------------------------------------------------------------------- modal
 export function buildModal(E, ui) {
   const id = ui.modalId;

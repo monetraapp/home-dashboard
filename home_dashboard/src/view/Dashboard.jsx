@@ -19,7 +19,7 @@ import {
   MEDIA_ZONES, MEDIA_ZONE_OF
 } from '../model/devices.js';
 import { PAGES, PAGE_HERO } from '../model/pages.js';
-import { buildPageCard, buildDeviceCard, buildSidebarDevice, buildQuickRow, buildModal } from './build.js';
+import { buildPageCard, buildDeviceCard, buildSidebarDevice, buildModal } from './build.js';
 
 const AC_UNIT_IDS = ['ac-vortex', 'ac-etaj', 'ac-vivax'];
 
@@ -185,7 +185,6 @@ export default function Dashboard({ onOpenMapping }) {
     .filter(Boolean)
     .map((d) => buildDeviceCard(E, ui, d));
 
-  const quickRows = trackedCards.slice(0, 4).map((d) => buildQuickRow(E, ui, d));
   const modal = buildModal(E, ui);
 
   // ----------------------------------------------------------------- stiluri
@@ -555,27 +554,6 @@ export default function Dashboard({ onOpenMapping }) {
                   </div>
                 </div>
 
-                <div style={s(glassCard())}>
-                  <div style={s(cardTitleStyle)}>Scurtături</div>
-                  <div style={s(cardSubStyle)}>Dispozitive urmărite</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
-                    {quickRows.map((d) => (
-                      <div key={d.id} style={s(d.quickRowStyle)}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                          <div style={s(d.iconWrapStyle)}>{d.iconEl}</div>
-                          <div style={{ minWidth: 0 }}>
-                            <div style={s(d.quickNameStyle)}>{d.label}</div>
-                            <div style={s(d.quickStatusStyle)}>{d.status}</div>
-                          </div>
-                        </div>
-                        <div className="hdTapY" style={s(d.togglePillStyle)} onClick={d.onToggle}>
-                          <div style={s(d.toggleKnobStyle)}>{d.toggleIconEl}</div>
-                          <span style={s(d.toggleTextStyle)}>{d.toggleText}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </>
             )}
           </div>
