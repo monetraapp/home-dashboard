@@ -242,7 +242,7 @@ export default function Dashboard({ onOpenMapping }) {
       <img
         src={import.meta.env.BASE_URL + 'hero-house.webp'}
         alt=""
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: mob ? 'center 62%' : 'center' }}
       />
       <div style={s('position:absolute; inset:0; background:linear-gradient(180deg, rgba(16,13,11,' + (narrow ? '0.15' : '0.35') + ') 0%, rgba(16,13,11,0) ' + (narrow ? '22%' : '30%') + ', rgba(16,13,11,0.55) ' + (narrow ? '58%' : '72%') + ', rgba(16,13,11,0.95) 100%); pointer-events:none;')} />
       {!narrow ? (

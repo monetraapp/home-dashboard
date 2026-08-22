@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.7
+
+Imaginea de antet înlocuită (vilă aeriană nocturnă, 1579×996 webp).
+Comportamentul rămâne cel din v1.1.6: fundal cu titlu suprapus pe desktop
+(capul coloanei drepte), primul element al paginii pe mobil/tabletă,
+gradient spre jos pentru titlu şi chips. Încadrare verificată pe
+360/760/1440 cu capturi: pe telefon fâşia de 150px prindea acoperişul
+întunecat din treimea de sus, aşa că `object-position` e `center 62%` pe
+mobil (banda cu terasele luminate); tableta şi desktopul rămân `center`.
+
+
 ## 1.2.6
 
 Cardul TV Hisense (Dormitor Etaj) păstrează silueta grilei Media: în locul
