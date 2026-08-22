@@ -191,6 +191,27 @@ export default function Dashboard({ onOpenMapping }) {
   // ----------------------------------------------------------------- stiluri
   const deskStyle = 'min-height:100vh; width:100%; padding:0; background:#0b0908; font-family:' + SANS + ';';
   const panelStyle = 'background:#100d0b; min-height:100vh; display:flex; flex-direction:column; padding-bottom:18px;';
+  // v1.1.6: fade-ul barei de navigaţie apare doar pe marginea unde chiar mai
+  // există taburi (înainte era static, doar pe dreapta).
+  const navScrollRef = useRef(null);
+  const [navFade, setNavFade] = useState({ l: false, r: true });
+  const updateNavFade = () => {
+    const elN = navScrollRef.current;
+    if (!elN) return;
+    const l = elN.scrollLeft > 4;
+    const r = elN.scrollLeft + elN.clientWidth < elN.scrollWidth - 4;
+    setNavFade((f) => (f.l === l && f.r === r ? f : { l, r }));
+  };
+  useEffect(() => {
+    updateNavFade();
+    window.addEventListener('resize', updateNavFade);
+    return () => window.removeEventListener('resize', updateNavFade);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bp.vw]);
+  const navMask = 'linear-gradient(90deg, ' +
+    (navFade.l ? 'transparent 0, #000 26px' : '#000 0') + ', #000 calc(100% - 26px), ' +
+    (navFade.r ? 'transparent 100%' : '#000 100%') + ')';
+
   const navRowStyle = 'display:flex; align-items:center; gap:' + (mob ? '10px' : '16px') + '; padding:' + (mob ? '12px 14px' : '18px 26px') + '; border-bottom:1px solid rgba(255,255,255,0.05);';
   const bodyRowStyle = 'display:flex; align-items:stretch; gap:0; min-width:0;' + (narrow ? ' flex-direction:column;' : '');
   const leftColStyle = narrow
@@ -199,7 +220,8 @@ export default function Dashboard({ onOpenMapping }) {
   const rightColStyle = 'flex:1; min-width:0; display:flex; flex-direction:column;';
   const cardTitleStyle = 'font-family:' + SANS + '; font-size:14.5px; font-weight:500; color:' + TXT + ';';
   const cardSubStyle = 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + TXT3 + '; margin-top:2px;';
-  const circleBtnStyle = 'width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center; color:#b8ab9b; cursor:pointer;';
+  // 44px = ţinta tactilă minimă (v1.1.6; înainte 40px).
+  const circleBtnStyle = 'width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center; color:#b8ab9b; cursor:pointer; flex-shrink:0;';
   // flex:1 + height fixă intrau în conflict (flex-basis bătea height în
   // coloană) şi inelul de 118px ieşea din cardul de 190px. Wrap-ul umple acum
   // spaţiul rămas, iar inelul e dimensionat să încapă (104px).
@@ -209,6 +231,40 @@ export default function Dashboard({ onOpenMapping }) {
   const dialUnitStyle = 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT2 + '; margin-top:3px;';
 
   const heroTitleStyle = 'font-family:' + SERIF + '; font-size:' + (mob ? '24px' : tab ? '30px' : '36px') + '; font-weight:400; line-height:1.1; color:#f7f1e9;';
+
+  // Antetul cu imagine (v1.1.6): un singur JSX, randat primul pe ecrane
+  // înguste şi în capul coloanei drepte pe desktop. Pe telefon: ~150px,
+  // gradient spre jos pentru lizibilitate, imagine centrată (object-position),
+  // fără gradientul lateral de desktop (acolo textul stă peste marginea
+  // stângă; pe mobil doar tăia imaginea).
+  const heroH = mob ? '150px' : tab ? '300px' : '520px';
+  const heroEl = (
+    <div style={s('position:relative; flex:0 0 ' + heroH + '; height:' + heroH + '; overflow:hidden; width:100%;')}>
+      <img
+        src={import.meta.env.BASE_URL + 'hero-house.webp'}
+        alt=""
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+      />
+      <div style={s('position:absolute; inset:0; background:linear-gradient(180deg, rgba(16,13,11,' + (narrow ? '0.15' : '0.35') + ') 0%, rgba(16,13,11,0) ' + (narrow ? '22%' : '30%') + ', rgba(16,13,11,0.55) ' + (narrow ? '58%' : '72%') + ', rgba(16,13,11,0.95) 100%); pointer-events:none;')} />
+      {!narrow ? (
+        <div style={s('position:absolute; inset:0; background:linear-gradient(90deg, rgba(16,13,11,0.9) 0%, rgba(16,13,11,0.15) 22%, rgba(16,13,11,0) 45%); pointer-events:none;')} />
+      ) : null}
+      <div style={s('position:absolute; left:' + (mob ? '14px' : '24px') + '; right:' + (mob ? '14px' : '26px') + '; bottom:' + (mob ? '10px' : '14px') + '; display:flex; align-items:flex-end; justify-content:space-between; gap:' + (mob ? '10px' : '20px') + '; flex-wrap:wrap; pointer-events:none;')}>
+        <div>
+          <div style={s(heroTitleStyle)}>{heroPair[0]}</div>
+          <div style={s(heroTitleStyle)}>{heroPair[1]}</div>
+        </div>
+        <div style={{ display: 'flex', gap: mob ? 6 : 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {heroChips.map((chip, i) => (
+            <div key={i} style={s(chip.chipStyle)}>
+              <span style={s(chip.iconStyle)}>{chip.iconEl}</span>
+              {chip.label}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
   const deviceSectionPadStyle = 'padding:' + (mob ? '16px 14px 22px' : narrow ? '18px 22px 24px' : '20px 26px 26px 20px') + ';';
   const deviceGridStyle = 'display:grid; grid-template-columns:repeat(auto-fit,minmax(' + (mob ? '260px' : '298px') + ',1fr)); gap:14px;';
   const tableSectionStyle = 'padding:' + (mob ? '4px 14px 22px' : narrow ? '4px 22px 24px' : '4px 26px 26px 20px') + ';';
@@ -230,14 +286,22 @@ export default function Dashboard({ onOpenMapping }) {
       <OfflineBanner />
       <div style={s(panelStyle)}>
         {/* ------------------------------------------------------------- nav */}
+        {/* v1.1.6: fade-ul urmăreşte scrollul (apare doar pe marginea unde mai
+            există conţinut), scroll-snap pe taburi, ţinte tactile ≥44px.
+            Avatarul "B" a fost ELIMINAT (un singur utilizator, autentificare
+            prin token — butonul nu comuta nimic). Clopoţelul a fost ELIMINAT:
+            nu afişa notificări/repairs, doar dubla starea conexiunii pe care
+            OfflineBanner o semnalează deja. */}
         <div style={s(navRowStyle)}>
-          {/* logo-ul "fusion" (branding ramas din portarea designului) a fost
-              eliminat in v1.1.2; taburile incep direct din stanga barei. */}
-          <div style={s('display:flex; align-items:center; gap:9px; flex:1; min-width:0; padding-left:4px; overflow-x:auto; scrollbar-width:none; padding:2px; mask-image:linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%); -webkit-mask-image:linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);')}>
+          <div
+            ref={navScrollRef}
+            onScroll={updateNavFade}
+            style={s('display:flex; align-items:center; gap:9px; flex:1; min-width:0; padding:2px 2px 2px 4px; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; mask-image:' + navMask + '; -webkit-mask-image:' + navMask + ';')}
+          >
             {NAV.map((n) => {
               const a = n.key === page;
               return (
-                <div key={n.key} style={s(navItemStyle(a))} onClick={() => setPage(n.key)}>
+                <div key={n.key} style={s(navItemStyle(a) + ' scroll-snap-align:start; min-height:44px;')} onClick={() => setPage(n.key)}>
                   <span style={s(navIconBox(a))}>{ic(n.icon, { size: 19, sw: 1.7 })}</span>
                   <span style={s(navLabel(a))}>{n.label}</span>
                 </div>
@@ -255,19 +319,14 @@ export default function Dashboard({ onOpenMapping }) {
             >
               {ic('sparkle', { size: 16 })}
             </div>
-            <div
-              style={s(circleBtnStyle + ' color:' + (ha.connected ? '#b8ab9b' : '#e8a08a') + ';')}
-              title={ha.connected ? 'Conectat la ' + (ha.config ? ha.config.url : '') : 'Deconectat de la Home Assistant'}
-            >
-              {ic(ha.connected ? 'bell' : 'alertTri', { size: 16 })}
-            </div>
-            <div style={s('width:40px; height:40px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:' + SANS + '; font-size:14.5px; font-weight:500; color:#2a1608; background:linear-gradient(140deg,' + ORANGE_HI + ',#D9691C); box-shadow:0 8px 18px -8px rgba(240,138,44,0.6);')}>
-              B
-            </div>
           </div>
         </div>
 
         <div style={s(bodyRowStyle)}>
+          {/* v1.1.6: pe ecrane înguste antetul cu imagine e PRIMUL element al
+              paginii (înainte stătea în coloana dreaptă, care pe mobil venea
+              după toată coloana stângă — antetul ajungea la mijlocul paginii). */}
+          {narrow ? heroEl : null}
           {/* ------------------------------------------------- coloana stânga */}
           <div style={s(leftColStyle)}>
             <div style={{ padding: '6px 0 52px' }}>
@@ -517,29 +576,7 @@ export default function Dashboard({ onOpenMapping }) {
 
           {/* -------------------------------------------------- coloana dreapta */}
           <div style={s(rightColStyle)}>
-            <div style={s('position:relative; flex:0 0 ' + (mob ? '300px' : tab ? '400px' : '520px') + '; height:' + (mob ? '300px' : tab ? '400px' : '520px') + '; overflow:hidden;')}>
-              <img
-                src={import.meta.env.BASE_URL + 'hero-house.webp'}
-                alt=""
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-              <div style={s('position:absolute; inset:0; background:linear-gradient(180deg, rgba(16,13,11,0.35) 0%, rgba(16,13,11,0) 30%, rgba(16,13,11,0.55) 72%, rgba(16,13,11,0.95) 100%); pointer-events:none;')} />
-              <div style={s('position:absolute; inset:0; background:linear-gradient(90deg, rgba(16,13,11,0.9) 0%, rgba(16,13,11,0.15) 22%, rgba(16,13,11,0) 45%); pointer-events:none;')} />
-              <div style={s('position:absolute; left:' + (mob ? '14px' : '24px') + '; right:' + (mob ? '14px' : '26px') + '; bottom:14px; display:flex; align-items:flex-end; justify-content:space-between; gap:' + (mob ? '10px' : '20px') + '; flex-wrap:wrap; pointer-events:none;')}>
-                <div>
-                  <div style={s(heroTitleStyle)}>{heroPair[0]}</div>
-                  <div style={s(heroTitleStyle)}>{heroPair[1]}</div>
-                </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  {heroChips.map((chip, i) => (
-                    <div key={i} style={s(chip.chipStyle)}>
-                      <span style={s(chip.iconStyle)}>{chip.iconEl}</span>
-                      {chip.label}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            {!narrow ? heroEl : null}
 
             {hasDeviceCards ? (
               <div style={s(deviceSectionPadStyle)}>

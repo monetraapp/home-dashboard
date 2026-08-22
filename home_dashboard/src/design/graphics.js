@@ -340,7 +340,14 @@ export function barChart(values, labels, unit, hoverIdx, onHover, mob) {
 
 export function poolChart(values, labels, highlightIdx, deltaLabel) {
   const w = 320, h = 118, n = values.length, colW = w / n;
-  const min = Math.min.apply(null, values) - 1.5, max = Math.max.apply(null, values) + 1.5, range = (max - min) || 1;
+  // v1.1.6: scala veche forţa un span de minim 3° (min−1.5 … max+1.5), aşa că
+  // o apă stabilă (variaţie <1°) aşeza toate marcajele la acelaşi nivel şi
+  // graficul părea gol. Acum spanul urmăreşte variaţia reală (minim 2°), iar
+  // fiecare marcaj primeşte o tijă verticală care îl leagă de bază.
+  const vMin = Math.min.apply(null, values), vMax = Math.max.apply(null, values);
+  const span = Math.max(2, (vMax - vMin) * 1.5);
+  const mid = (vMin + vMax) / 2;
+  const min = mid - span / 2, range = span;
   const nodes = [];
   for (let i = 0; i < n; i++) {
     const x = i * colW;
@@ -351,6 +358,7 @@ export function poolChart(values, labels, highlightIdx, deltaLabel) {
   for (let j = 0; j < n; j++) {
     const y = h - 10 - ((values[j] - min) / range) * (h - 26);
     const cxj = j * colW + colW / 2;
+    nodes.push(el('line', { key: 's' + j, x1: cxj, y1: h - 4, x2: cxj, y2: y + 1.5, stroke: j === highlightIdx ? 'rgba(240,138,44,0.35)' : 'rgba(255,255,255,0.14)', strokeWidth: 2, strokeLinecap: 'round' }));
     nodes.push(el('line', { key: 'd' + j, x1: cxj - 15, y1: y, x2: cxj + 15, y2: y, stroke: j === highlightIdx ? ORANGE : 'rgba(255,255,255,0.75)', strokeWidth: 2, strokeLinecap: 'round' }));
     if (j === highlightIdx) {
       nodes.push(el('rect', { key: 'hb', x: cxj - 26, y: y - 34, width: 52, height: 24, rx: 8, fill: ORANGE }));

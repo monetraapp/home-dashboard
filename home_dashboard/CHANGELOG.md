@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.1.6
+
+Fix-uri pentru mobil (360–414px), verificate după refactorizarea v1.1.5.
+
+1. **Navigaţia principală (8 pagini)**: scrollul orizontal cu scrollbar ascuns
+   şi fade la dreapta existau deja din v1.1.2, iar iconurile din dreapta erau
+   deja în afara containerului de scroll — rămăseseră de făcut: fade-ul e acum
+   dinamic (apare doar pe marginea unde mai există taburi), scroll-snap pe
+   elemente, ţinte tactile ≥44px (butoane 40→44px, taburi min-height 44px).
+2. **Avatarul "B" ELIMINAT** — un singur utilizator, autentificare prin token,
+   butonul nu comuta nimic.
+3. **Clopoţelul ELIMINAT** — nu afişa notificări sau repairs HA; era doar un
+   indicator de conexiune (icon + title cu URL-ul), redundant cu banda
+   OfflineBanner care semnalează deja deconectarea.
+4. **Antetul cu imagine de pe Acasă**: pe ecrane înguste e acum PRIMUL element
+   al paginii (stătea în coloana dreaptă, care pe mobil venea după toată
+   coloana stângă). Pe telefon: ~150px, gradient întărit spre jos, imagine
+   centrată (object-position), fără gradientul lateral de desktop care o tăia
+   din stânga. Titlul + cele 3 chips rămân suprapuse.
+5. **Graficul săptămânal "Temperatură piscină"**: cauza aspectului "gol" —
+   graficul e prin design un dot-plot cu liniuţe orizontale (nu bare), iar
+   scala veche forţa un span de minim 3° (min−1.5…max+1.5); cu apa stabilă
+   toate liniuţele cădeau la acelaşi nivel. Datele existau (badge-ul e din
+   aceeaşi serie). Acum spanul urmăreşte variaţia reală (minim 2°) şi fiecare
+   marcaj are o tijă verticală până la bază.
+
 ## 1.1.5
 
 Pagina Energie, reconstruită după designul "Energie Redesign v2"
