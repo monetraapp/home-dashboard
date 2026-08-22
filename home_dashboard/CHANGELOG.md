@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.8
+
+Contorul inteligent de la racord (GPG0A450ZS) intră în dashboard: card nou
+„Contor racord” pe pagina Energie — bare pe faze, net semnat la racord
+(celulă nouă `sdir` pe un singur registru: pozitiv = import, negativ =
+export), totaluri import/export, detaliu per fază (V/A/W/VA/var/PF) şi
+diagnostic. 27 de sloturi `ctr.*`, exclusiv registrele validate de auditul
+de coerenţă din 2026-08-23 (Σ faze ≈ total ±2%, PF=P/S ±1%, cross-check
+cu invertorul ±1.5%, delta-check pe contoare); `pos_act_power`,
+`rev_act_power` (dubluri bit-cu-bit ale netului) şi `power_factor` total
+(nu se închide pe P/S) sunt respinse, cu test dedicat. Contorizarea e PER
+FAZĂ — documentată în note şi tooltip-uri.
+
+Găuri de mapare închise (auditul HA): firmware Switch Foişor/Etaj (randuri
+noi pe Reţea + Actualizări reţea), starea EAP-urilor (monitor „EAP ·
+Stare”), comutatorul „Limitare putere” al Vortexului (fără el, number-ul
+pwrlimit nu se aplica). `ph_sp` nu se mapează: ţinta pH e deja acoperită
+de template-ul cu scală corectată (`ph_sp/10`).
+
+253 → 288 sloturi mapate; teste: 102 logică + 44 stil.
+
 ## 1.2.7
 
 Imaginea de antet înlocuită (vilă aeriană nocturnă, 1579×996 webp).
