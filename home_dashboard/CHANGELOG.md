@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.3.5
+
+Revenire la `align-items: stretch` peste tot (grila de dispozitive, grila de
+carduri a paginilor, rândul de coloane de pe Acasă) — toate cardurile dintr-un
+rând au din nou aceeaşi înălţime. Diferenţa faţă de v1.3.3: surplusul nu se mai
+adună la baza cardului, ci se distribuie ÎNĂUNTRU, după modelul cardului
+„Control climat".
+
+Carduri de dispozitiv: cardul devine container flex vertical — antetul stă sus
+(fix), zona cadranului creşte şi îşi centrează conţinutul (`flex:1 1 auto`;
+varianta fără cadran păstrează silueta de 132px prin `min-height`), iar
+„Setări avansate" rămâne lipit de bază. Carduri de pagină: spaţiul liber se
+împarte între TOATE secţiunile cu rânduri (monitor/expand), proporţional, deci
+densitatea rândurilor rămâne uniformă în tot cardul; blocurile fără rânduri
+(notă, grafic, grilă) nu cresc. Cardul piscinei absoarbe surplusul coloanei,
+dar graficul NU se întinde — stă la 118px, centrat vertical.
+
+Două variante încercate şi respinse pe parcurs, consemnate în cod ca să nu se
+reintroducă: `space-between` pe cardul de pagină (lasă un gol mare chiar sub
+titlu) şi creşterea doar a ultimului bloc (rânduri de 87px lângă rânduri de
+26px în acelaşi card).
+
+Verificat pe DOM-ul real, 8 pagini × 3 lăţimi (1440/900/390): 234 măsurători de
+card, 42 de rânduri cu cel puţin două carduri — zero carduri cu gol la bază
+peste 48px şi zero rânduri cu înălţimi inegale. Detectorul cardGap din audit
+rămâne valid şi tăcut.
+
 ## 1.3.4
 
 Cardurile nu se mai întind ca să egalizeze rândul (Faza A). Erau trei
