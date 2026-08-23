@@ -340,43 +340,6 @@ export function barChart(values, labels, unit, hoverIdx, onHover, mob) {
     style: { display: 'block', width: '100%', height: 'auto', cursor: onHover ? 'crosshair' : 'default' } }, nodes);
 }
 
-// `maxH` (v1.3.6) e un PLAFON, nu o înălţime impusă: cardul piscinei are acum
-// înălţime fixă, deci graficul se REDUCE cât e nevoie ca să încapă, dar nu
-// depăşeşte niciodată 118px. (Diferenţa faţă de `hPx` din v1.3.2, care îl
-// ÎNTINDEA — vezi FitPoolChart, eliminat în v1.3.4.)
-export function poolChart(values, labels, highlightIdx, deltaLabel, maxH) {
-  const w = 320, h = Math.max(70, Math.min(118, maxH || 118)), n = values.length, colW = w / n;
-  // v1.1.6: scala veche forţa un span de minim 3° (min−1.5 … max+1.5), aşa că
-  // o apă stabilă (variaţie <1°) aşeza toate marcajele la acelaşi nivel şi
-  // graficul părea gol. Acum spanul urmăreşte variaţia reală (minim 2°), iar
-  // fiecare marcaj primeşte o tijă verticală care îl leagă de bază.
-  const vMin = Math.min.apply(null, values), vMax = Math.max.apply(null, values);
-  const span = Math.max(2, (vMax - vMin) * 1.5);
-  const mid = (vMin + vMax) / 2;
-  const min = mid - span / 2, range = span;
-  const nodes = [];
-  for (let i = 0; i < n; i++) {
-    const x = i * colW;
-    nodes.push(el('line', { key: 'g' + i, x1: x, y1: 6, x2: x, y2: h - 4, stroke: 'rgba(255,255,255,0.055)', strokeWidth: 1 }));
-  }
-  nodes.push(el('line', { key: 'gl', x1: w, y1: 6, x2: w, y2: h - 4, stroke: 'rgba(255,255,255,0.055)', strokeWidth: 1 }));
-  nodes.push(el('line', { key: 'mid', x1: 0, y1: h * 0.52, x2: w, y2: h * 0.52, stroke: 'rgba(255,255,255,0.07)', strokeWidth: 1, strokeDasharray: '3 5' }));
-  for (let j = 0; j < n; j++) {
-    const y = h - 10 - ((values[j] - min) / range) * (h - 26);
-    const cxj = j * colW + colW / 2;
-    nodes.push(el('line', { key: 's' + j, x1: cxj, y1: h - 4, x2: cxj, y2: y + 1.5, stroke: j === highlightIdx ? 'rgba(240,138,44,0.35)' : 'rgba(255,255,255,0.14)', strokeWidth: 2, strokeLinecap: 'round' }));
-    nodes.push(el('line', { key: 'd' + j, x1: cxj - 15, y1: y, x2: cxj + 15, y2: y, stroke: j === highlightIdx ? ORANGE : 'rgba(255,255,255,0.75)', strokeWidth: 2, strokeLinecap: 'round' }));
-    if (j === highlightIdx) {
-      nodes.push(el('rect', { key: 'hb', x: cxj - 26, y: y - 34, width: 52, height: 24, rx: 8, fill: ORANGE }));
-      nodes.push(el('text', { key: 'ht', x: cxj, y: y - 17.5, textAnchor: 'middle', fill: '#2a1608', style: { fontFamily: SANS, fontSize: '11.5px', fontWeight: 600 } }, deltaLabel));
-    }
-  }
-  const svg = el('svg', { key: 'svg', viewBox: '0 0 ' + w + ' ' + h, width: '100%', height: h, style: { display: 'block', marginTop: '14px' } }, nodes);
-  const labelRow = el('div', { key: 'lb', style: cssToObj('display:flex; margin-top:6px;') }, labels.map((lb, i) =>
-    el('span', { key: i, style: cssToObj('flex:1; text-align:center; font-family:' + SANS + '; font-size:10.5px; color:#6c6053;') }, lb)));
-  return el('div', {}, [svg, labelRow]);
-}
-
 // ------------------------------------------------- producţie pe zi (v1.1.4)
 /**
  * Curbă de producţie cu arie umplută pe ziua curentă, ore pe axa X.

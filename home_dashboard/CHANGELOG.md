@@ -1,5 +1,49 @@
 # Changelog
 
+## 1.4.0
+
+Graficul din cardul „Temperatură piscină", refăcut complet: **curbă netedă cu
+arie umplută** şi gradient care se estompează spre bază, pe **date orare**, cu
+indicator la hover şi la atingere. Dot-plot-ul cu tije (o valoare pe zi) şi
+rândul de etichete zilnice au dispărut — momentul se citeşte acum din antet,
+la poziţia indicatorului.
+
+**Sursa de date: statistici ORARE, nu istoric brut.** Senzorul are
+`state_class: measurement`, deci HA îi calculează singur media pe oră; 7 zile
+înseamnă cel mult 168 de puncte — mărginit, precis şi rezistent la epurarea
+recorder-ului (istoricul brut ar fi fost nemărginit şi s-ar fi pierdut după 10
+zile). Fereastra e ancorată la ORA curentă, nu la ceasul care bate în fiecare
+secundă, altfel interogarea s-ar reface continuu. Orele fără statistici de la
+capete se taie: senzorul-oglindă a fost creat pe 20.08, deci acum există ~96 de
+ore, iar curba se întinde pe toată lăţimea şi subtitlul spune sincer „în 4
+zile" — în loc să înghesuie graficul în dreapta şi să pretindă 7 zile.
+Subtitlul devine „în 7 zile" de la sine, pe măsură ce se adună statistici.
+
+**Interpolare monotonă** (Fritsch–Carlson, `design/curve.js`, modul pur): între
+două ore măsurate curba nu poate depăşi valorile lor. O netezire obişnuită ar fi
+desenat, între 31 °C şi 33 °C, un vârf la 33,4 °C — un maxim care nu s-a
+măsurat niciodată. Golurile din statistici rup curba în tronsoane, ca să nu
+apară o linie dreaptă peste ore fără date.
+
+**Interacţiune.** Cu mouse-ul: indicator la hover, dispare la ieşire. Cu
+degetul (tabletă montată, `pointer: coarse`): atingerea şi glisarea mută
+indicatorul, iar `touch-action: pan-y` lasă pagina să deruleze pe verticală, dar
+ne dă glisarea pe orizontală. După ridicarea degetului valoarea rămâne
+citibilă 2,5 secunde — altfel ar dispărea exact în clipa în care îţi iei
+degetul de pe ecran ca s-o citeşti; dacă browserul preia gestul pentru derulare
+(`pointercancel`), indicatorul dispare imediat. Cu indicatorul activ, antetul
+arată valoarea DIN ACEL PUNCT şi momentul ei („31,7°" · „Sâmbătă 11:00"); fără
+indicator, valoarea curentă, ca înainte.
+
+Cardul rămâne la înălţimea fixă de 230px; aria iese în marginile lui (margin
+negativ + `overflow:hidden`), ca în referinţă. Paleta şi fonturile sunt cele
+existente. Fără date: aceeaşi stare goală onestă.
+
+Teste: 153 logică (+16 pe `curve.js`, între care verificarea că nicio porţiune
+de curbă nu depăşeşte valorile măsurate) + 44 stil. Verificat pe DOM real:
+formă (1 curbă, 1 arie, 0 tije), hover, ieşirea cursorului, `pointer: coarse`,
+glisare, persistenţa de 2,5s şi anularea la derulare.
+
 ## 1.3.6
 
 Coloana stângă de pe Acasă, reorganizată: **ceas → ziua şi data → vreme →

@@ -5,12 +5,15 @@ import {
   PILL_ON, pad, DAYS, MONTHS
 } from '../design/tokens.js';
 import { ic } from '../design/icons.js';
-import { arcGauge, sliderRow, ribbonRing, segmentRing, poolChart } from '../design/graphics.js';
+import { arcGauge, sliderRow, ribbonRing, segmentRing } from '../design/graphics.js';
+import PoolChart, { cursorLabel } from './PoolChart.jsx';
 import { useBreakpoint } from '../design/breakpoints.js';
 import { fmtUnitAuto, fmtTemp, dec } from '../design/format.js';
 import { useHa } from '../ha/context.js';
 import { useEntities, VERIFY, NA, HVAC_LABEL } from '../ha/entities.js';
-import { useHistory, dailyAverage, fillGaps, lastDayLabels } from '../ha/history.js';
+import { useHistory, useStatistics } from '../ha/history.js';
+import { statMeanSeries } from '../design/energyMath.js';
+import { trimEdges } from '../design/curve.js';
 import { Tip, Roll, pressProps } from './overlay.jsx';
 import { EnergyInstrument } from './Energy.jsx';
 import { useDailyForecast, formatForecast, COND_RO, COND_ICON } from '../ha/weather.js';
@@ -87,7 +90,19 @@ export default function Dashboard({ onOpenMapping }) {
   const hist = useHistory(histIds, 7);
 
   const poolId = E.idOf('sensor.apa_temp');
-  const poolHist = useHistory(isAcasa && poolId ? [poolId] : [], 7);
+  // (v1.4.0) Statistici ORARE, nu istoric brut: HA agregă singur media pe oră
+  // pentru entităţile cu state_class, deci 7 zile = cel mult 168 de puncte,
+  // mărginit şi rezistent la epurarea recorder-ului (istoricul brut ar fi fost
+  // nemărginit şi s-ar fi tăiat la 10 zile). Fereastra e ancorată la ORA
+  // curentă, nu la `now` (care se schimbă în fiecare secundă) — altfel
+  // interogarea s-ar reface continuu.
+  const poolHourAnchor = Math.floor(now.getTime() / 3600000);
+  const poolWin = useMemo(() => {
+    const end = (poolHourAnchor + 1) * 3600000;
+    return { start: end - 168 * 3600000, end, hours: 168 };
+  }, [poolHourAnchor]);
+  const poolStats = useStatistics(isAcasa && poolId ? [poolId] : [], poolWin.start, poolWin.end, 'hour');
+  const [poolCursor, setPoolCursor] = useState(null);
 
   // ------------------------------------------------------------------ ui
   const ui = {
@@ -134,9 +149,26 @@ export default function Dashboard({ onOpenMapping }) {
   const energyValue = E.mapped('energy.total_luna') ? (energyParts ? energyParts.v : NA) : VERIFY;
   const energyUnit = energyParts ? energyParts.u : 'kWh';
 
-  const poolSeries = poolId && poolHist.raw ? fillGaps(dailyAverage(poolHist.raw, poolId, 7)) : null;
-  const poolLabels = lastDayLabels(7);
-  const poolDelta = poolSeries ? Math.round((poolSeries[6] - poolSeries[0]) * 10) / 10 : null;
+  // Orele fără statistici de la CAPETE se taie: dacă senzorul are date doar de
+  // 4 zile, curba se întinde pe toată lăţimea şi subtitlul spune „în 4 zile" —
+  // în loc să înghesuie graficul în dreapta şi să pretindă 7 zile.
+  const poolPoints = useMemo(() => {
+    const rows = poolId && poolStats.stats ? poolStats.stats[poolId] : null;
+    if (!rows || !rows.length) return null;
+    const vals = statMeanSeries(rows, poolWin.hours, poolWin.start, 3600000);
+    const edge = trimEdges(vals);
+    if (!edge) return null;
+    const out = [];
+    for (let i = edge.from; i <= edge.to; i++) out.push({ t: poolWin.start + i * 3600000, v: vals[i] });
+    return out.length ? out : null;
+  }, [poolId, poolStats.stats, poolWin]);
+  const poolFirst = poolPoints ? poolPoints.find((p) => p.v !== null) : null;
+  const poolLast = poolPoints ? [...poolPoints].reverse().find((p) => p.v !== null) : null;
+  const poolDelta = poolFirst && poolLast ? Math.round((poolLast.v - poolFirst.v) * 10) / 10 : null;
+  // acoperirea reală, în zile întregi (minim 1)
+  const poolDays = poolFirst && poolLast
+    ? Math.max(1, Math.round((poolLast.t - poolFirst.t) / 86400000)) : null;
+  const poolAt = poolCursor !== null && poolPoints && poolPoints[poolCursor] ? poolPoints[poolCursor] : null;
 
   // -------------------------------------------------------------- pageStat
   const stat = useMemo(() => pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energyUnit), [
@@ -237,12 +269,13 @@ export default function Dashboard({ onOpenMapping }) {
   //    plus 2px joc (box-sizing e border-box global).
   //  - POOL_CARD_H: exact înălţimea măsurată a cardului Vreme (230px, aceeaşi
   //    la 1440/900/390). Cardul piscinei NU mai creşte niciodată.
-  //  - POOL_CHART_H: ce rămâne pentru grafic după antet şi cromul lui
-  //    (230 − 42 padding/bordură − 40 antet − 34 marginea de sus + etichete),
-  //    plafonat la 118px: se reduce dacă nu încape, nu se întinde niciodată.
+  //  - POOL_CHART_H: ce rămâne pentru grafic după antet — 230 − 42
+  //    (padding + bordură) − 40 (antet). Din v1.4.0 graficul nu mai are rând
+  //    de etichete zilnice (momentul se citeşte la atingere), iar aria iese
+  //    în marginile cardului, deci foloseşte toată înălţimea rămasă.
   const INFO_CARD_H = 88;
   const POOL_CARD_H = 230;
-  const POOL_CHART_H = Math.max(70, Math.min(118, POOL_CARD_H - 42 - 40 - 34));
+  const POOL_CHART_H = Math.max(70, Math.min(160, POOL_CARD_H - 42 - 40));
   const dialCenterStyle = 'position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center;';
   const dialNumStyle = 'font-family:' + DOTO + '; font-size:30px; font-weight:400; color:#f7ede2; line-height:1;';
   const dialUnitStyle = 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT2 + '; margin-top:3px;';
@@ -437,30 +470,37 @@ export default function Dashboard({ onOpenMapping }) {
                   </div>
                 </div>
 
-                {/* temperatură piscină (v1.3.6): mutat între Vreme şi Control
-                    climat, cu înălţime FIXĂ egală cu a cardului Vreme. Nu mai
-                    creşte niciodată — nu mai e „absorbantul" coloanei. Graficul
-                    se încadrează în spaţiul rămas (plafonat la 118px), iar
-                    overflow:hidden garantează că nu poate depăşi cardul. */}
+                {/* temperatură piscină — înălţime FIXĂ (v1.3.6) + curbă netedă
+                    pe date orare cu indicator la hover/atingere (v1.4.0).
+                    Graficul iese în marginile cardului (margin negativ), ca în
+                    referinţă; overflow:hidden îl taie pe colţurile rotunjite.
+                    Cu cursorul activ, antetul arată valoarea DIN ACEL PUNCT şi
+                    momentul ei; fără cursor, valoarea curentă. */}
                 <div style={s(glassCard() + ' height:' + POOL_CARD_H + 'px; overflow:hidden; display:flex; flex-direction:column;')} data-card="piscina">
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={s(cardTitleStyle)}>Temperatură piscină</div>
                       <div style={s(cardSubStyle)}>
-                        {poolSeries
-                          ? (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°C în 7 zile'
-                          : E.mapped('sensor.apa_temp')
-                            ? poolHist.loading ? 'se încarcă istoricul…' : 'fără date în recorder'
-                            : 'VERIFY · mapează senzorul de temperatură apă'}
+                        {poolAt
+                          ? cursorLabel(poolAt.t)
+                          : poolPoints
+                            ? (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°C în ' + (poolDays === 1 ? 'o zi' : poolDays + ' zile')
+                            : E.mapped('sensor.apa_temp')
+                              ? poolStats.loading ? 'se încarcă statisticile…' : 'fără statistici orare încă'
+                              : 'VERIFY · mapează senzorul de temperatură apă'}
                       </div>
                     </div>
                     <div style={s('font-family:' + DOTO + '; font-size:32px; font-weight:400; color:' + (E.mapped('sensor.apa_temp') ? '#f7ede2' : ORANGE) + ';' + (E.mapped('sensor.apa_temp') ? '' : ' font-size:16px;'))}>
-                      {E.mapped('sensor.apa_temp') ? (E.num('sensor.apa_temp') === null ? NA : Math.round(E.num('sensor.apa_temp')) + '°') : VERIFY}
+                      {poolAt
+                        ? (poolAt.v === null ? NA : dec(poolAt.v.toFixed(1)) + '°')
+                        : E.mapped('sensor.apa_temp')
+                          ? (E.num('sensor.apa_temp') === null ? NA : Math.round(E.num('sensor.apa_temp')) + '°')
+                          : VERIFY}
                     </div>
                   </div>
-                  <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    {poolSeries
-                      ? poolChart(poolSeries, poolLabels, 6, (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°', POOL_CHART_H)
+                  <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', margin: '0 -20px -20px' }}>
+                    {poolPoints
+                      ? <PoolChart points={poolPoints} height={POOL_CHART_H} cursor={poolCursor} onCursor={setPoolCursor} />
                       : <div style={{ height: POOL_CHART_H }} />}
                   </div>
                 </div>

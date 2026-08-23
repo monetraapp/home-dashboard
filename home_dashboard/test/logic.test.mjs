@@ -16,6 +16,7 @@ import {
 import {
   fmtPow, fmtEn, fmtVar, fmtVA, fmtTemp, fmtVolt, fmtAmp, fmtFreq, fmtPct, fmtText, fmtUnitAuto, dec
 } from '../src/design/format.js';
+import { monotoneTangents, monotonePath, contiguousRuns, trimEdges } from '../src/design/curve.js';
 
 let pass = 0, fail = 0;
 function eq(name, got, want) {
@@ -346,6 +347,66 @@ eq('oglinzile contorului sunt mapate pe template-urile create',
      .map((k) => SUGGESTED_MAP[k]),
    ['sensor.contor_import_total', 'sensor.contor_export_total',
     'sensor.contor_faza_1_putere', 'sensor.contor_faza_2_putere', 'sensor.contor_faza_3_putere']);
+
+// ---- curba netedă a graficului de piscină (v1.4.0) --------------------------
+console.log('curba monotona:');
+// Cazul care conteaza: interpolarea NU are voie sa depaseasca valorile masurate.
+// Esantionam curba generata si verificam ca ramane intre capete pe fiecare
+// segment (proprietatea Fritsch-Carlson).
+function sampleCubic(p0, c1, c2, p3, t) {
+  const u = 1 - t;
+  return u * u * u * p0 + 3 * u * u * t * c1 + 3 * u * t * t * c2 + t * t * t * p3;
+}
+function segmentsFromPath(d) {
+  // 'M x y C c1x c1y c2x c2y x y C ...' -> [[y0, c1y, c2y, y1], ...]
+  const nums = d.replace(/[MC]/g, ' ').trim().split(/\s+/).map(Number);
+  const segs = [];
+  let y0 = nums[1];
+  for (let i = 2; i + 5 < nums.length; i += 6) {
+    segs.push([y0, nums[i + 1], nums[i + 3], nums[i + 5]]);
+    y0 = nums[i + 5];
+  }
+  return segs;
+}
+const dents = [[0, 10], [1, 30], [2, 10], [3, 12], [4, 60], [5, 58]];
+const dPath = monotonePath(dents);
+eq('calea incepe cu M si contine curbe C', /^M[\d.\- ]+ C/.test(dPath), true);
+eq('cate un segment cubic per interval', segmentsFromPath(dPath).length, dents.length - 1);
+eq('curba NU depaseste valorile masurate (fara varfuri inventate)',
+   (() => {
+     const bad = [];
+     for (const [a, c1, c2, b] of segmentsFromPath(dPath)) {
+       const lo = Math.min(a, b) - 0.001, hi = Math.max(a, b) + 0.001;
+       for (let t = 0; t <= 1.0001; t += 0.05) {
+         const v = sampleCubic(a, c1, c2, b, t);
+         if (v < lo || v > hi) { bad.push(Math.round(v * 100) / 100); break; }
+       }
+     }
+     return bad;
+   })(), []);
+// tangenta e zero in varfuri/vai (schimbare de sens), altfel media pantelor
+eq('tangenta 0 in varf', monotoneTangents([[0, 0], [1, 10], [2, 0]])[1], 0);
+eq('tangenta 0 in vale', monotoneTangents([[0, 10], [1, 0], [2, 10]])[1], 0);
+eq('pe o panta constanta tangentele sunt panta',
+   monotoneTangents([[0, 0], [1, 5], [2, 10]]), [5, 5, 5]);
+eq('serie plata -> toate tangentele 0', monotoneTangents([[0, 7], [1, 7], [2, 7]]), [0, 0, 0]);
+eq('un singur punct -> doar M', monotonePath([[3, 4]]), 'M3 4');
+eq('serie goala -> cale goala', monotonePath([]), '');
+// coordonatele SVG raman cu PUNCT, chiar daca aplicatia afiseaza virgula
+eq('separatorul din cale e punctul, nu virgula', /,/.test(monotonePath([[0, 0.5], [1, 1.5]])), false);
+
+// golurile nu se unesc cu o linie dreapta: seria se rupe in tronsoane
+eq('tronsoane continue in jurul golurilor',
+   contiguousRuns([null, 1, 2, null, null, 5, 6]).map((r) => [r.from, r.values.length]),
+   [[1, 2], [5, 2]]);
+eq('serie fara goluri -> un singur tronson',
+   contiguousRuns([1, 2, 3]).map((r) => r.from), [0]);
+eq('serie complet goala -> niciun tronson', contiguousRuns([null, null]), []);
+
+// taierea capetelor: 4 zile de date intr-o fereastra de 7 nu se inghesuie
+eq('taie golurile de la capete', trimEdges([null, null, 3, 4, null]), { from: 2, to: 3 });
+eq('serie plina -> capetele raman', trimEdges([1, 2, 3]), { from: 0, to: 2 });
+eq('fara nicio valoare -> null', trimEdges([null, null]), null);
 
 // ---- diagrama de flux energetic (v1.1.4) -----------------------------------
 console.log('diagrama de flux:');
