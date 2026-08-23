@@ -13,11 +13,11 @@ layout **greșită și revertită**, și un grafic de piscină refăcut de la ze
 
 | Componentă | Stare |
 |:--|:--|
-| Add-on Home Dashboard | **v1.4.1**, `state: started`, bundle servit `index-BxF4aqp_.js` |
+| Add-on Home Dashboard | **v1.4.2**, `state: started`, bundle servit `index-BVn9WZ_Y.js` |
 | `ingress_panel` | **`true`, setat prin Supervisor API** — bifa „Show in sidebar" nu se mai pune manual. Confirmat cu `get_panels` |
 | Catalog de sloturi | **291**, toate mapate, zero nemapate (era 293) |
 | Suită de teste | **153 logică + 44 stil, 0 picate** |
-| Audit responsive | **NU a fost rerulat pe v1.4.1** — vezi §7. Ultima rulare reală: 12:57, pe v1.3.2, `index-DfG0gcsj.js`, **0/0/0** |
+| Audit responsive | Rulat de Bogdan pe v1.4.1 (`index-BxF4aqp_.js`) la 13:43: **1 defect real** (cardGap pe „Automatizări", 53px, în 6 combinaţii ≥760px). **Reparat în v1.4.2**, verificat pe DOM real: 53px → 15px. **Rerularea pe `index-BVn9WZ_Y.js` rămâne de făcut** — vezi §7 |
 | Dashboard-uri Lovelace | **0 în registru** — rămâne doar Overview-ul implicit (auto-generat) |
 | Add-on-uri instalate | **6** (erau 8), toate pornite: Matter Server, Mosquitto, Grott, AdGuard, File editor, Home Dashboard |
 | Repository-uri store | 8 (scos `677650a1` ha-fusion) |
@@ -160,6 +160,26 @@ Mansardă Vortex), Tuya Local (pompa Fairland), Vidaa TV (instalat azi), HA-MCP
 (canalul prin care lucrez) și HACS însuși. Zero carduri Lovelace, teme,
 AppDaemon sau python_script instalate.
 
+### 2.10 cardGap pe „Automatizări" (v1.4.2)
+
+Auditul rulat de Bogdan pe v1.4.1 a întors 4 rânduri de raport, care sunt
+**același defect**: același detector (`cardGap`), același element, aceeași
+măsurătoare (53px goi, card 292px, conținut până la 219px). Cele 4 rânduri
+apar pentru că selectorul CSS diferă între layout-ul de 760/1179 și cel de
+1180/1440, plus ramurile touch — în total 6 combinații, toate ≥760px.
+
+Cauza s-a dovedit a fi **în v1.3.5, nu în curățenie** (§3.3). Cardul
+„Automatizări" are un singur bloc, `grid(1, …)`, iar regula din v1.3.5 exclude
+grilele de la creștere. Corect pentru grilele de dale, greșit pentru o grilă cu
+o singură coloană, care e o listă de rânduri — singura din aplicație.
+
+Fixul: `flex:1 1 auto` + `align-content: stretch` pe grilele cu **o** coloană,
+ceea ce împarte surplusul egal între cele trei rânduri; dala are deja
+`flex:1 1 auto` și conținutul centrat în `tokens.js` (neatins). Măsurat pe DOM
+real la 1180px și 760px: **53px → 15px**, în linie cu restul cardurilor (13px),
+fără ca vreo altă înălțime să se schimbe. `align-items: stretch` pe grile nu a
+fost atins.
+
 ---
 
 ## 3. DRUMURI GREȘITE ȘI REVENIRI
@@ -195,7 +215,22 @@ a dat fals-pozitiv pe cardul piscinei (119px). Prima regulă căuta „ultimul
 copil **cu conținut**", dar placeholder-ul piscinei e un spațiu gol
 intenționat. Corectat prin măsurarea **cutiilor din flux**, nu a conținutului.
 
-### 3.3 `config.yaml` golit de propria mea comandă
+### 3.3 Ipoteza „curățenia a produs golul" — plauzibilă, dar falsă
+
+Auditul pe v1.4.1 a semnalat 53px goi la baza cardului „Automatizări" de pe
+Mentenanță. Explicația care se oferea singură: scosesem două rânduri dintr-un
+card de pe aceeași pagină, deci grila s-a reechilibrat.
+
+Măsurat A/B pe v1.4.0 și v1.4.1, sub același mock: **53px identic pe ambele**.
+Cardul pe care îl scurtasem („Add-on-uri") avea 13px goi în ambele versiuni,
+pentru că blocul lui `monitor` crește și își absoarbe singur surplusul — și
+nici nu e pe același rând de grilă cu „Automatizări" (`top=644` față de
+`top=880`). Cauza reală era regula din **v1.3.5**, care exclude grilele de la
+creștere; corectă pentru grilele de dale, greșită pentru `grid(1, …)`, care e
+o listă de rânduri. Reparat în v1.4.2, cu excepția limitată la o singură
+coloană.
+
+### 3.4 `config.yaml` golit de propria mea comandă
 
 Un one-liner care deschidea fișierul pentru scriere înainte să-l citească a
 lăsat `config.yaml` gol, iar Supervisor-ul a respins add-on-ul
@@ -203,14 +238,14 @@ lăsat `config.yaml` gol, iar Supervisor-ul a respins add-on-ul
 De atunci **citesc-apoi-scriu, cu assert pe lungime** — regula e aplicată și
 în modificările de azi.
 
-### 3.4 API-ul File editor, folosit greșit de două ori
+### 3.5 API-ul File editor, folosit greșit de două ori
 
 `/api/file` cu POST → „Invalid method". `/api/newfolder` cu JSON → „Generic
 failure". Ambele rezolvate abia după citirea sursei upstream:
 totul e **form-encoded**, iar `newfolder` vrea `path` (părintele absolut) +
 `name` separat.
 
-### 3.5 Certificatele VIDAA — trei blocaje, zero ocoliri
+### 3.6 Certificatele VIDAA — trei blocaje, zero ocoliri
 
 Clasificatorul de permisiuni a blocat scrierea certificatului și a cheii de
 client. Nu am căutat o cale ocolită; am explicat ce sunt și am cerut aprobare.
@@ -338,6 +373,32 @@ criteriul corect e „îl recunosc / nu-l recunosc", nu „pare nefolosit".
    modulului, pentru că e exact genul de lucru pe care îl „uniformizează"
    cineva peste șase luni.
 
+9. **Un audit „0/0/0" acoperă doar versiunea pe care a rulat.** Rularea curată
+   de la 12:57 era pe v1.3.2. Între ea și v1.4.1 au intrat rescrierea de
+   layout, cardul de zi/dată și graficul de piscină — iar defectul de pe
+   „Automatizări" a intrat cu regula din **v1.3.5** și a stat nedescoperit trei
+   versiuni. Regula practică: dacă ultima rulare nu e pe bundle-ul curent,
+   trateaz-o ca inexistentă, nu ca dovadă.
+
+10. **Ipoteza despre cauză se testează A/B, nu se acceptă pentru că sună
+    logic.** Ipoteza că scoaterea sloturilor `addon.*` a produs golul era
+    perfect plauzibilă — card scurtat, grilă care egalizează rândul. Am
+    construit build-ul v1.4.0 din `65808b1` și l-am măsurat sub același mock:
+    **53px identic pe ambele versiuni**. Cardul scurtat („Add-on-uri") avea
+    13px goi în ambele, pentru că blocul lui `monitor` își absoarbe surplusul,
+    iar cele două carduri nici nu sunt pe același rând de grilă (`top` diferit
+    în măsurătoare). Metoda — recompilează versiunea anterioară în același
+    arbore, cu `git checkout <commit> -- <fișiere>`, măsoară, apoi
+    `git restore --source=HEAD --staged --worktree` — costă câteva minute și
+    înlocuiește o presupunere cu o cifră.
+
+11. **`git checkout <commit> -- <fișiere>` STAGEAZĂ fișierele.** Un
+    `git checkout -- <fișiere>` de „restaurare" le ia atunci din index, adică
+    tot versiunea veche, și pare că a funcționat. Restaurarea corectă e
+    `git restore --source=HEAD --staged --worktree`. Verificarea care prinde
+    greșeala: `git status --short` trebuie să fie **gol**, iar hash-ul
+    bundle-ului reconstruit trebuie să revină la cel de dinainte.
+
 ---
 
 ## 6. TASK-URI DESCHISE
@@ -405,21 +466,20 @@ Toate punctele din secțiunea C a `13_AUDIT_HA_READONLY.md` sunt rezolvate:
 
 ## 7. NECESITĂ BOGDAN
 
-1. **Rerularea auditului responsive pe v1.4.1.** Nu am putut-o face: auditul
-   cere `HD_HA_TOKEN`, iar B3 a arătat că **nu există** un token cu acest nume;
-   cel folosit la rularea de la 12:57 exista doar în mediul acelei comenzi și
-   s-a pierdut. Am rulat `--smoke`, care confirmă că lanțul e intact
-   (`aplicatie v1.4.1 · bundle index-BxF4aqp_.js`, ecranul de Setup detectat) —
-   lipsește doar credențialul.
+1. **Rerularea auditului responsive pe v1.4.2.** Tot nu o pot face eu: auditul
+   cere `HD_HA_TOKEN`, iar tokenul nu e persistat nici la nivel de utilizator,
+   nici de mașină (verificat) — a existat doar în shell-ul tău.
 
    ```bash
    cd C:\HomeDashboard-Standalone-git\home_dashboard && npm run audit:responsive
    ```
    (cu `$env:HD_HA_TOKEN='…'` setat înainte, în PowerShell)
 
-   **Spun explicit: „0/0/0" din tabelul §1 este de la v1.3.2, nu de la v1.4.1.**
-   Între ele au intrat graficul de piscină, cardul de zi/dată și redistribuirea
-   layout-ului — exact genul de schimbări pe care auditul le prinde.
+   **Verifică în antetul raportului că scrie `index-BVn9WZ_Y.js`** — dacă e alt
+   hash, măsoară altceva decât fixul. Aștept **0/0/0**; cele 6 apariţii de
+   cardGap de pe Mentenanţă trebuie să dispară. Măsurătoarea mea pe DOM real
+   dă 15px pe „Automatizări", sub pragul de 48px, dar e făcută cu mock, nu cu
+   instanţa reală — de aceea punctul rămâne deschis până la raportul tău.
 
 2. **Revocarea tokenurilor long-lived** — nu există API. Profil → Securitate.
    Cele două sunt „Claude MCP" (19.08) și „HA-MCP Server" (19.08, canalul meu
