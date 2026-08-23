@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   s, SANS, SERIF, DOTO, ORANGE, ORANGE_HI, TXT, TXT2, TXT3,
   glassCard, navItemStyle, navIconBox, navLabel, togglePill, toggleKnob, toggleText,
@@ -215,7 +215,10 @@ export default function Dashboard({ onOpenMapping }) {
     (navFade.r ? 'transparent 100%' : '#000 100%') + ')';
 
   const navRowStyle = 'display:flex; align-items:center; gap:' + (mob ? '10px' : '16px') + '; padding:' + (mob ? '12px 14px' : '18px 26px') + '; border-bottom:1px solid rgba(255,255,255,0.05);';
-  const bodyRowStyle = 'display:flex; align-items:stretch; gap:0; min-width:0;' + (narrow ? ' flex-direction:column;' : '');
+  // (v1.3.4) flex-start, nu stretch: coloanele îşi păstrează înălţimea
+  // naturală. Cu stretch, coloana scurtă era întinsă la înălţimea celeilalte,
+  // iar cardul "grower" din ea (piscina) primea spaţiu gol în exces.
+  const bodyRowStyle = 'display:flex; align-items:flex-start; gap:0; min-width:0;' + (narrow ? ' flex-direction:column;' : '');
   const leftColStyle = narrow
     ? 'width:100%; padding:' + (mob ? '20px 14px 8px' : '26px 22px 10px') + '; display:flex; flex-direction:column; gap:14px;'
     : 'width:376px; flex:0 0 376px; padding:60px 18px 26px 28px; display:flex; flex-direction:column; gap:14px;';
@@ -268,7 +271,12 @@ export default function Dashboard({ onOpenMapping }) {
     </div>
   );
   const deviceSectionPadStyle = 'padding:' + (mob ? '16px 14px 22px' : narrow ? '18px 22px 24px' : '20px 26px 26px 20px') + ';';
-  const deviceGridStyle = 'display:grid; grid-template-columns:repeat(auto-fit,minmax(' + (mob ? '260px' : '298px') + ',1fr)); gap:14px;';
+  // align-items:start (v1.3.4): fiecare card de dispozitiv îşi păstrează
+  // înălţimea naturală. Implicit grid-ul întindea cardurile scurte (Pompă
+  // filtrare, TV-uri fără mini-toggle-uri) la înălţimea celui mai înalt din
+  // rând, lăsând ~200px goi sub "Setări avansate". Golul dintre rânduri e
+  // acceptat deliberat: arată ca separare, nu ca element lipsă.
+  const deviceGridStyle = 'display:grid; grid-template-columns:repeat(auto-fit,minmax(' + (mob ? '260px' : '298px') + ',1fr)); gap:14px; align-items:start;';
   const tableSectionStyle = 'padding:' + (mob ? '4px 14px 22px' : narrow ? '4px 22px 24px' : '4px 26px 26px 20px') + ';';
 
   // Salut dupa ora locala a browserului (`now` se actualizeaza la fiecare
@@ -352,7 +360,7 @@ export default function Dashboard({ onOpenMapping }) {
             {isAcasa ? (
               <>
                 {/* ceas */}
-                <div style={s(glassCard())}>
+                <div style={s(glassCard())} data-card="ceas">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={s('font-family:' + DOTO + '; font-size:42px; font-weight:400; line-height:1; color:#f7f1e9; letter-spacing:0.02em;')}>
@@ -369,7 +377,7 @@ export default function Dashboard({ onOpenMapping }) {
                 </div>
 
                 {/* vreme */}
-                <div style={s(glassCard())}>
+                <div style={s(glassCard())} data-card="vreme">
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={s(cardTitleStyle)}>Vreme</div>
@@ -403,7 +411,7 @@ export default function Dashboard({ onOpenMapping }) {
                 </div>
 
                 {/* control climat */}
-                <div style={s(glassCard() + ' padding:20px 20px 20px; overflow:visible; min-height:440px; display:flex; flex-direction:column; justify-content:space-between;')}>
+                <div style={s(glassCard() + ' padding:20px 20px 20px; overflow:visible; min-height:440px; display:flex; flex-direction:column; justify-content:space-between;')} data-card="climat">
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={s(cardTitleStyle)}>Control climat</div>
@@ -466,7 +474,7 @@ export default function Dashboard({ onOpenMapping }) {
 
                 {/* două cadrane mici */}
                 <div style={s('display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px;')}>
-                  <div style={s(glassCard() + ' height:190px; display:flex; flex-direction:column;')}>
+                  <div style={s(glassCard() + ' height:190px; display:flex; flex-direction:column;')} data-card="energie-luna">
                     <div style={s(cardTitleStyle)}>AC Etaj · consum luna curentă</div>
                     <div style={s(cardSubStyle)}>{now.getDate() + ' din ' + daysInMonth + ' zile'}</div>
                     <div style={s(energyDialWrapStyle)}>
@@ -477,7 +485,7 @@ export default function Dashboard({ onOpenMapping }) {
                       </div>
                     </div>
                   </div>
-                  <div style={s(glassCard() + ' height:190px; display:flex; flex-direction:column;')}>
+                  <div style={s(glassCard() + ' height:190px; display:flex; flex-direction:column;')} data-card="dispozitive-ring">
                     <div style={s(cardTitleStyle)}>Dispozitive</div>
                     <div style={s(cardSubStyle)}>{onCount + '/' + trackedCards.length + ' active acum'}</div>
                     <div style={s(energyDialWrapStyle)}>
@@ -489,10 +497,12 @@ export default function Dashboard({ onOpenMapping }) {
                   </div>
                 </div>
 
-                {/* temperatură piscină — cardul se întinde (egalizează coloana);
-                    graficul umple spaţiul rămas prin FitPoolChart (v1.3.2),
-                    nu mai stă ţintuit jos cu gol deasupra */}
-                <div style={s(glassCard() + ' flex:1 1 auto; min-height:210px; display:flex; flex-direction:column;')}>
+                {/* temperatură piscină — înălţime NATURALĂ (v1.3.4). Era
+                    "grower"-ul coloanei (flex:1 + min-height), iar FitPoolChart
+                    întindea graficul ca să umple spaţiul, deformându-l. Acum
+                    coloana nu mai e întinsă (bodyRow: flex-start), deci
+                    graficul revine la înălţimea lui proiectată. */}
+                <div style={s(glassCard() + ' display:flex; flex-direction:column;')} data-card="piscina">
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <div>
                       <div style={s(cardTitleStyle)}>Temperatură piscină</div>
@@ -508,14 +518,12 @@ export default function Dashboard({ onOpenMapping }) {
                       {E.mapped('sensor.apa_temp') ? (E.num('sensor.apa_temp') === null ? NA : Math.round(E.num('sensor.apa_temp')) + '°') : VERIFY}
                     </div>
                   </div>
-                  {poolSeries
-                    ? <FitPoolChart series={poolSeries} labels={poolLabels} hi={6} delta={(poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°'} />
-                    : <div style={{ height: 118 }} />}
+                  {poolSeries ? poolChart(poolSeries, poolLabels, 6, (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°') : <div style={{ height: 118 }} />}
                 </div>
               </>
             ) : (
               <>
-                <div style={s(glassCard() + ' height:236px; flex:0 0 236px; display:flex; flex-direction:column;' + (narrow ? ' max-width:420px;' : ''))}>
+                <div style={s(glassCard() + ' height:236px; flex:0 0 236px; display:flex; flex-direction:column;' + (narrow ? ' max-width:420px;' : ''))} data-card="stat">
                   <div style={s(cardTitleStyle)}>{stat.title}</div>
                   <div style={s(cardSubStyle)}>{stat.sub}</div>
                   <div style={s(energyDialWrapStyle)}>
@@ -528,7 +536,7 @@ export default function Dashboard({ onOpenMapping }) {
                 </div>
 
                 {hasSidebarDevices ? (
-                  <div style={s(glassCard())}>
+                  <div style={s(glassCard())} data-card="sidebar-devices">
                     <div style={s(cardTitleStyle)}>{PAGE_DEVICE_HEAD[page] ? PAGE_DEVICE_HEAD[page][0] : 'Dispozitive'}</div>
                     <div style={s(cardSubStyle)}>Control rapid · apasă pentru setări complete</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 14 }}>
@@ -552,7 +560,7 @@ export default function Dashboard({ onOpenMapping }) {
                   </div>
                 ) : null}
 
-                <div style={s(glassCard())}>
+                <div style={s(glassCard())} data-card="page-chips">
                   <div style={s(cardTitleStyle)}>{currentPage.title}</div>
                   <div style={s(cardSubStyle)}>{currentPage.eyebrow}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
@@ -621,7 +629,9 @@ export default function Dashboard({ onOpenMapping }) {
 
             {!isAcasa ? (
               <div style={s(tableSectionStyle)}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + (mob ? 1 : 2) + ',minmax(0,1fr))', gap: 14, alignItems: 'stretch' }}>
+                {/* alignItems:start (v1.3.4) — vezi nota de la deviceGridStyle:
+                    cardurile de pagină îşi păstrează înălţimea naturală. */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + (mob ? 1 : 2) + ',minmax(0,1fr))', gap: 14, alignItems: 'start' }}>
                   <div
                     style={s('grid-column:1 / -1; order:' + (currentPage.hasBottom ? 85 : -1) + '; font-family:' + SANS + '; font-size:16px; font-weight:500; color:' + TXT + ';' + (currentPage.hasBottom ? ' margin-top:12px;' : ''))}
                   >
@@ -774,7 +784,10 @@ function OfflineBanner() {
 // -------------------------------------------------------------- card device
 function DeviceCard({ c }) {
   return (
-    <div style={s(c.cardStyle)}>
+    // data-card (v1.3.4): marcaj STABIL pentru auditul responsive — stilurile
+    // fiind inline, detectorul de "spaţiu gol la baza cardului" n-ar avea altfel
+    // cum să ştie ce element e un card. Nu afectează randarea.
+    <div style={s(c.cardStyle)} data-card={'device:' + c.id}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
           <div style={s(c.headIconStyle)}>{c.headIconEl}</div>
@@ -796,7 +809,7 @@ function DeviceCard({ c }) {
            cercului. Valorile laterale (pasul şi ţinta) au fost scoase dintre
            butoane: ţinta dubla valoarea din centrul cadranului, iar pasul e
            comunicat prin tooltip-ul butoanelor (title). */
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 2 }}>
+        <div style={s(c.dialRowStyle)}>
           <div className="hdTap" style={s(c.roundBtnStyle)} onClick={c.onMinus} title={c.stepTitle}>{ic('minus', { size: 16, sw: 2 })}</div>
           <div style={s(c.dialWrapStyle)}>
             {c.dialTicksEl}
@@ -871,7 +884,7 @@ function DeviceCard({ c }) {
 // --------------------------------------------------------------- card pagină
 function PageCard({ card }) {
   return (
-    <div style={s(card.cardStyle)}>
+    <div style={s(card.cardStyle)} data-card={'page:' + card.title}>
       <div style={s(card.headerStyle)}>{card.title}</div>
       {card.blocks.map((b, i) => (
         <Block key={i} b={b} />
@@ -1271,32 +1284,6 @@ function Picker({ tracked, setTracked, dragId, setDragId, onClose }) {
           })}
         </div>
       </div>
-    </div>
-  );
-}
-
-// -------------------------------------------------- grafic piscină (v1.3.2)
-// Cardul piscinei se întinde (flex:1, egalizează coloana cu cea din stânga);
-// graficul avea 118px ficşi şi stătea ţintuit la bază, cu gol mare deasupra.
-// Componenta măsoară spaţiul alocat şi redă graficul la înălţimea reală.
-function FitPoolChart({ series, labels, hi, delta }) {
-  const ref = useRef(null);
-  const [h, setH] = useState(118);
-  useLayoutEffect(() => {
-    const node = ref.current;
-    if (!node) return undefined;
-    const measure = () => {
-      // minus marginile interne ale graficului (14px sus) şi rândul de etichete
-      const avail = node.clientHeight - 36;
-      if (avail >= 118) setH(avail);
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, []);
-  return (
-    <div ref={ref} style={{ flex: '1 1 auto', minHeight: 152, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-      {poolChart(series, labels, hi, delta, h)}
     </div>
   );
 }
