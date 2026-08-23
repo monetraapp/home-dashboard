@@ -17,7 +17,7 @@ layout **greșită și revertită**, și un grafic de piscină refăcut de la ze
 | `ingress_panel` | **`true`, setat prin Supervisor API** — bifa „Show in sidebar" nu se mai pune manual. Confirmat cu `get_panels` |
 | Catalog de sloturi | **291**, toate mapate, zero nemapate (era 293) |
 | Suită de teste | **153 logică + 44 stil, 0 picate** |
-| Audit responsive | Rulat de Bogdan pe v1.4.1 (`index-BxF4aqp_.js`) la 13:43: **1 defect real** (cardGap pe „Automatizări", 53px, în 6 combinaţii ≥760px). **Reparat în v1.4.2**, verificat pe DOM real: 53px → 15px. **Rerularea pe `index-BVn9WZ_Y.js` rămâne de făcut** — vezi §7 |
+| Audit responsive | **0/0/0 pe v1.4.2** (`index-BVn9WZ_Y.js`), rulat pe instanţa reală: toate cele 80 de combinaţii curate, inclusiv cele 6 de pe Mentenanţă, fără efecte colaterale pe alte pagini. Rularea anterioară, pe v1.4.1, semnalase 1 defect real — cardGap pe „Automatizări", reparat în v1.4.2 (§2.10) |
 | Dashboard-uri Lovelace | **0 în registru** — rămâne doar Overview-ul implicit (auto-generat) |
 | Add-on-uri instalate | **6** (erau 8), toate pornite: Matter Server, Mosquitto, Grott, AdGuard, File editor, Home Dashboard |
 | Repository-uri store | 8 (scos `677650a1` ha-fusion) |
@@ -179,6 +179,10 @@ ceea ce împarte surplusul egal între cele trei rânduri; dala are deja
 real la 1180px și 760px: **53px → 15px**, în linie cu restul cardurilor (13px),
 fără ca vreo altă înălțime să se schimbe. `align-items: stretch` pe grile nu a
 fost atins.
+
+**Confirmat pe instanța reală**, nu doar pe mock: auditul rulat pe v1.4.2
+(antet `index-BVn9WZ_Y.js`) întoarce **0 probleme distincte** pe toate cele 80
+de combinații, cele 6 de pe Mentenanță incluse, fără regresii pe alte pagini.
 
 ---
 
@@ -440,7 +444,8 @@ Toate punctele din secțiunea C a `13_AUDIT_HA_READONLY.md` sunt rezolvate:
   Argumentul e în CHANGELOG-ul v1.3.5: e un motor de layout în JS cu
   re-măsurare la fiecare resize și la fiecare schimbare de valoare live, pe o
   tabletă montată sub Fully Kiosk.
-- **NOU:** rerularea auditului responsive pe v1.4.1 (§7).
+- ~~rerularea auditului responsive~~ — **ÎNCHIS**: 0/0/0 pe v1.4.2, pe instanța
+  reală, 80/80 combinații curate.
 
 ### Prezență / automatizări noi
 - **GPS în aplicația companion** — `device_tracker.s26_ultra` e încă `unknown`.
@@ -466,33 +471,23 @@ Toate punctele din secțiunea C a `13_AUDIT_HA_READONLY.md` sunt rezolvate:
 
 ## 7. NECESITĂ BOGDAN
 
-1. **Rerularea auditului responsive pe v1.4.2.** Tot nu o pot face eu: auditul
-   cere `HD_HA_TOKEN`, iar tokenul nu e persistat nici la nivel de utilizator,
-   nici de mașină (verificat) — a existat doar în shell-ul tău.
-
-   ```bash
-   cd C:\HomeDashboard-Standalone-git\home_dashboard && npm run audit:responsive
-   ```
-   (cu `$env:HD_HA_TOKEN='…'` setat înainte, în PowerShell)
-
-   **Verifică în antetul raportului că scrie `index-BVn9WZ_Y.js`** — dacă e alt
-   hash, măsoară altceva decât fixul. Aștept **0/0/0**; cele 6 apariţii de
-   cardGap de pe Mentenanţă trebuie să dispară. Măsurătoarea mea pe DOM real
-   dă 15px pe „Automatizări", sub pragul de 48px, dar e făcută cu mock, nu cu
-   instanţa reală — de aceea punctul rămâne deschis până la raportul tău.
-
-2. **Revocarea tokenurilor long-lived** — nu există API. Profil → Securitate.
+1. **Revocarea tokenurilor long-lived** — nu există API. Profil → Securitate.
    Cele două sunt „Claude MCP" (19.08) și „HA-MCP Server" (19.08, canalul meu
    activ — dacă îl revoci, îmi tai accesul). Criteriul: îl recunoști sau nu,
    **nu** „pare nefolosit" (vezi B3).
 
-3. **Hard refresh (Ctrl+Shift+R)** pe orice tab care are dashboard-ul deschis.
+2. **Hard refresh (Ctrl+Shift+R)** pe orice tab care are dashboard-ul deschis.
    Tab-urile vechi rulează JS din memorie și par funcționale la nesfârșit.
 
-4. **Permisiunea de locație în fundal** pentru aplicația companion (§6).
+3. **Permisiunea de locație în fundal** pentru aplicația companion (§6).
 
-5. **Testarea automatizărilor WOL** dimineața, cu televizoarele oprite peste
+4. **Testarea automatizărilor WOL** dimineața, cu televizoarele oprite peste
    noapte — cum ai spus. Integrarea a rămas pe loc, deci testul e valid.
+
+*(Rerularea auditului responsive a ieșit de pe listă: rulat pe instanța reală
+pe v1.4.2, antet `index-BVn9WZ_Y.js`, **0 probleme distincte** pe toate cele
+80 de combinații — inclusiv cele 6 de pe Mentenanță, fără efecte colaterale.
+Măsurătoarea mea pe mock, 53px → 15px, e confirmată de instanța reală.)*
 
 *(Sidebar-ul nu mai e pe listă: `get_panels` confirmă panoul
 `e382af62_home_dashboard`, titlu „Home Dashboard", `show_in_sidebar: true`.
