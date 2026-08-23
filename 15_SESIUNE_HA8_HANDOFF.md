@@ -14,7 +14,7 @@ layout **greșită și revertită**, și un grafic de piscină refăcut de la ze
 | Componentă | Stare |
 |:--|:--|
 | Add-on Home Dashboard | **v1.4.1**, `state: started`, bundle servit `index-BxF4aqp_.js` |
-| `ingress_panel` | **`true`, setat prin Supervisor API** — bifa „Show in sidebar" nu se mai pune manual |
+| `ingress_panel` | **`true`, setat prin Supervisor API** — bifa „Show in sidebar" nu se mai pune manual. Confirmat cu `get_panels` |
 | Catalog de sloturi | **291**, toate mapate, zero nemapate (era 293) |
 | Suită de teste | **153 logică + 44 stil, 0 picate** |
 | Audit responsive | **NU a fost rerulat pe v1.4.1** — vezi §7. Ultima rulare reală: 12:57, pe v1.3.2, `index-DfG0gcsj.js`, **0/0/0** |
@@ -429,14 +429,15 @@ Toate punctele din secțiunea C a `13_AUDIT_HA_READONLY.md` sunt rezolvate:
 3. **Hard refresh (Ctrl+Shift+R)** pe orice tab care are dashboard-ul deschis.
    Tab-urile vechi rulează JS din memorie și par funcționale la nesfârșit.
 
-4. **Verifică sidebar-ul.** `ingress_panel=true` a fost acceptat de Supervisor,
-   dar nu am putut confirma vizual bara laterală. Dacă Home Dashboard nu apare,
-   pune bifa manual o dată și spune-mi — înseamnă că metoda nu ține.
+4. **Permisiunea de locație în fundal** pentru aplicația companion (§6).
 
-5. **Permisiunea de locație în fundal** pentru aplicația companion (§6).
-
-6. **Testarea automatizărilor WOL** dimineața, cu televizoarele oprite peste
+5. **Testarea automatizărilor WOL** dimineața, cu televizoarele oprite peste
    noapte — cum ai spus. Integrarea a rămas pe loc, deci testul e valid.
+
+*(Sidebar-ul nu mai e pe listă: `get_panels` confirmă panoul
+`e382af62_home_dashboard`, titlu „Home Dashboard", `show_in_sidebar: true`.
+Aceeași verificare arată că panourile `404-home`, `404-rapoarte` și `map` au
+dispărut, și că a rămas doar `lovelace` — Overview-ul implicit.)*
 
 ---
 
