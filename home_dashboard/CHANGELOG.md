@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.3.4
+
+Cardurile nu se mai întind ca să egalizeze rândul (Faza A). Erau trei
+mecanisme de întindere: grila de dispozitive (stretch implicit), grila de
+carduri a paginilor (`alignItems: stretch`) și rândul celor două coloane
+de pe Acasă (`align-items: stretch`). Un card scurt lângă unul înalt
+căpăta zeci sau sute de px goi sub ultimul element ("Pompă filtrare",
+"TV Dormitor Etaj"), iar cardul piscinei — "grower"-ul coloanei — întindea
+graficul prin FitPoolChart, deformându-l. Acum: `align-items: start` pe
+ambele grile, `flex-start` pe rândul de coloane, cardul piscinei la
+înălțime naturală, iar FitPoolChart eliminat (poolChart revine la 118px
+ficși, parametrul `hPx` scos). Compromis acceptat deliberat: rândurile nu
+mai sunt aliniate jos — golul dintre rânduri arată ca separare, cel din
+card arăta ca element lipsă. Masonry în JS (Faza B) a fost respins:
+motor de layout cu re-măsurare la resize și la fiecare valoare live, pe
+tabletă montată sub Fully Kiosk.
+
+Detector nou în auditul responsive: "spațiu gol excesiv la baza cardului"
+(MEDIU, prag 48px). Măsoară
+`golBază = card.bottom − celMaiDeJosCopil.bottom − padding-bottom`
+pe containerele marcate `data-card` (marcaj nou — stilurile fiind inline,
+detectorul n-avea altfel cum să recunoască un card). Criteriul e CUTIA în
+flux, nu conținutul: un spacer gol cu înălțime explicită (locul rezervat
+graficului când nu sunt date în recorder) rezervă spațiul deliberat și nu
+se semnalează. Cardurile cu `justify-content: space-between`
+("Control climat") își împing ultimul copil la bază, deci ies natural cu
+golBază ≈ 0 — fără nicio excepție specială. Verificat pe DOM-ul real, ca
+experiment controlat: pagina cu Faza A dă 0 semnalări; cu `stretch`
+reintrodus la runtime dă 4 (458px, 458px, 126px, 82px); "Control climat"
+rămâne la 1px în toate trecerile.
+
+TV în standby: cadranul de volum se desena plin, cu "—" în centru și cu
+−/+ aparent active. Acum tot blocul e estompat (0.55 — aceeași convenție
+ca la cadranul static Hisense), iar butoanele rămân la opacitate 1 în
+interiorul lui, ca să nu se compună (0,55 × 0,45 ≈ 0,25 = ilizibil).
+
 ## 1.3.3
 
 TV Dormitor Etaj (Hisense 65E7QE) remapat de pe HomeKit pe integrarea
