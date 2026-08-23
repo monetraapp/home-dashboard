@@ -70,7 +70,14 @@ export const SUGGESTED_MAP = {
   'media.bucatarie': 'media_player.parter_televizor_bucatarie_samsung',
   'media.sofia_parter': 'media_player.parter_televizor_sofia_parter_samsung',
   'media.dormitor_sofia': 'media_player.etaj_televizor_dormitor_sofia_etaj_samsung',
-  'media.etaj_hisense': 'media_player.etaj_televizor_dormitor_etaj_hisense_television',
+  // (v1.3.3) Remapat de pe media_player HomeKit (supported_features 18817,
+  // fără VOLUME_SET) pe integrarea Vidaa MQTT (24461: VOLUME_SET+VOLUME_MUTE+
+  // SELECT_SOURCE), împerecheată 2026-08-23 prin PIN + certificate mTLS, auth
+  // static (dinamicul oscila pe MAC greşit). Volum 0-100 verificat stabil.
+  // Cardul revine automat la cadran ACTIV (gatingul citește supported_features).
+  'media.etaj_hisense': 'media_player.dormitor_etaj_tv_dormitor_etaj_vidaa',
+  // Mute-ul rămâne pe switch-ul HomeKit dedicat până se confirmă în timp că
+  // mute-ul Vidaa e la fel de fiabil (deși media_player-ul Vidaa are VOLUME_MUTE).
   'media.etaj_hisense_mute': 'switch.etaj_televizor_dormitor_etaj_hisense_mute',
   'media.foisor': 'media_player.foisor_televizor_foisor_samsung',
   'media.tata_bucatarie': 'media_player.casa_tata_televizor_tata_bucatarie_samsung',

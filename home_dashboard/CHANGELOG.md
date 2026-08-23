@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.3
+
+TV Dormitor Etaj (Hisense 65E7QE) remapat de pe HomeKit pe integrarea
+Vidaa (MQTT, HACS warrenrees/ha_vidaatv), imperecheata prin PIN +
+certificate mTLS. Noul media_player expune supported_features 24461
+(VOLUME_SET + VOLUME_MUTE + SELECT_SOURCE) fata de 18817 pe HomeKit, deci
+cardul revine automat la cadran de volum ACTIV si sectiunea de volum
+reapare in modal (gatingul citeste supported_features, cod nemodificat).
+Volum 0-100 verificat stabil dupa trecerea pe auth static (dinamicul
+oscila pe MAC-ul gresit). Mute ramane pe switch-ul HomeKit dedicat pana
+se confirma in timp fiabilitatea mute-ului Vidaa. HomeKit ramane instalat
+ca plasa de siguranta pentru on/off.
+
 ## 1.3.2
 
 Modalul respectă acum aceleaşi reguli de feature-gating ca şi cardul.
