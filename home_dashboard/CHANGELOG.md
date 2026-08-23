@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.4.2
+
+Cardul „Automatizări" de pe Mentenanţă rămânea cu **53px goi la bază**. Auditul
+responsive pe v1.4.1 l-a semnalat în 6 combinaţii, toate de la 760px în sus;
+sub 760px pagina e pe o coloană, deci nu avea de unde să apară.
+
+**Cauza nu a fost curăţenia de sloturi din 1.4.1.** Ipoteza firească — că
+scoaterea rândurilor Fusion şi Get HACS a scurtat un card şi a lăsat un gol —
+a fost verificată A/B, cu acelaşi build şi acelaşi mock, pe 1.4.0 şi pe 1.4.1:
+golul de 53px e **identic pe amândouă**. Cardul scurtat („Add-on-uri") are 13px
+goi în ambele versiuni, pentru că blocul lui `monitor` creşte şi îşi absoarbe
+singur surplusul. Cele două carduri nici măcar nu sunt pe acelaşi rând.
+
+Cauza reală vine din regula introdusă în 1.3.5: surplusul se distribuie doar în
+blocurile cu rânduri (`monitor`, `expand`), iar grilele au fost excluse pentru
+că o grilă de dale întinsă arată ca un bloc gol. Raţionamentul e corect pentru
+grilele cu 2-3 coloane, dar cardul „Automatizări" e un `grid` cu **o singură
+coloană** — adică o listă de trei rânduri, vizual identică cu un tabel. Nu avea
+ce să crească, iar vecinul lui de rând, „Actualizări sistem", are cinci rânduri
+faţă de trei.
+
+Excepţia e ţintită: creşte doar grila cu o coloană — singura din aplicaţie —
+prin `flex:1 1 auto` şi `align-content: stretch`, care împarte surplusul EGAL
+între cele trei rânduri. Dala are deja `flex:1 1 auto` şi conţinutul centrat în
+`tokens.js`, deci se înalţă exact ca un rând de `monitor`. Grilele cu 2-3
+coloane rămân excluse.
+
+`align-items: stretch` pe grile **nu s-a atins**: înălţimile rândurilor sunt
+identice înainte şi după (222 / 292 / 432 / 257 / 134px). Faza A rămâne
+documentată ca greşită în 1.3.5 şi nu se reintroduce.
+
+Măsurat pe DOM real, la 1180px şi 760px: „Automatizări" 53px → **15px**, în
+linie cu restul cardurilor (13px). Niciun alt card nu s-a mişcat.
+
+Teste: 153 logică + 44 stil.
+
 ## 1.4.1
 
 Curăţenie: sloturile **`addon.fusion`** şi **`addon.get_hacs`** au fost scoase

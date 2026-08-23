@@ -960,15 +960,25 @@ function PageCard({ card }) {
   // ÎNĂUNTRU, ca la „Control climat": antetul rămâne sus, iar spaţiul liber se
   // împarte între TOATE secţiunile de conţinut cu rânduri (monitor/expand),
   // proporţional — fiecare tabel creşte la fel, deci densitatea rândurilor
-  // rămâne uniformă în tot cardul. Blocurile fără rânduri (notă, grafic, grilă)
-  // nu cresc: o notă întinsă ar arăta ca un bloc gol. Ultima secţiune ajunge
-  // astfel la baza cardului -> gol ≈ 0.
+  // rămâne uniformă în tot cardul. Blocurile fără rânduri (notă, grafic, grilă
+  // de dale) nu cresc: o notă întinsă ar arăta ca un bloc gol. Ultima secţiune
+  // ajunge astfel la baza cardului -> gol ≈ 0.
+  //
+  // (v1.4.2) Excepţie la regula de mai sus: o grilă cu O SINGURĂ coloană nu e
+  // o grilă de dale, e o listă de rânduri — vizual identică cu un tabel
+  // `monitor`. Singurul astfel de bloc din aplicaţie e cardul „Automatizări"
+  // de pe Mentenanţă, care rămânea cu 53px goi la bază pentru că vecinul lui
+  // de rând, „Actualizări sistem", are 5 rânduri faţă de 3 (auditul responsive
+  // pe v1.4.1, detector cardGap, 6 combinaţii ≥760px). Grilele cu 2-3 coloane
+  // rămân excluse — acolo raţionamentul iniţial e corect.
   //
   // Alternativele încercate şi respinse, ca să nu se reintroducă:
   //   - `space-between` pe card: lasă un gol mare chiar sub titlu;
   //   - creşterea DOAR a ultimului bloc: rânduri de 87px lângă rânduri de 26px
-  //     în acelaşi card.
-  const growable = (b) => !!(b.isMonitor || b.isExpand);
+  //     în acelaşi card;
+  //   - `align-items: start` pe grile (Faza A): grila arată neîngrijită, cu
+  //     carduri de înălţimi aleatorii — vezi CHANGELOG v1.3.5.
+  const growable = (b) => !!(b.isMonitor || b.isExpand || (b.isGrid && b.cols === 1));
   return (
     <div style={s(card.cardStyle)} data-card={'page:' + card.title}>
       <div style={s(card.headerStyle + ' flex-shrink:0;')}>{card.title}</div>
@@ -1047,9 +1057,17 @@ function Block({ b, grow }) {
       </div>
     );
 
+  // (v1.4.2) Când creşte (doar grilele cu o coloană — vezi PageCard), containerul
+  // ia surplusul, iar `align-content: stretch` îl împarte EGAL între rândurile
+  // auto. Dala are deja `flex:1 1 auto` şi `align-items:center` în tokens.js,
+  // deci se înalţă cu conţinutul centrat — exact ca rândurile unui `monitor`.
+  // Nu se atinge `display:grid`: growWrap ar impune display:flex, iar `s()` e
+  // last-wins.
+  const growGrid = grow ? { flex: '1 1 auto', alignContent: 'stretch' } : null;
+
   if (b.isGrid)
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + b.cols + ',minmax(0,1fr))', gap: 8, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + b.cols + ',minmax(0,1fr))', gap: 8, marginBottom: 14, ...growGrid }}>
         {b.items.map((item, i) => (
           <div key={i} style={s(item.wrapStyle)} onMouseEnter={item.onEnter} onMouseLeave={item.onLeave}>
             <div style={s(item.tileStyle)} {...pressProps(item.onEnter, item.onLeave, item.onToggle)}>
