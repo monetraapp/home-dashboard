@@ -340,11 +340,12 @@ export function barChart(values, labels, unit, hoverIdx, onHover, mob) {
     style: { display: 'block', width: '100%', height: 'auto', cursor: onHover ? 'crosshair' : 'default' } }, nodes);
 }
 
-// Înălţime FIXĂ (118px): din v1.3.4 cardul piscinei nu se mai întinde, deci
-// graficul nu mai trebuie să-şi măsoare spaţiul (parametrul `hPx` din v1.3.2
-// şi componenta FitPoolChart au fost eliminate — întindeau graficul).
-export function poolChart(values, labels, highlightIdx, deltaLabel) {
-  const w = 320, h = 118, n = values.length, colW = w / n;
+// `maxH` (v1.3.6) e un PLAFON, nu o înălţime impusă: cardul piscinei are acum
+// înălţime fixă, deci graficul se REDUCE cât e nevoie ca să încapă, dar nu
+// depăşeşte niciodată 118px. (Diferenţa faţă de `hPx` din v1.3.2, care îl
+// ÎNTINDEA — vezi FitPoolChart, eliminat în v1.3.4.)
+export function poolChart(values, labels, highlightIdx, deltaLabel, maxH) {
+  const w = 320, h = Math.max(70, Math.min(118, maxH || 118)), n = values.length, colW = w / n;
   // v1.1.6: scala veche forţa un span de minim 3° (min−1.5 … max+1.5), aşa că
   // o apă stabilă (variaţie <1°) aşeza toate marcajele la acelaşi nivel şi
   // graficul părea gol. Acum spanul urmăreşte variaţia reală (minim 2°), iar

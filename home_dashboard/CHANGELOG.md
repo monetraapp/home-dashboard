@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.3.6
+
+Coloana stângă de pe Acasă, reorganizată: **ceas → ziua şi data → vreme →
+temperatură piscină → control climat → cadranele mici**.
+
+Card nou „ziua şi data", cu acelaşi tratament vizual ca ceasul: aceeaşi
+înălţime (88px, fixă prin construcţie — 44px caseta iconului + padding +
+bordură, `box-sizing` fiind border-box global), aceeaşi casetă de icon
+(calendar) şi cifrele în DOTO, ca la ceas. Ziua lunii e valoarea mare, cu
+numele zilei şi luna/anul alături. Din cardul „Ora" a dispărut linia cu ziua
+şi data — rămâne doar ceasul.
+
+Cardul „Temperatură piscină" a fost mutat între „Vreme" şi „Control climat" şi
+are acum înălţime FIXĂ, egală cu a cardului Vreme (230px — măsurat identic la
+1440/900/390). Nu mai creşte niciodată, deci nu mai e „absorbantul" coloanei.
+Graficul se încadrează în spaţiul rămas: `poolChart` primeşte un PLAFON de
+înălţime (nu o înălţime impusă), aşa că se reduce cât e nevoie dar nu depăşeşte
+118px; cardul are `overflow:hidden` ca garanţie suplimentară. La 230px iese
+114px de grafic, fără tăiere.
+
+Efectul mutării, verificat: coloana stângă devine cea care DEFINEŞTE înălţimea
+rândului (conţinutul ei o depăşeşte pe cea dreaptă la toate cele trei lăţimi),
+deci niciun card din ea nu mai e întins şi sub ultimul card rămân 0px goi.
+Detectorul cardGap rămâne tăcut: 237 măsurători de card pe 8 pagini × 3 lăţimi,
+zero carduri cu gol la bază peste 48px şi zero rânduri cu înălţimi inegale.
+
 ## 1.3.5
 
 Revenire la `align-items: stretch` peste tot (grila de dispozitive, grila de

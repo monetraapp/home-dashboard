@@ -14,7 +14,7 @@ import {
   GripVertical, BatteryMedium, Thermometer, Rocket, Wifi, Wrench, Archive,
   Armchair, CalendarMinus, CalendarPlus, Minus, Plus, DropletOff, HeartPulse,
   Cable, VolumeX, Clapperboard, BatteryCharging, UtilityPole, Activity,
-  CarFront
+  CarFront, CalendarDays
 } from 'lucide-react';
 
 // nume istoric -> componenta Lucide (maparea semantică, nu aproximativă)
@@ -23,6 +23,7 @@ const LUCIDE = {
   barChart: BarChart3, power: Power, snow: Snowflake, flame: Flame,
   auto: RotateCw, sun: Sun, wind: Wind, fan: Fan, fan2: Fan,
   droplet: Droplet, moon: Moon, leaf: Leaf, gauge: Gauge, clock: Clock,
+  calendarDays: CalendarDays,
   playCircle: PlayCircle, sliders: SlidersHorizontal, close: X, tv: Tv,
   monitor: Monitor, server: Server, sparkle: Sparkles, refresh: RefreshCw,
   lock: Lock, shield: Shield, shieldDot: ShieldCheck, ban: Ban,

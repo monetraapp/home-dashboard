@@ -231,6 +231,18 @@ export default function Dashboard({ onOpenMapping }) {
   // coloană) şi inelul de 118px ieşea din cardul de 190px. Wrap-ul umple acum
   // spaţiul rămas, iar inelul e dimensionat să încapă (104px).
   const energyDialWrapStyle = 'position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;';
+  // (v1.3.6) Înălţimi FIXE în coloana stângă.
+  //  - INFO_CARD_H: cardurile „Ora" şi „Ziua şi data" — identice prin
+  //    construcţie. 44px (caseta iconului) + 2×20 padding + 2×1 bordură = 86,
+  //    plus 2px joc (box-sizing e border-box global).
+  //  - POOL_CARD_H: exact înălţimea măsurată a cardului Vreme (230px, aceeaşi
+  //    la 1440/900/390). Cardul piscinei NU mai creşte niciodată.
+  //  - POOL_CHART_H: ce rămâne pentru grafic după antet şi cromul lui
+  //    (230 − 42 padding/bordură − 40 antet − 34 marginea de sus + etichete),
+  //    plafonat la 118px: se reduce dacă nu încape, nu se întinde niciodată.
+  const INFO_CARD_H = 88;
+  const POOL_CARD_H = 230;
+  const POOL_CHART_H = Math.max(70, Math.min(118, POOL_CARD_H - 42 - 40 - 34));
   const dialCenterStyle = 'position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center;';
   const dialNumStyle = 'font-family:' + DOTO + '; font-size:30px; font-weight:400; color:#f7ede2; line-height:1;';
   const dialUnitStyle = 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT2 + '; margin-top:3px;';
@@ -358,19 +370,35 @@ export default function Dashboard({ onOpenMapping }) {
 
             {isAcasa ? (
               <>
-                {/* ceas */}
-                <div style={s(glassCard())} data-card="ceas">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={s('font-family:' + DOTO + '; font-size:42px; font-weight:400; line-height:1; color:#f7f1e9; letter-spacing:0.02em;')}>
-                        {pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds())}
-                      </div>
-                      <div style={s('font-family:' + SANS + '; font-size:12px; font-weight:300; color:' + TXT2 + '; margin-top:9px;')}>
-                        {DAYS[now.getDay()] + ', ' + now.getDate() + ' ' + MONTHS[now.getMonth()] + ' ' + now.getFullYear()}
-                      </div>
+                {/* ceas — DOAR ora (v1.3.6: ziua şi data au card propriu) */}
+                <div style={s(glassCard() + ' height:' + INFO_CARD_H + 'px; display:flex; align-items:center;')} data-card="ceas">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                    <div style={s('font-family:' + DOTO + '; font-size:42px; font-weight:400; line-height:1; color:#f7f1e9; letter-spacing:0.02em;')}>
+                      {pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds())}
                     </div>
                     <div style={s('width:44px; height:44px; flex-shrink:0; border-radius:14px; display:flex; align-items:center; justify-content:center; color:' + ORANGE + '; background:rgba(240,138,44,0.1); border:1px solid rgba(240,138,44,0.24);')}>
                       {ic('clock', { size: 21 })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ziua şi data (v1.3.6) — acelaşi tratament vizual ca ceasul:
+                    aceeaşi înălţime, aceeaşi casetă de icon, cifrele în DOTO. */}
+                <div style={s(glassCard() + ' height:' + INFO_CARD_H + 'px; display:flex; align-items:center;')} data-card="data">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%' }}>
+                    <div style={s('font-family:' + DOTO + '; font-size:42px; font-weight:400; line-height:1; color:#f7f1e9; letter-spacing:0.02em;')}>
+                      {now.getDate()}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={s('font-family:' + SANS + '; font-size:13.5px; font-weight:500; color:' + TXT + '; line-height:1.2;')}>
+                        {DAYS[now.getDay()]}
+                      </div>
+                      <div style={s('font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT2 + '; margin-top:3px;')}>
+                        {MONTHS[now.getMonth()] + ' ' + now.getFullYear()}
+                      </div>
+                    </div>
+                    <div style={s('width:44px; height:44px; flex-shrink:0; border-radius:14px; display:flex; align-items:center; justify-content:center; color:' + ORANGE + '; background:rgba(240,138,44,0.1); border:1px solid rgba(240,138,44,0.24);')}>
+                      {ic('calendarDays', { size: 21 })}
                     </div>
                   </div>
                 </div>
@@ -406,6 +434,34 @@ export default function Dashboard({ onOpenMapping }) {
                         <div style={s('font-family:' + SANS + '; font-size:11.5px; font-weight:500; color:#c8bcae;')}>{d.temp}</div>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* temperatură piscină (v1.3.6): mutat între Vreme şi Control
+                    climat, cu înălţime FIXĂ egală cu a cardului Vreme. Nu mai
+                    creşte niciodată — nu mai e „absorbantul" coloanei. Graficul
+                    se încadrează în spaţiul rămas (plafonat la 118px), iar
+                    overflow:hidden garantează că nu poate depăşi cardul. */}
+                <div style={s(glassCard() + ' height:' + POOL_CARD_H + 'px; overflow:hidden; display:flex; flex-direction:column;')} data-card="piscina">
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={s(cardTitleStyle)}>Temperatură piscină</div>
+                      <div style={s(cardSubStyle)}>
+                        {poolSeries
+                          ? (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°C în 7 zile'
+                          : E.mapped('sensor.apa_temp')
+                            ? poolHist.loading ? 'se încarcă istoricul…' : 'fără date în recorder'
+                            : 'VERIFY · mapează senzorul de temperatură apă'}
+                      </div>
+                    </div>
+                    <div style={s('font-family:' + DOTO + '; font-size:32px; font-weight:400; color:' + (E.mapped('sensor.apa_temp') ? '#f7ede2' : ORANGE) + ';' + (E.mapped('sensor.apa_temp') ? '' : ' font-size:16px;'))}>
+                      {E.mapped('sensor.apa_temp') ? (E.num('sensor.apa_temp') === null ? NA : Math.round(E.num('sensor.apa_temp')) + '°') : VERIFY}
+                    </div>
+                  </div>
+                  <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    {poolSeries
+                      ? poolChart(poolSeries, poolLabels, 6, (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°', POOL_CHART_H)
+                      : <div style={{ height: POOL_CHART_H }} />}
                   </div>
                 </div>
 
@@ -496,29 +552,6 @@ export default function Dashboard({ onOpenMapping }) {
                   </div>
                 </div>
 
-                {/* temperatură piscină (v1.3.5): cardul absoarbe surplusul
-                    coloanei (flex:1), dar graficul NU se întinde — stă la 118px,
-                    centrat vertical în zona care creşte. */}
-                <div style={s(glassCard() + ' flex:1 1 auto; min-height:210px; display:flex; flex-direction:column;')} data-card="piscina">
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                    <div>
-                      <div style={s(cardTitleStyle)}>Temperatură piscină</div>
-                      <div style={s(cardSubStyle)}>
-                        {poolSeries
-                          ? (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°C în 7 zile'
-                          : E.mapped('sensor.apa_temp')
-                            ? poolHist.loading ? 'se încarcă istoricul…' : 'fără date în recorder'
-                            : 'VERIFY · mapează senzorul de temperatură apă'}
-                      </div>
-                    </div>
-                    <div style={s('font-family:' + DOTO + '; font-size:32px; font-weight:400; color:' + (E.mapped('sensor.apa_temp') ? '#f7ede2' : ORANGE) + ';' + (E.mapped('sensor.apa_temp') ? '' : ' font-size:16px;'))}>
-                      {E.mapped('sensor.apa_temp') ? (E.num('sensor.apa_temp') === null ? NA : Math.round(E.num('sensor.apa_temp')) + '°') : VERIFY}
-                    </div>
-                  </div>
-                  <div style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 118 }}>
-                    {poolSeries ? poolChart(poolSeries, poolLabels, 6, (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°') : <div style={{ height: 118 }} />}
-                  </div>
-                </div>
               </>
             ) : (
               <>
