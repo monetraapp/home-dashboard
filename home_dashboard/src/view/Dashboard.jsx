@@ -215,10 +215,10 @@ export default function Dashboard({ onOpenMapping }) {
     (navFade.r ? 'transparent 100%' : '#000 100%') + ')';
 
   const navRowStyle = 'display:flex; align-items:center; gap:' + (mob ? '10px' : '16px') + '; padding:' + (mob ? '12px 14px' : '18px 26px') + '; border-bottom:1px solid rgba(255,255,255,0.05);';
-  // (v1.3.4) flex-start, nu stretch: coloanele îşi păstrează înălţimea
-  // naturală. Cu stretch, coloana scurtă era întinsă la înălţimea celeilalte,
-  // iar cardul "grower" din ea (piscina) primea spaţiu gol în exces.
-  const bodyRowStyle = 'display:flex; align-items:flex-start; gap:0; min-width:0;' + (narrow ? ' flex-direction:column;' : '');
+  // (v1.3.5) stretch: coloanele au aceeaşi înălţime. Surplusul NU se adună la
+  // baza vreunui card — cardul piscinei îl absoarbe şi îl distribuie înăuntru
+  // (graficul rămâne 118px, centrat vertical).
+  const bodyRowStyle = 'display:flex; align-items:stretch; gap:0; min-width:0;' + (narrow ? ' flex-direction:column;' : '');
   const leftColStyle = narrow
     ? 'width:100%; padding:' + (mob ? '20px 14px 8px' : '26px 22px 10px') + '; display:flex; flex-direction:column; gap:14px;'
     : 'width:376px; flex:0 0 376px; padding:60px 18px 26px 28px; display:flex; flex-direction:column; gap:14px;';
@@ -271,12 +271,11 @@ export default function Dashboard({ onOpenMapping }) {
     </div>
   );
   const deviceSectionPadStyle = 'padding:' + (mob ? '16px 14px 22px' : narrow ? '18px 22px 24px' : '20px 26px 26px 20px') + ';';
-  // align-items:start (v1.3.4): fiecare card de dispozitiv îşi păstrează
-  // înălţimea naturală. Implicit grid-ul întindea cardurile scurte (Pompă
-  // filtrare, TV-uri fără mini-toggle-uri) la înălţimea celui mai înalt din
-  // rând, lăsând ~200px goi sub "Setări avansate". Golul dintre rânduri e
-  // acceptat deliberat: arată ca separare, nu ca element lipsă.
-  const deviceGridStyle = 'display:grid; grid-template-columns:repeat(auto-fit,minmax(' + (mob ? '260px' : '298px') + ',1fr)); gap:14px; align-items:start;';
+  // (v1.3.5) stretch (implicit): toate cardurile dintr-un rând au aceeaşi
+  // înălţime. Surplusul se distribuie ÎN card (zona cadranului creşte şi îşi
+  // centrează conţinutul, "Setări avansate" rămâne lipit de bază), nu se
+  // adună gol sub ultimul element.
+  const deviceGridStyle = 'display:grid; grid-template-columns:repeat(auto-fit,minmax(' + (mob ? '260px' : '298px') + ',1fr)); gap:14px;';
   const tableSectionStyle = 'padding:' + (mob ? '4px 14px 22px' : narrow ? '4px 22px 24px' : '4px 26px 26px 20px') + ';';
 
   // Salut dupa ora locala a browserului (`now` se actualizeaza la fiecare
@@ -497,12 +496,10 @@ export default function Dashboard({ onOpenMapping }) {
                   </div>
                 </div>
 
-                {/* temperatură piscină — înălţime NATURALĂ (v1.3.4). Era
-                    "grower"-ul coloanei (flex:1 + min-height), iar FitPoolChart
-                    întindea graficul ca să umple spaţiul, deformându-l. Acum
-                    coloana nu mai e întinsă (bodyRow: flex-start), deci
-                    graficul revine la înălţimea lui proiectată. */}
-                <div style={s(glassCard() + ' display:flex; flex-direction:column;')} data-card="piscina">
+                {/* temperatură piscină (v1.3.5): cardul absoarbe surplusul
+                    coloanei (flex:1), dar graficul NU se întinde — stă la 118px,
+                    centrat vertical în zona care creşte. */}
+                <div style={s(glassCard() + ' flex:1 1 auto; min-height:210px; display:flex; flex-direction:column;')} data-card="piscina">
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <div>
                       <div style={s(cardTitleStyle)}>Temperatură piscină</div>
@@ -518,7 +515,9 @@ export default function Dashboard({ onOpenMapping }) {
                       {E.mapped('sensor.apa_temp') ? (E.num('sensor.apa_temp') === null ? NA : Math.round(E.num('sensor.apa_temp')) + '°') : VERIFY}
                     </div>
                   </div>
-                  {poolSeries ? poolChart(poolSeries, poolLabels, 6, (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°') : <div style={{ height: 118 }} />}
+                  <div style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 118 }}>
+                    {poolSeries ? poolChart(poolSeries, poolLabels, 6, (poolDelta >= 0 ? '+' : '') + dec(poolDelta) + '°') : <div style={{ height: 118 }} />}
+                  </div>
                 </div>
               </>
             ) : (
@@ -629,9 +628,9 @@ export default function Dashboard({ onOpenMapping }) {
 
             {!isAcasa ? (
               <div style={s(tableSectionStyle)}>
-                {/* alignItems:start (v1.3.4) — vezi nota de la deviceGridStyle:
-                    cardurile de pagină îşi păstrează înălţimea naturală. */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + (mob ? 1 : 2) + ',minmax(0,1fr))', gap: 14, alignItems: 'start' }}>
+                {/* stretch (v1.3.5): cardurile din acelaşi rând sunt egale;
+                    surplusul se distribuie în interiorul fiecărui card. */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + (mob ? 1 : 2) + ',minmax(0,1fr))', gap: 14, alignItems: 'stretch' }}>
                   <div
                     style={s('grid-column:1 / -1; order:' + (currentPage.hasBottom ? 85 : -1) + '; font-family:' + SANS + '; font-size:16px; font-weight:500; color:' + TXT + ';' + (currentPage.hasBottom ? ' margin-top:12px;' : ''))}
                   >
@@ -788,7 +787,8 @@ function DeviceCard({ c }) {
     // fiind inline, detectorul de "spaţiu gol la baza cardului" n-ar avea altfel
     // cum să ştie ce element e un card. Nu afectează randarea.
     <div style={s(c.cardStyle)} data-card={'device:' + c.id}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+      {/* antet: sus, fix — nu creşte şi nu se comprimă (v1.3.5) */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
           <div style={s(c.headIconStyle)}>{c.headIconEl}</div>
           <div style={{ minWidth: 0 }}>
@@ -826,7 +826,7 @@ function DeviceCard({ c }) {
            spacer-e de latimea butoanelor -/+ pentru aliniere; tooltip-ul
            (hover / long-press) explica de ce nu exista control. */
         <div
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 2, position: 'relative' }}
+          style={s(c.staticDialRowStyle)}
           onMouseEnter={c.onStaticEnter}
           onMouseLeave={c.onStaticLeave}
           {...pressProps(c.onStaticEnter, c.onStaticLeave, () => {})}
@@ -883,17 +883,35 @@ function DeviceCard({ c }) {
 
 // --------------------------------------------------------------- card pagină
 function PageCard({ card }) {
+  // (v1.3.5) Grila întinde cardul la înălţimea rândului; surplusul se distribuie
+  // ÎNĂUNTRU, ca la „Control climat": antetul rămâne sus, iar spaţiul liber se
+  // împarte între TOATE secţiunile de conţinut cu rânduri (monitor/expand),
+  // proporţional — fiecare tabel creşte la fel, deci densitatea rândurilor
+  // rămâne uniformă în tot cardul. Blocurile fără rânduri (notă, grafic, grilă)
+  // nu cresc: o notă întinsă ar arăta ca un bloc gol. Ultima secţiune ajunge
+  // astfel la baza cardului -> gol ≈ 0.
+  //
+  // Alternativele încercate şi respinse, ca să nu se reintroducă:
+  //   - `space-between` pe card: lasă un gol mare chiar sub titlu;
+  //   - creşterea DOAR a ultimului bloc: rânduri de 87px lângă rânduri de 26px
+  //     în acelaşi card.
+  const growable = (b) => !!(b.isMonitor || b.isExpand);
   return (
     <div style={s(card.cardStyle)} data-card={'page:' + card.title}>
-      <div style={s(card.headerStyle)}>{card.title}</div>
+      <div style={s(card.headerStyle + ' flex-shrink:0;')}>{card.title}</div>
       {card.blocks.map((b, i) => (
-        <Block key={i} b={b} />
+        <Block key={i} b={b} grow={growable(b)} />
       ))}
     </div>
   );
 }
 
-function Block({ b }) {
+function Block({ b, grow }) {
+  // `grow` (v1.3.5): acest bloc absoarbe surplusul cardului întins de grilă.
+  // Wrapper-ul devine coloană flexibilă, capul rămâne fix, iar rândurile se
+  // împart spaţiul în mod egal (conţinutul lor e deja centrat vertical).
+  const growWrap = grow ? ' flex:1 1 auto; display:flex; flex-direction:column;' : '';
+  const growRow = grow ? ' flex:1 1 auto;' : '';
   // Starea deschis/închis a secţiunilor extensibile (energie, v1.1.3).
   // Hook-ul stă înaintea oricărui return ca să respecte regulile React.
   const [open, setOpen] = useState(false);
@@ -934,13 +952,13 @@ function Block({ b }) {
 
   if (b.isExpand)
     return (
-      <div style={s(b.wrapStyle)}>
-        <div style={s(b.capStyle)}>
+      <div style={s(b.wrapStyle + growWrap)}>
+        <div style={s(b.capStyle + (grow ? ' flex-shrink:0;' : ''))}>
           <span style={s(b.capIconStyle)}>{b.capIconEl}</span>
           {b.title}
         </div>
         {b.summary.concat(open ? b.detail : []).map((row, i) => (
-          <div key={i} style={s(row.rowStyle)} onMouseEnter={row.onEnter} onMouseLeave={row.onLeave} {...pressProps(row.onEnter, row.onLeave, () => {})}>
+          <div key={i} style={s(row.rowStyle + growRow)} onMouseEnter={row.onEnter} onMouseLeave={row.onLeave} {...pressProps(row.onEnter, row.onLeave, () => {})}>
             <div style={s(row.labelStyle)}>
               <span style={s(row.dotStyle)} />
               {row.label}
@@ -976,13 +994,13 @@ function Block({ b }) {
 
   if (b.isMonitor)
     return (
-      <div style={s(b.wrapStyle)}>
-        <div style={s(b.capStyle)}>
+      <div style={s(b.wrapStyle + growWrap)}>
+        <div style={s(b.capStyle + (grow ? ' flex-shrink:0;' : ''))}>
           <span style={s(b.capIconStyle)}>{b.capIconEl}</span>
           {b.title}
         </div>
         {b.rows.map((row, i) => (
-          <div key={i} style={s(row.rowStyle)} onMouseEnter={row.onEnter} onMouseLeave={row.onLeave} {...pressProps(row.onEnter, row.onLeave, () => {})}>
+          <div key={i} style={s(row.rowStyle + growRow)} onMouseEnter={row.onEnter} onMouseLeave={row.onLeave} {...pressProps(row.onEnter, row.onLeave, () => {})}>
             <div style={s(row.labelStyle)}>
               <span style={s(row.dotStyle)} />
               {row.label}

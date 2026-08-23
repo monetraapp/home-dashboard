@@ -853,6 +853,8 @@ export function buildDeviceCard(E, ui, def) {
     // nimic); tooltip-ul explica de ce. Mute si sursele de mai jos raman
     // functionale.
     staticDial: !!def.dial && def.dial.kind === 'volume' && E.mapped(def.slot) && !E.supportsFeature(def.slot, 4),
+    // (v1.3.5) acelaşi tratament ca dialRowStyle: creşte şi îşi centrează conţinutul.
+    staticDialRowStyle: 'position:relative; flex:1 1 auto; display:flex; align-items:center; justify-content:center; gap:14px; margin-top:2px;',
     staticDialTicksEl: dialTicks(0, false, mob ? 116 : 132),
     staticDialVal: !E.available(def.slot) ? NA
       : E.isOn(def.slot) ? (E.currentSource(def.slot) || 'Pornit') : 'Standby',
@@ -862,12 +864,17 @@ export function buildDeviceCard(E, ui, def) {
     showStaticTip: ui.hoverKey === 'sdial:' + def.id,
     onStaticEnter: () => ui.setHoverKey('sdial:' + def.id),
     onStaticLeave: () => ui.setHoverKey(null),
-    noDialWrapStyle: 'height:132px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; margin-top:2px;',
+    // min-height (nu height) + flex:1 — pastreaza silueta de 132px, dar
+    // absoarbe surplusul cardului si tine continutul centrat.
+    noDialWrapStyle: 'min-height:132px; flex:1 1 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; margin-top:2px;',
     noDialIconEl: ic(def.icon, { size: 34, color: a ? ORANGE : TXT3 }),
     noDialTextStyle: 'font-family:' + SANS + '; font-size:21px; font-weight:500; line-height:1; color:' + (a ? '#f7f1e9' : '#9d9186') + ';',
     noDialText: !E.mapped(def.slot) ? VERIFY : !E.available(def.slot) ? NA
       : a ? (def.stateLabels ? def.stateLabels[0] : 'Pornit') : (def.stateLabels ? def.stateLabels[1] : 'Oprit'),
-    cardStyle: 'padding:16px 16px 14px; border-radius:22px; background:' + CARD_BG + '; border:1px solid ' + CARD_BORDER + ';',
+    // (v1.3.5) Cardul e container flex vertical: grila il intinde la
+    // inaltimea randului, iar surplusul se distribuie INAUNTRU (zona
+    // cadranului creste si isi centreaza continutul), nu se aduna la baza.
+    cardStyle: 'padding:16px 16px 14px; border-radius:22px; display:flex; flex-direction:column; background:' + CARD_BG + '; border:1px solid ' + CARD_BORDER + ';',
     headIconStyle: 'width:34px; height:34px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:' + (a ? '#2a1608' : TXT2) + '; background:' + (a ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(255,255,255,0.06)') + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)') + ';',
     headIconEl: ic(def.icon, { size: 18 }),
     nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + CLAMP2,
@@ -876,7 +883,7 @@ export function buildDeviceCard(E, ui, def) {
     toggleKnobStyle: 'width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:' + (a ? KNOB_ON : KNOB_OFF) + '; ' + KNOB_SHADOW,
     toggleIconEl: ic('power', { size: 12.5, color: a ? '#C4600F' : '#cfc4b8', sw: 2.2 }),
     toggleTitle: canToggle ? 'Pornit / oprit' : 'VERIFY · entitate nemapată sau indisponibilă',
-    ambientStyle: 'font-family:' + SANS + '; font-size:12px; font-weight:300; color:' + (ambientText(E, def) === VERIFY ? ORANGE : TXT2) + '; text-align:center; margin:14px 0 4px;',
+    ambientStyle: 'flex-shrink:0; font-family:' + SANS + '; font-size:12px; font-weight:300; color:' + (ambientText(E, def) === VERIFY ? ORANGE : TXT2) + '; text-align:center; margin:14px 0 4px;',
     dialWrapStyle: 'position:relative; width:' + (mob ? 116 : 132) + 'px; height:' + (mob ? 116 : 132) + 'px; flex-shrink:0; display:flex; align-items:center; justify-content:center;',
     dialTicksEl: dialTicks(frac, a, mob ? 116 : 132),
     knobStyle: 'position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:' + (mob ? 64 : 74) + 'px; height:' + (mob ? 64 : 74) + 'px; border-radius:50%; display:flex; align-items:center; justify-content:center; gap:1px; background:radial-gradient(120% 120% at 30% 20%, #2e2620 0%, #17120f 70%); border:1px solid rgba(255,255,255,0.09); box-shadow:inset 0 2px 6px rgba(0,0,0,0.5), 0 10px 20px -10px rgba(0,0,0,0.8);',
@@ -888,7 +895,7 @@ export function buildDeviceCard(E, ui, def) {
     // laterală ambiguă — vezi CHANGELOG 1.0.7 punctul 1.3)
     stepTitle: 'pas ' + (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
     // Rândul cadranului: estompat integral când TV-ul e în standby (v1.3.4).
-    dialRowStyle: 'display:flex; align-items:center; justify-content:center; gap:14px; margin-top:2px;' + (dialDimmed ? ' opacity:0.55;' : ''),
+    dialRowStyle: 'flex:1 1 auto; display:flex; align-items:center; justify-content:center; gap:14px; margin-top:2px;' + (dialDimmed ? ' opacity:0.55;' : ''),
     roundBtnStyle: 'width:' + (touch44 ? 44 : 30) + 'px; height:' + (touch44 ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + btnOpacity + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
     stepLabelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT2 + '; white-space:nowrap;',
     stepLabel: (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
@@ -896,7 +903,7 @@ export function buildDeviceCard(E, ui, def) {
     targetLabel,
     onMinus: (e) => { stop(e); if (di.writable && di.val !== null) di.set(di.val - di.step); },
     onPlus: (e) => { stop(e); if (di.writable) di.set((di.val === null ? di.min : di.val) + di.step); },
-    miniRowStyle: 'display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06);',
+    miniRowStyle: 'flex-shrink:0; display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06);',
     miniToggles: def.minis.map((mt, mi) => {
       const b = buildToggleAction(E, ui, def, mt);
       const on = b.res.active;
@@ -916,7 +923,7 @@ export function buildDeviceCard(E, ui, def) {
         onToggle: (e) => { stop(e); if (b.res.supported) b.res.run(); }
       };
     }),
-    circleRowStyle: 'display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:' + (bpOf(ui).mob ? '9px' : '11px') + '; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06);',
+    circleRowStyle: 'flex-shrink:0; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:' + (bpOf(ui).mob ? '9px' : '11px') + '; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06);',
     circles: def.circles.map((cb) => {
       const b = buildToggleAction(E, ui, def, cb);
       const on = b.res.active;
@@ -932,7 +939,8 @@ export function buildDeviceCard(E, ui, def) {
         onToggle: (e) => { stop(e); if (b.res.supported) b.res.run(); }
       };
     }),
-    advBtnStyle: 'min-height:44px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:10px; border-radius:13px; cursor:pointer; font-family:' + SANS + '; font-size:12px; font-weight:400; color:#c8bcae; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.075);',
+    // ultimul copil al cardului: ramane LIPIT de baza (flex-shrink:0).
+    advBtnStyle: 'flex-shrink:0; min-height:44px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:10px; border-radius:13px; cursor:pointer; font-family:' + SANS + '; font-size:12px; font-weight:400; color:#c8bcae; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.075);',
     advIconStyle: 'display:flex; color:' + ORANGE + ';',
     advIconEl: ic('sliders', { size: 16 }),
     onOpen: () => ui.setModalId(def.id),
