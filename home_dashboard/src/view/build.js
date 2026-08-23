@@ -827,6 +827,13 @@ export function buildDeviceCard(E, ui, def) {
   // fără unitate lângă valoarea lipsă ("—", nu "—%")
   const dialUnitShown = di.val === null ? '' : di.unit;
   const targetLabel = di.standby ? 'Standby' : !di.mapped ? VERIFY : di.val === null ? NA : dialVal + di.unit;
+  // (v1.3.4) TV în standby: volumul nu există, deci cadranul se desena plin dar
+  // cu "—" în centru, iar −/+ păreau active. Estompăm TOT blocul (0.55 — aceeaşi
+  // convenţie ca la cadranul static Hisense), nu doar butoanele. Butoanele
+  // rămân la opacitate 1 ÎN interiorul blocului, altfel s-ar compune
+  // (0.55 × 0.45 ≈ 0.25) şi ar deveni ilizibile.
+  const dialDimmed = !!di.standby;
+  const btnOpacity = di.writable || dialDimmed ? 1 : 0.45;
 
   return {
     id: def.id,
@@ -880,7 +887,9 @@ export function buildDeviceCard(E, ui, def) {
     // titlu pe butoanele −/+ (pasul e comunicat aici, nu printr-o valoare
     // laterală ambiguă — vezi CHANGELOG 1.0.7 punctul 1.3)
     stepTitle: 'pas ' + (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
-    roundBtnStyle: 'width:' + (touch44 ? 44 : 30) + 'px; height:' + (touch44 ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
+    // Rândul cadranului: estompat integral când TV-ul e în standby (v1.3.4).
+    dialRowStyle: 'display:flex; align-items:center; justify-content:center; gap:14px; margin-top:2px;' + (dialDimmed ? ' opacity:0.55;' : ''),
+    roundBtnStyle: 'width:' + (touch44 ? 44 : 30) + 'px; height:' + (touch44 ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + btnOpacity + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
     stepLabelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT2 + '; white-space:nowrap;',
     stepLabel: (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
     targetLabelStyle: 'font-family:' + SANS + '; font-size:13px; font-weight:' + (targetLabel === VERIFY ? 600 : 500) + '; color:' + (targetLabel === VERIFY ? ORANGE : a ? ORANGE : TXT3) + '; white-space:nowrap;',
