@@ -141,7 +141,7 @@ function auditPage() {
     return selPath(el) + (t ? ' — „' + t + '"' : '');
   };
 
-  const out = { overflowBody: [], outside: [], containerOverflow: [], touch: [], textCut: [], overlap: [], contrast: [], textEllipsis: [] };
+  const out = { overflowBody: [], outside: [], containerOverflow: [], touch: [], textCut: [], overlap: [], contrast: [], textEllipsis: [], cardGap: [] };
 
   // 1) overflow orizontal pe body
   const bodyOver = document.documentElement.scrollWidth - vw;
@@ -326,6 +326,46 @@ function auditPage() {
     out.contrast.push({ el: ident(el), detail: 'contrast ' + ratio.toFixed(2) + ':1 (minim ' + limit + ':1, font ' + Math.round(fs) + 'px)' });
   }
 
+  // 8) spaţiu gol excesiv la BAZA cardului (v1.3.4). Auditul nu prindea
+  // cardurile întinse de grilă (nu e overflow, nu e text tăiat): un card scurt
+  // lângă unul înalt căpăta zeci/sute de px goi sub ultimul element.
+  //   golBază = card.bottom − (cel mai de jos copil cu conţinut).bottom − padding-bottom
+  // Se măsoară pe [data-card] (marcaj stabil — stilurile sunt inline).
+  // Cardurile cu `justify-content: space-between` (ex. „Control climat") îşi
+  // împing ultimul copil FIX la bază, deci ies natural cu golBază ≈ 0: nu e
+  // nevoie de nicio excepţie specială, măsurătoarea le exclude singură.
+  const GAP_LIMIT = 48;
+  for (const el of document.querySelectorAll('[data-card]')) {
+    if (out.cardGap.length >= CAP) break;
+    if (!isVisible(el)) continue;
+    const st = cs(el);
+    const rect = el.getBoundingClientRect();
+    const padB = parseFloat(st.paddingBottom) || 0;
+    // Cel mai de JOS copil care OCUPĂ SPAŢIU în fluxul cardului (nu neapărat
+    // ultimul din DOM: ordinea vizuală poate diferi prin flex/grid `order`).
+    // Criteriul e cutia, nu conţinutul: un spacer gol cu înălţime explicită
+    // (ex. locul rezervat graficului cât timp nu sunt date în recorder) rezervă
+    // spaţiul deliberat şi NU e "gol la baza cardului". Absolut-poziţionatele
+    // (gradienturi, tooltip-uri) nu ţin de flux.
+    let lowest = null;
+    let lowestBottom = -Infinity;
+    for (const k of Array.from(el.children)) {
+      if (!isVisible(k)) continue;
+      const kst = cs(k);
+      if (kst.position === 'absolute' || kst.position === 'fixed') continue;
+      const kb = k.getBoundingClientRect().bottom;
+      if (kb > lowestBottom) { lowestBottom = kb; lowest = k; }
+    }
+    if (!lowest) continue;
+    const gap = rect.bottom - lowestBottom - padB;
+    if (gap <= GAP_LIMIT) continue;
+    out.cardGap.push({
+      el: ident(el),
+      detail: Math.round(gap) + 'px goi sub ultimul element (card ' + Math.round(rect.height) +
+        'px, conţinut până la ' + Math.round(lowestBottom - rect.top) + 'px) — cardul e întins de grilă'
+    });
+  }
+
   return out;
 }
 
@@ -360,6 +400,7 @@ const SEVERITY = {
   touch: ['MEDIU', 'Ţintă tactilă sub 44×44px'],
   textCut: ['MEDIU', 'Text tăiat vertical'],
   textEllipsis: ['MEDIU', 'Text trunchiat cu ellipsis activ'],
+  cardGap: ['MEDIU', 'Spaţiu gol excesiv la baza cardului (>48px)'],
   contrast: ['MINOR', 'Contrast sub pragul WCAG']
 };
 
