@@ -275,7 +275,9 @@ eq('niciun control interzis nu e mapat (PoE, reboot, Aux1/Aux2)',
 eq('sloturile ramase au toate un motiv explicit',
    SLOTS.filter((x) => !SUGGESTED_MAP[x.key] && !UNMAPPED_REASONS[x.key]).map((x) => x.key), []);
 
-eq('total: 293 mapate din 293 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [293, 293]);
+// 293 -> 291: sloturile addon.fusion si addon.get_hacs au iesit odata cu
+// dezinstalarea add-on-urilor (curatenia din 23.08.2026).
+eq('total: 291 mapate din 291 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [291, 291]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------

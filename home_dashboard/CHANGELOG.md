@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.4.1
+
+Curăţenie: sloturile **`addon.fusion`** şi **`addon.get_hacs`** au fost scoase
+din catalog, din maparea implicită şi din pagina „Mentenanţă", pentru că
+add-on-urile din spatele lor au fost dezinstalate din Home Assistant.
+
+Fusion era un experiment abandonat, iar „Get HACS" e un instalator care şi-a
+făcut treaba o dată, în 2024 — HACS rulează de atunci pe cont propriu şi
+rămâne neatins (slotul `upd.hacs`, care urmăreşte actualizările HACS, e
+nemodificat). Sloturile au ieşit odată cu add-on-urile ca să nu rămână în
+selectorul de mapare două locuri care nu se mai pot lega de nimic; un slot
+gol nu e o rezervă, e o eroare viitoare.
+
+Catalogul scade de la 293 la **291 de sloturi**, toate mapate. Rândurile
+rămase în blocul „Stare add-on-uri" sunt Home Dashboard şi Matter Server.
+
+Fără nicio schimbare vizuală şi fără modificări de comportament în restul
+aplicaţiei.
+
+Teste: 153 logică + 44 stil.
+
 ## 1.4.0
 
 Graficul din cardul „Temperatură piscină", refăcut complet: **curbă netedă cu

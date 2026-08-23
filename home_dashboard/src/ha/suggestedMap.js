@@ -163,9 +163,7 @@ export const SUGGESTED_MAP = {
 
   // ---------------------------------------------------------- MENTENANŢĂ
   // Indicatori add-on-uri (activate din registry 2026-08-22; erau
-  // disabled_by:integration). Read-only — switch.fusion etc. NU se mapează.
-  'addon.fusion': 'binary_sensor.fusion_running',
-  'addon.get_hacs': 'binary_sensor.get_hacs_running',
+  // disabled_by:integration). Read-only — comutatoarele NU se mapează.
   'addon.home_dashboard': 'binary_sensor.home_dashboard_running',
   'addon.matter_server': 'binary_sensor.matter_server_running',
   'upd.ha_core': 'update.home_assistant_core_update',

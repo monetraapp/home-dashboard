@@ -218,9 +218,9 @@ export const SLOTS = [
   slot('upd.net_swe', 'Update Switch Etaj', 'mentenanta', ['update', 'binary_sensor', 'sensor']),
   // Indicatori "rulează" pentru add-on-uri (binary_sensor.*_running, hassio).
   // Erau dezactivate de integrare; activate din registry pe 2026-08-22.
-  // Doar citire — comutarea add-on-urilor (switch.fusion etc.) NU se expune.
-  slot('addon.fusion', 'Add-on Fusion · rulează', 'mentenanta', ['binary_sensor']),
-  slot('addon.get_hacs', 'Add-on Get HACS · rulează', 'mentenanta', ['binary_sensor']),
+  // Doar citire — comutarea add-on-urilor NU se expune. Fusion şi Get HACS
+  // au fost dezinstalate la curăţenia din 23.08.2026; sloturile lor au ieşit
+  // odată cu ele, ca să nu rămână locuri goale în selectorul de mapare.
   slot('addon.home_dashboard', 'Add-on Home Dashboard · rulează', 'mentenanta', ['binary_sensor']),
   slot('addon.matter_server', 'Add-on Matter Server · rulează', 'mentenanta', ['binary_sensor']),
   slot('backup.state', 'Stare backup', 'mentenanta', ['sensor', 'binary_sensor']),

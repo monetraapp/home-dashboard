@@ -700,10 +700,8 @@ export const PAGES = {
           // pornire/oprire add-on NU se expun — oprirea accidentală a unui
           // add-on de pe dashboard e exact genul de acţiune periculoasă evitată.
           monitor('Stare add-on-uri', [
-            r('Fusion', 'addon.fusion', { map: { on: 'Rulează', off: 'Oprit' } }),
             r('Home Dashboard', 'addon.home_dashboard', { map: { on: 'Rulează', off: 'Oprit' } }),
-            r('Matter Server', 'addon.matter_server', { map: { on: 'Rulează', off: 'Oprit' } }),
-            r('Get HACS', 'addon.get_hacs', { map: { on: 'Rulează', off: 'Oprit' } })
+            r('Matter Server', 'addon.matter_server', { map: { on: 'Rulează', off: 'Oprit' } })
           ])
         ]
       },
