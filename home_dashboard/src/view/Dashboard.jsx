@@ -23,6 +23,8 @@ import {
   MEDIA_ZONES, MEDIA_ZONE_OF
 } from '../model/devices.js';
 import { PAGES, PAGE_HERO } from '../model/pages.js';
+import { useRegistries } from '../ha/registries.js';
+import { ZonePage } from './ZonePage.jsx';
 import { buildPageCard, buildDeviceCard, buildSidebarDevice, buildModal } from './build.js';
 
 const AC_UNIT_IDS = ['ac-vortex', 'ac-etaj', 'ac-vivax'];
@@ -79,7 +81,12 @@ export default function Dashboard({ onOpenMapping }) {
   }, [tracked, anim]);
 
   const isAcasa = page === 'acasa';
-  const pageDef = isAcasa ? null : PAGES[page];
+  // (v1.5.0) „Zone" nu are definiţie în PAGES: se construieşte din registrele
+  // HA la execuţie, deci trece pe lângă tot lanţul pageDef/carduri/dispozitive.
+  const isZone = page === 'zone';
+  const pageDef = isAcasa || isZone ? null : PAGES[page];
+  const [zoneSel, setZoneSel] = useState(null);
+  const { etaje: zoneEtaje, loading: zoneLoading, error: zoneError } = useRegistries(isZone);
 
   // ------------------------------------------------------------- istoric
   const histSlots = useMemo(() => collectHistorySlots(pageDef), [pageDef]);
@@ -192,13 +199,20 @@ export default function Dashboard({ onOpenMapping }) {
     : null;
 
   const heroPair = PAGE_HERO[page] || PAGE_HERO.acasa;
+  const zoneChips = isZone
+    ? [
+        ['layoutGrid', zoneEtaje ? zoneEtaje.reduce((n, f) => n + f.zone.length, 0) + ' zone' : '—'],
+        ['home', zoneEtaje ? zoneEtaje.length + ' etaje' : '—'],
+        [ha.connected ? 'shield' : 'alertTri', ha.connected ? 'Conectat' : 'Deconectat']
+      ]
+    : null;
   const heroChips = (isAcasa
     ? [
         ['power', onCount + ' active'],
         ['bolt', energyValue === VERIFY ? 'Energie VERIFY' : energyValue + ' ' + energyUnit],
         [ha.connected ? 'shield' : 'alertTri', ha.connected ? 'Conectat' : 'Deconectat']
       ]
-    : pageDef.chips.map((c) => [c.icon, c.text !== undefined ? c.text : (c.prefix || '') + E.fmt(c.slot, c.opts)])
+    : zoneChips || pageDef.chips.map((c) => [c.icon, c.text !== undefined ? c.text : (c.prefix || '') + E.fmt(c.slot, c.opts)])
   ).map((c) => ({
     iconEl: ic(c[0], { size: 13 }),
     label: c[1],
@@ -206,9 +220,9 @@ export default function Dashboard({ onOpenMapping }) {
     iconStyle: 'display:flex; color:' + TXT2 + ';'
   }));
 
-  const pageDeviceIds = isAcasa ? tracked : PAGE_DEVICES[page] || [];
-  const hasSidebarDevices = !isAcasa && pageDeviceIds.length > 0 && pageDeviceIds.length <= 4;
-  const hasDeviceCards = isAcasa || pageDeviceIds.length > 4;
+  const pageDeviceIds = isAcasa || isZone ? (isAcasa ? tracked : []) : PAGE_DEVICES[page] || [];
+  const hasSidebarDevices = !isAcasa && !isZone && pageDeviceIds.length > 0 && pageDeviceIds.length <= 4;
+  const hasDeviceCards = isAcasa || (!isZone && pageDeviceIds.length > 4);
 
   const sidebarDevices = hasSidebarDevices
     ? pageDeviceIds.map((id) => CARD_BY_ID[id]).filter(Boolean).map((d) => buildSidebarDevice(E, ui, d))
@@ -361,12 +375,29 @@ export default function Dashboard({ onOpenMapping }) {
             onScroll={updateNavFade}
             style={s('display:flex; align-items:center; gap:9px; flex:1; min-width:0; padding:2px 2px 2px 4px; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; mask-image:' + navMask + '; -webkit-mask-image:' + navMask + ';')}
           >
+            {/* (v1.5.0) Eticheta apare DOAR pe tabul activ. Cu a noua pagină,
+                bara depăşea 1205px, iar pe tableta montată (1180px) se vedeau
+                7 taburi din 9, cu derulare — pe un ecran fix la care ajungi cu
+                un deget în trecere, asta e o degradare reală. Fără etichete
+                conţinutul scade la 715px, deci încap toate nouă fără derulare.
+                Măsurat, nu presupus: 1/9 -> 2/9 la 360px, 2/9 -> 3/9 la 414px,
+                7/9 cu derulare -> 9/9 fără, la 1180px.
+                `navItemStyle`/`navLabel` sunt în tokens.js (testul de
+                fidelitate), deci NU se modifică: se adaugă la locul apelului,
+                iar `s()` e last-wins. Padding-ul simetric înlocuieşte perechea
+                22px/22px doar când eticheta lipseşte, altfel pilula ar rămâne
+                un oval gol în jurul unei iconiţe de 19px. */}
             {NAV.map((n) => {
               const a = n.key === page;
               return (
-                <div key={n.key} style={s(navItemStyle(a) + ' scroll-snap-align:start; min-height:44px;')} onClick={() => setPage(n.key)}>
+                <div
+                  key={n.key}
+                  title={n.label}
+                  style={s(navItemStyle(a) + ' scroll-snap-align:start; min-height:44px;' + (a ? '' : ' padding:11px 15px; gap:0;'))}
+                  onClick={() => setPage(n.key)}
+                >
                   <span style={s(navIconBox(a))}>{ic(n.icon, { size: 19, sw: 1.7 })}</span>
-                  <span style={s(navLabel(a))}>{n.label}</span>
+                  {a ? <span style={s(navLabel(a))}>{n.label}</span> : null}
                 </div>
               );
             })}
@@ -593,6 +624,22 @@ export default function Dashboard({ onOpenMapping }) {
                 </div>
 
               </>
+            ) : isZone ? (
+              // (v1.5.0) Acelaşi card de context ca pe celelalte pagini: fără
+              // el coloana stângă rămânea goală pe toată înălţimea, exact
+              // spaţiul mort pe care detectorul cardGap îl vânează în carduri.
+              <div style={s(glassCard())} data-card="page-chips">
+                <div style={s(cardTitleStyle)}>{heroPair[0]}</div>
+                <div style={s(cardSubStyle)}>{heroPair[1]}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+                  {heroChips.map((chip, i) => (
+                    <div key={i} style={s('display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:12px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.06);')}>
+                      <span style={s('display:flex; color:' + ORANGE + ';')}>{chip.iconEl}</span>
+                      <span style={s('font-family:' + SANS + '; font-size:12px; color:#c4b7a7;')}>{chip.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <>
                 <div style={s(glassCard() + ' height:236px; flex:0 0 236px; display:flex; flex-direction:column;' + (narrow ? ' max-width:420px;' : ''))} data-card="stat">
@@ -699,7 +746,21 @@ export default function Dashboard({ onOpenMapping }) {
               </div>
             ) : null}
 
-            {!isAcasa ? (
+            {isZone ? (
+              <div style={s(tableSectionStyle)}>
+                <ZonePage
+                  etaje={zoneEtaje}
+                  loading={zoneLoading}
+                  error={zoneError}
+                  states={ha.states || {}}
+                  mob={mob}
+                  sel={zoneSel}
+                  setSel={setZoneSel}
+                />
+              </div>
+            ) : null}
+
+            {!isAcasa && !isZone ? (
               <div style={s(tableSectionStyle)}>
                 {/* stretch (v1.3.5): cardurile din acelaşi rând sunt egale;
                     surplusul se distribuie în interiorul fiecărui card. */}

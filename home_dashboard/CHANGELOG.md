@@ -1,5 +1,60 @@
 # Changelog
 
+## 1.5.0
+
+Pagină nouă, **„Zone"** — a noua axă de navigare: pe încăperi, nu pe funcţie.
+Un card per zonă, grupate pe etaje în ordinea `level`; la atingere se deschide
+tot ce e în zona aceea, grupat pe climat, media, lumini, comutatoare, camere şi
+senzori.
+
+**Nu are sloturi în catalog.** Structura vine integral din registrele HA, citite
+la execuţie peste WebSocket-ul deja deschis: `config/floor_registry/list`,
+`config/area_registry/list`, `config/device_registry/list`,
+`config/entity_registry/list`. Consecinţa care justifică alegerea: mut un
+dispozitiv în altă zonă din Home Assistant şi pagina se actualizează singură,
+fără release. O mapare manuală ar fi însemnat 14 sloturi noi şi un release la
+fiecare mutare — sloturi care s-ar fi învechit tăcut. Cele patru liste se cer o
+singură dată, la prima intrare pe pagină (tabletele pornesc pe Acasă, deci nu
+plătesc costul), şi se reîmprospătează la evenimentele de registru, cu 1,5s de
+amânare, fiindcă o singură mutare în interfaţa HA emite mai multe evenimente.
+
+Două subtilităţi, ambele cu test dedicat. **`area_id` setat direct pe entitate
+bate zona dispozitivului** — aşa funcţionează şi HA, iar o entitate mutată
+manual trebuie să apară unde ai pus-o, nu unde stă restul dispozitivului. Şi
+**cele 60 de dispozitive fără zonă nu apar nicăieri**: sunt infrastructura
+ţinută deliberat neatribuită (decizie din `04_`), deja acoperită integral pe
+Reţea şi Mentenanţă. Nu li se inventează o zonă şi nu sunt arătate ca lipsă —
+o secţiune „fără zonă" ar fi arătat ca o listă de neterminat şi ar fi tentat pe
+cineva s-o „repare", anulând decizia. Omisiunea e spusă în subtitlul paginii.
+
+**Bara de navigaţie: eticheta apare doar pe tabul activ.** Cu a noua pagină
+conţinutul barei ar fi ajuns la 1205px, iar pe tableta montată (1180px) se
+vedeau 7 taburi din 9, cu derulare — pe un ecran fix la care ajungi cu un deget
+în trecere, asta e o degradare reală. Fără etichete, conţinutul scade la 603px,
+deci **încap toate nouă fără derulare**. Măsurat, nu presupus: la 360px 1 tab
+întreg devin 2, la 414px 2 devin 3, iar la 1180px 7-din-9-cu-derulare devin
+9-din-9. `navItemStyle` şi `navLabel` sunt în `tokens.js` şi **nu s-au atins**:
+suprascrierea se adaugă la locul apelului, unde `s()` e last-wins.
+
+**Iconurile de navigaţie, refăcute** — în modul de mai sus silueta e singurul
+indiciu, deci fiecare pagină primeşte un obiect concret: Climat trece de la
+triunghiul de avertizare (`TriangleAlert`, care pe o pagină de climatizare citea
+„ceva e stricat") la `AirVent`; Media de la o glifă desenată manual, un „cast"
+cu arce care se certa vizual cu Wifi, la `Tv`; Camere de la `ShieldCheck`
+(„securitate", nu „camere") la `Cctv`; Energie de la `BarChart3` la `bolt`,
+singura abstracţie rămasă într-o bară de obiecte. `alertTri` **rămâne** în hartă
+neschimbat — e folosit în alte 12 locuri (starea meteo `exceptional`, modul Auto
+din acordeoane); s-a schimbat doar ce cere bara. Piscina (`waves`) şi Energia
+(`bolt`) sunt vecine: verificat la 19px că nu se confundă — bandă orizontală
+dungată vs formă diagonală compactă, axe perpendiculare.
+
+Verificat pe DOM real, la 1180px şi 360px: 9 taburi cu o singură etichetă, cele
+6 etaje în ordinea corectă, 14 carduri de zonă, entitatea mutată manual apare în
+zona ei nouă şi nu în cea a dispozitivului, gateway-ul fără zonă nu apare
+nicăieri, deschiderea şi închiderea unei zone funcţionează, zero cardGap.
+
+Teste: 164 logică (+11 pe registre) + 44 stil.
+
 ## 1.4.2
 
 Cardul „Automatizări" de pe Mentenanţă rămânea cu **53px goi la bază**. Auditul

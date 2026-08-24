@@ -265,13 +265,26 @@ export const PAGE_DEVICE_HEAD = {
   media: ['Televizoare', 'apasă pentru setări complete']
 };
 
+// (v1.5.0) Iconurile au fost refăcute odată cu modul „etichetă doar pe tabul
+// activ": pe tabul inactiv silueta e singurul indiciu, deci fiecare pagină are
+// un obiect concret, nu o abstracţie. Ce s-a schimbat şi de ce:
+//   Climat   alertTri  -> airVent   (triunghi de avertizare pe o pagină de
+//                                    climatizare citea „ceva e stricat")
+//   Media    tag       -> tv        (glifa desenată manual era un „cast" cu
+//                                    arce, care se certa vizual cu Wifi)
+//   Camere   shieldDot -> cctv      (scut cu bifă = „securitate", nu „camere")
+//   Energie  barChart  -> bolt      (singura abstracţie rămasă; `bolt` înseamnă
+//                                    deja putere în alte 15 locuri din aplicaţie)
+// Piscina (waves) şi Energia (bolt) sunt vecine în bară: verificat la 19px că
+// nu se confundă — banda orizontală dungată vs forma diagonală compactă.
 export const NAV = [
   { key: 'acasa', label: 'Acasă', icon: 'home' },
-  { key: 'climat', label: 'Climat', icon: 'alertTri' },
+  { key: 'climat', label: 'Climat', icon: 'airVent' },
   { key: 'piscina', label: 'Piscină', icon: 'waves' },
-  { key: 'energie', label: 'Energie', icon: 'barChart' },
-  { key: 'camere', label: 'Camere', icon: 'shieldDot' },
+  { key: 'energie', label: 'Energie', icon: 'bolt' },
+  { key: 'camere', label: 'Camere', icon: 'cctv' },
   { key: 'retea', label: 'Reţea', icon: 'wifi' },
-  { key: 'media', label: 'Media', icon: 'tag' },
-  { key: 'mentenanta', label: 'Mentenanţă', icon: 'wrench' }
+  { key: 'media', label: 'Media', icon: 'tv' },
+  { key: 'mentenanta', label: 'Mentenanţă', icon: 'wrench' },
+  { key: 'zone', label: 'Zone', icon: 'layoutGrid' }
 ];

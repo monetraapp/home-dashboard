@@ -785,5 +785,9 @@ export const PAGE_HERO = {
   camere: ['Supraveghere', 'Cinci camere, perimetru complet'],
   retea: ['Reţea', 'Infrastructură şi conectivitate'],
   energie: ['Energie', 'Producţie, stocare şi consum'],
-  mentenanta: ['Mentenanţă', 'Starea sistemului sub control']
+  mentenanta: ['Mentenanţă', 'Starea sistemului sub control'],
+  // (v1.5.0) Subtitlul spune explicit că infrastructura lipseşte din pagină.
+  // Fără propoziţia asta, absenţa gateway-ului şi a switch-urilor arată ca o
+  // scăpare; cu ea, e o decizie vizibilă în interfaţă.
+  zone: ['Zone', 'Pe încăperi — infrastructura rămâne pe Reţea şi Mentenanţă']
 };

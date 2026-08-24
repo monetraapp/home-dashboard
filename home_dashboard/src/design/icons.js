@@ -14,7 +14,10 @@ import {
   GripVertical, BatteryMedium, Thermometer, Rocket, Wifi, Wrench, Archive,
   Armchair, CalendarMinus, CalendarPlus, Minus, Plus, DropletOff, HeartPulse,
   Cable, VolumeX, Clapperboard, BatteryCharging, UtilityPole, Activity,
-  CarFront, CalendarDays
+  CarFront, CalendarDays,
+  // (v1.5.0) navigaţie: în modul „etichetă doar pe tabul activ" silueta e
+  // singurul indiciu, deci fiecare tab primeşte un obiect concret.
+  AirVent, Cctv, LayoutGrid
 } from 'lucide-react';
 
 // nume istoric -> componenta Lucide (maparea semantică, nu aproximativă)
@@ -39,7 +42,11 @@ const LUCIDE = {
   volumeX: VolumeX, clapperboard: Clapperboard,
   // energie (v1.1.3)
   batteryCharging: BatteryCharging, utilityPole: UtilityPole,
-  activity: Activity, car: CarFront
+  activity: Activity, car: CarFront,
+  // navigaţie (v1.5.0). Numele vechi rămân în hartă — `alertTri` e folosit în
+  // 12 locuri (starea meteo `exceptional`, modul Auto din acordeoane), deci
+  // NU se remapează; s-a schimbat doar ce cere bara de navigaţie.
+  airVent: AirVent, cctv: Cctv, layoutGrid: LayoutGrid
 };
 
 export function el(tag, props, children) {

@@ -17,6 +17,7 @@ import {
   fmtPow, fmtEn, fmtVar, fmtVA, fmtTemp, fmtVolt, fmtAmp, fmtFreq, fmtPct, fmtText, fmtUnitAuto, dec
 } from '../src/design/format.js';
 import { monotoneTangents, monotonePath, contiguousRuns, trimEdges } from '../src/design/curve.js';
+import { buildZones, sortFloors } from '../src/ha/registries.js';
 
 let pass = 0, fail = 0;
 function eq(name, got, want) {
@@ -537,6 +538,60 @@ eq('statEnergySeries fara rânduri -> null-uri', statEnergySeries([], 2, DAYMS, 
 eq('statMeanSeries plaseaza mediile', statMeanSeries([{ start: DAYMS, mean: 50.04 }], 2, DAYMS, DAYMS), [50, null]);
 eq('sumOrNull ignora null-urile', sumOrNull([10, null, 5]), 15);
 eq('sumOrNull cu totul gol -> null', sumOrNull([null, null]), null);
+
+// ---- zone: etaje si registre (v1.5.0) ---------------------------------------
+console.log('zone (registre HA):');
+
+// Registru mic dar reprezentativ: etaje neordonate ca sa se vada sortarea,
+// o entitate cu area_id PROPRIU care contrazice zona dispozitivului, un
+// dispozitiv FARA zona (infrastructura) si o entitate dezactivata.
+const REG = {
+  floors: [
+    { floor_id: 'exterior', name: 'Exterior', level: 4 },
+    { floor_id: 'parter', name: 'Parter', level: 0 },
+    { floor_id: 'etaj', name: 'Etaj', level: 1 }
+  ],
+  areas: [
+    { area_id: 'kitchen', name: 'Bucatarie & Dining', floor_id: 'parter' },
+    { area_id: 'bedroom', name: 'Dormitor Etaj', floor_id: 'etaj' },
+    { area_id: 'foisor', name: 'Foisor', floor_id: 'exterior' },
+    { area_id: 'nicaieri', name: 'Zona fara etaj', floor_id: null }
+  ],
+  devices: [
+    { id: 'd_ac', area_id: 'bedroom' },
+    { id: 'd_tv', area_id: 'foisor' },
+    { id: 'd_gw', area_id: null }
+  ],
+  entities: [
+    { entity_id: 'climate.ac', device_id: 'd_ac', area_id: null },
+    { entity_id: 'sensor.ac_ambient', device_id: 'd_ac', area_id: 'kitchen' },
+    { entity_id: 'media_player.tv', device_id: 'd_tv', area_id: null },
+    { entity_id: 'sensor.gw_cpu', device_id: 'd_gw', area_id: null },
+    { entity_id: 'switch.dezactivat', device_id: 'd_tv', area_id: null, disabled_by: 'user' },
+    { entity_id: 'update.firmware', device_id: 'd_tv', area_id: null },
+    { entity_id: 'sensor.orfan', device_id: null, area_id: 'nicaieri' }
+  ]
+};
+const ST = {
+  'climate.ac': {}, 'sensor.ac_ambient': {}, 'media_player.tv': {},
+  'sensor.gw_cpu': {}, 'switch.dezactivat': {}, 'update.firmware': {}, 'sensor.orfan': {}
+};
+const Z = buildZones(REG, ST);
+const zonaCu = (id) => { for (const f of Z) for (const z of f.zone) if (z.id === id) return z; return null; };
+const undevaAre = (eid) => Z.some((f) => f.zone.some((z) => z.entities.indexOf(eid) >= 0));
+
+eq('etajele ies sortate dupa level', sortFloors(REG.floors).map((f) => f.name), ['Parter', 'Etaj', 'Exterior']);
+eq('ordinea etajelor in rezultat', Z.map((f) => f.name), ['Parter', 'Etaj', 'Exterior', 'Fără etaj']);
+eq('capcana 1: area_id pe entitate bate zona dispozitivului', zonaCu('kitchen').entities, ['sensor.ac_ambient']);
+eq('fara area_id propriu, entitatea mosteneste zona dispozitivului', zonaCu('bedroom').entities, ['climate.ac']);
+eq('capcana 2: dispozitivul fara zona NU apare nicaieri', undevaAre('sensor.gw_cpu'), false);
+eq('entitatea dezactivata e ignorata', undevaAre('switch.dezactivat'), false);
+eq('domeniul update e ignorat', undevaAre('update.firmware'), false);
+eq('entitatea fara dispozitiv, dar cu zona, e pastrata', zonaCu('nicaieri').entities, ['sensor.orfan']);
+eq('zona fara etaj nu inventeaza un etaj, dar nu se pierde', Z[Z.length - 1].id, '__fara_etaj');
+eq('entitatea absenta din state machine e ignorata',
+   buildZones(REG, { 'climate.ac': {} }).reduce((n, f) => n + f.zone.reduce((m, z) => m + z.entities.length, 0), 0), 1);
+eq('registru gol nu arunca', buildZones({ floors: [], areas: [], devices: [], entities: [] }, {}), []);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);
