@@ -13,12 +13,14 @@ layout **greșită și revertită**, și un grafic de piscină refăcut de la ze
 
 | Componentă | Stare |
 |:--|:--|
-| Add-on Home Dashboard | **v1.4.2**, `state: started`, bundle servit `index-BVn9WZ_Y.js` |
+| Add-on Home Dashboard | **v1.5.0**, `state: started`, bundle servit `index-c3ETjZJm.js` |
 | `ingress_panel` | **`true`, setat prin Supervisor API** — bifa „Show in sidebar" nu se mai pune manual. Confirmat cu `get_panels` |
 | Catalog de sloturi | **291**, toate mapate, zero nemapate (era 293) |
-| Suită de teste | **153 logică + 44 stil, 0 picate** |
-| Audit responsive | **0/0/0 pe v1.4.2** (`index-BVn9WZ_Y.js`), rulat pe instanţa reală: toate cele 80 de combinaţii curate, inclusiv cele 6 de pe Mentenanţă, fără efecte colaterale pe alte pagini. Rularea anterioară, pe v1.4.1, semnalase 1 defect real — cardGap pe „Automatizări", reparat în v1.4.2 (§2.10) |
+| Suită de teste | **164 logică + 44 stil, 0 picate** |
+| Audit responsive | **0/0/0 pe v1.4.2**, rulat pe instanţa reală (80/80 combinaţii). **De rerulat pe v1.5.0** (`index-c3ETjZJm.js`), care aduce a noua pagină şi bara fără etichete — vezi §7 |
 | Dashboard-uri Lovelace | **0 în registru** — rămâne doar Overview-ul implicit (auto-generat) |
+| Etaje / zone HA | **6 etaje, 14 zone, toate atribuite** (§2.11). 60 de dispozitive rămân deliberat fără zonă |
+| Pagini în Home Dashboard | **9** (a noua: „Zone"), bara fără derulare pe tabletă |
 | Add-on-uri instalate | **6** (erau 8), toate pornite: Matter Server, Mosquitto, Grott, AdGuard, File editor, Home Dashboard |
 | Repository-uri store | 8 (scos `677650a1` ha-fusion) |
 | Integrări HACS | **5, toate folosite** — nimic de scos |
@@ -183,6 +185,61 @@ fost atins.
 **Confirmat pe instanța reală**, nu doar pe mock: auditul rulat pe v1.4.2
 (antet `index-BVn9WZ_Y.js`) întoarce **0 probleme distincte** pe toate cele 80
 de combinații, cele 6 de pe Mentenanță incluse, fără regresii pe alte pagini.
+
+---
+
+### 2.11 Etaje, zone și pagina „Zone" (v1.5.0)
+
+Overview-ul auto-generat arăta 9 intrări în „Other areas". Verificarea a găsit
+**8** zone fără etaj, iar a noua intrare, „Devices", **nu era o zonă**: nu apare
+în registrul de zone, registrul de etichete e gol, iar dashboard-ul implicit nu
+are configurație stocată — e integral generat de strategie. „Devices" e coșul ei
+pentru cele **60 de dispozitive fără zonă**, adică exact infrastructura. Nu era
+nimic de șters.
+
+S-au creat trei etaje — **Casa Tata** (level 3), **Exterior** (4), **Tehnic**
+(5) — și s-au atribuit cele 8 zone rămase. Cele 6 deja corecte nu au fost
+atinse: `modified_at` la `kitchen`, `bedroom`, `mansarda`, `dormitor_sofia_etaj`,
+`hol_etaj` și `dormitor_sofia_parter` a rămas cel vechi. Zero `entity_id`
+schimbat, zero redenumiri. `level` e strict cheie de sortare în HA; 3/4/5
+reproduce ordinea cerută: Parter → Etaj → Mansarda → Casa Tata → Exterior →
+Tehnic.
+
+Peste asta, **pagina „Zone"** în Home Dashboard. Nu are sloturi în catalog:
+structura vine din cele patru registre citite la execuție peste WebSocket-ul
+deja deschis. Mut un dispozitiv în altă zonă din HA și pagina se actualizează
+singură, fără release — o mapare manuală ar fi cerut 14 sloturi noi și un
+release la fiecare mutare.
+
+Două subtilități, ambele cu test dedicat: `area_id` setat **direct pe entitate**
+bate zona dispozitivului (ca în HA), iar cele 60 de dispozitive fără zonă nu
+apar nicăieri și nu sunt arătate ca lipsă — o secțiune „fără zonă" ar fi arătat
+ca o listă de neterminat și ar fi tentat pe cineva s-o „repare", anulând decizia
+din `04_`. Omisiunea e scrisă în subtitlul paginii.
+
+**Bara de navigație: eticheta doar pe tabul activ.** Măsurătoarea făcută înainte
+de implementare a infirmat premisa: la 360px nu se vedeau ~3,5 taburi, ci
+**unul** — bara are acolo doar 224px, restul fiind luat de cele două butoane
+rotunde. Iar bara depășea **deja** pe tabletă, cu opt taburi. A noua pagină nu
+costa niciun tab vizibil la nicio lățime măsurată. Ce conta era tableta: 7 din 9
+cu derulare. Fără etichete, conținutul scade de la 1205px la 603px, deci **9/9
+fără derulare la 1180px**; la 360px 1 tab devine 2, la 414px 2 devin 3.
+`tokens.js` nu s-a atins — suprascrierea se adaugă la locul apelului, unde `s()`
+e last-wins.
+
+Etichete mai scurte au fost **măsurate și respinse**: „Mentenanţă" → „Service"
+scădea conținutul cu 31px și nu câștiga niciun tab, în plus băga un cuvânt
+englezesc într-o interfață integral românească.
+
+**Iconurile de navigație, refăcute**, pentru că în modul de mai sus silueta e
+singurul indiciu: Climat `TriangleAlert` → `AirVent` (un triunghi de avertizare
+pe o pagină de climatizare citea „ceva e stricat"), Media `tag` desenat manual →
+`Tv` (glifa veche era un „cast" cu arce, care se certa vizual cu Wifi de la
+Reţea), Camere `ShieldCheck` → `Cctv`, Energie `BarChart3` → `bolt`. Maparea
+`alertTri` a rămas neschimbată — e folosită în alte 12 locuri (starea meteo
+`exceptional`, modul Auto din acordeoane). Piscina și Energia sunt vecine în
+bară: verificat la 19px că nu se confundă — bandă orizontală dungată vs formă
+diagonală compactă, axe perpendiculare.
 
 ---
 
@@ -444,8 +501,12 @@ Toate punctele din secțiunea C a `13_AUDIT_HA_READONLY.md` sunt rezolvate:
   Argumentul e în CHANGELOG-ul v1.3.5: e un motor de layout în JS cu
   re-măsurare la fiecare resize și la fiecare schimbare de valoare live, pe o
   tabletă montată sub Fully Kiosk.
-- ~~rerularea auditului responsive~~ — **ÎNCHIS**: 0/0/0 pe v1.4.2, pe instanța
-  reală, 80/80 combinații curate.
+- ~~rerularea auditului responsive~~ — închis pe v1.4.2 (80/80 combinații).
+  **Redeschis pentru v1.5.0** — vezi §7.
+- ~~pagină pe zone~~ — **FĂCUT** (§2.11): 6 etaje, 14 zone, pagina derivată din
+  registrele HA, deci se actualizează singură la mutări.
+- **NOU:** iconițele de navigație — `Cctv` e cea mai densă glifă din set și stă
+  lângă `bolt`. Se disting, dar dacă vreuna dă bătăi de cap pe tabletă, aceea e.
 
 ### Prezență / automatizări noi
 - **GPS în aplicația companion** — `device_tracker.s26_ultra` e încă `unknown`.
@@ -471,17 +532,24 @@ Toate punctele din secțiunea C a `13_AUDIT_HA_READONLY.md` sunt rezolvate:
 
 ## 7. NECESITĂ BOGDAN
 
-1. **Revocarea tokenurilor long-lived** — nu există API. Profil → Securitate.
+1. **Rerularea auditului responsive pe v1.5.0.** Tot nu o pot face eu — tokenul
+   nu e persistat nici la nivel de utilizator, nici de mașină (verificat).
+   **Verifică în antet că scrie `index-c3ETjZJm.js`.** Aici e cea mai mare
+   suprafață nouă din sesiune: o pagină întreagă plus o bară de navigație
+   schimbată. Măsurătorile mele sunt pe mock, la 1180px și 360px, cu zero
+   cardGap — dar auditul acoperă 8 lățimi × 9 pagini, inclusiv ramurile touch.
+
+2. **Revocarea tokenurilor long-lived** — nu există API. Profil → Securitate.
    Cele două sunt „Claude MCP" (19.08) și „HA-MCP Server" (19.08, canalul meu
    activ — dacă îl revoci, îmi tai accesul). Criteriul: îl recunoști sau nu,
    **nu** „pare nefolosit" (vezi B3).
 
-2. **Hard refresh (Ctrl+Shift+R)** pe orice tab care are dashboard-ul deschis.
+3. **Hard refresh (Ctrl+Shift+R)** pe orice tab care are dashboard-ul deschis.
    Tab-urile vechi rulează JS din memorie și par funcționale la nesfârșit.
 
-3. **Permisiunea de locație în fundal** pentru aplicația companion (§6).
+4. **Permisiunea de locație în fundal** pentru aplicația companion (§6).
 
-4. **Testarea automatizărilor WOL** dimineața, cu televizoarele oprite peste
+5. **Testarea automatizărilor WOL** dimineața, cu televizoarele oprite peste
    noapte — cum ai spus. Integrarea a rămas pe loc, deci testul e valid.
 
 *(Rerularea auditului responsive a ieșit de pe listă: rulat pe instanța reală
