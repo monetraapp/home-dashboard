@@ -145,7 +145,7 @@ export function buildItem(E, ui, d, keyCtx) {
     value,
     tileStyle: tileStyleFor(active, canToggle) + (d.toggleable ? toggleItemTileExtra(ui) : '') + (d.toggleable && !canToggle ? ' opacity:0.72;' : ''),
     iconWrapStyle: iconWrapFor(active),
-    labelStyle: d.toggleable ? toggleItemLabelStyle(active, ui) : labelFor(active) + LABEL_WRAP2,
+    labelStyle: d.toggleable ? toggleItemLabelStyle(active, ui) : labelFor(active) + labelWrap(ui),
     valueStyle: d.toggleable ? toggleItemValueStyle(active) : verifyValueStyle(active, value),
     wrapStyle: 'position:relative; display:flex; min-width:0;',
     tipText: tip,
@@ -260,7 +260,18 @@ function monitorRows(E, ui, title, rows, keyCtx) {
 // elipsa abia la capătul liniei a doua; word-break previne overflow-ul
 // cuvintelor foarte lungi. Valorile/metadatele rămân pe o linie (sunt date,
 // nu identitate).
-const CLAMP2 = 'display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;';
+// (v1.5.6) `overflow-wrap:break-word` + `hyphens:auto` in loc de
+// `word-break:break-word`: acesta din urma rupea „Clorinator" in „Clorinat/or"
+// la 320px, desi cuvantul incapea pe linia urmatoare. Textul nu se pierdea,
+// deci auditul tacea — dar ruptura era arbitrara.
+// (v1.5.6) Numarul de linii permise depinde de latime. La <=360px doua linii
+// nu ajung: auditul a masurat „AC Mansarda Vivax" pierzand 18px si
+// „Clorinator principal" 18px. A treia linie e mai ieftina decat un nume
+// taiat — cardul creste, tinta tactila ramane >=44px, fontul nu scade.
+function clamp2(ui) {
+  return 'display:-webkit-box; -webkit-line-clamp:' + (ultraNarrow(ui) ? 3 : 2) +
+    '; -webkit-box-orient:vertical; overflow:hidden; hyphens:auto; overflow-wrap:break-word;';
+}
 
 // Etichetele de tile/chip se rup pe maxim 2 linii in loc sa se taie cu
 // '...' (audit v1.2.x: 'Regim boost' pierdea 41px, 'Stergator Speed Dome'
@@ -268,7 +279,11 @@ const CLAMP2 = 'display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:ve
 // folosire, tokens.js ramane identic cu designul original (testul de stil).
 // hyphens:auto desparte cu cratima cuvintele unice lungi ('Dezumidificare');
 // <html lang="ro"> exista deja.
-const LABEL_WRAP2 = ' white-space:normal; text-overflow:clip; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; hyphens:auto; overflow-wrap:break-word; line-height:1.25;';
+function labelWrap(ui) {
+  return ' white-space:normal; text-overflow:clip; display:-webkit-box; -webkit-line-clamp:' +
+    (ultraNarrow(ui) ? 3 : 2) +
+    '; -webkit-box-orient:vertical; overflow:hidden; hyphens:auto; overflow-wrap:break-word; line-height:1.25;';
+}
 
 // Chip-uri toggle (Pornit/Oprit) pe grile înguste: valoarea nu se taie cu
 // ellipsis — audit 320px Piscină. Sub 360px comprimăm ușor padding/label.
@@ -277,8 +292,12 @@ function ultraNarrow(ui) {
 }
 function toggleItemLabelStyle(active, ui) {
   const base = labelFor(active);
-  if (!ultraNarrow(ui)) return base + LABEL_WRAP2;
-  return base + ' white-space:normal; text-overflow:clip; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; line-height:1.2;';
+  if (!ultraNarrow(ui)) return base + labelWrap(ui);
+  // O SINGURA linie taia „Regim redus" in „Re..." (44px pierduti, masurat la
+  // 320 si 360px). Trei linii — la fel ca labelWrap() la aceeasi latime — acopera
+  // si cea mai lunga eticheta din aplicatie, „Ştergător Speed Dome" (20 caractere).
+  // Dala creste in inaltime; fontul si tinta tactila raman neatinse.
+  return base + ' white-space:normal; text-overflow:clip; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; line-height:1.2;';
 }
 function toggleItemValueStyle(active) {
   const color = active ? 'rgba(42,22,8,0.72)' : TXT3;
@@ -301,7 +320,15 @@ export function buildBlock(E, ui, hist, b) {
   }
 
   if (b.type === 'grid') {
-    return { isGrid: true, cols: b.cols, items: b.items.map((d, di) => buildItem(E, ui, d, 'grid' + di)) };
+    // (v1.5.6) La <=360px plafonam la 2 coloane. `grid(3, …)` randa trei dale
+    // si la 320px, lasand ~30px de text fiecare: „Regim redus" ar fi avut
+    // nevoie de 4 linii ca sa incapa, iar „Clorinator" de 3. Nu e problema de
+    // clamp, ci de latime — masurat de auditul responsive pe 26.08.
+    return {
+      isGrid: true,
+      cols: ultraNarrow(ui) ? Math.min(b.cols, 2) : b.cols,
+      items: b.items.map((d, di) => buildItem(E, ui, d, 'grid' + di))
+    };
   }
 
   if (b.type === 'monitor') {
@@ -484,7 +511,7 @@ export function buildBlock(E, ui, hist, b) {
       return {
         label: row.label + (E.mapped(row.slot) ? '' : ' · VERIFY'),
         rowStyle: 'display:grid; grid-template-columns:' + (bpOf(ui).mob ? '86px' : '132px') + ' minmax(0,1fr); align-items:center; gap:' + (bpOf(ui).mob ? '8px' : '12px') + '; margin-bottom:6px;',
-        labelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:400; color:' + (E.mapped(row.slot) ? '#bdb1a4' : ORANGE) + '; text-align:right;' + LABEL_WRAP2,
+        labelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:400; color:' + (E.mapped(row.slot) ? '#bdb1a4' : ORANGE) + '; text-align:right;' + labelWrap(ui),
         barStyle: 'display:flex; gap:1.5px; height:22px; border-radius:7px; overflow:hidden; background:rgba(255,255,255,0.03);',
         segs: use.map((sg) => ({ style: 'flex:' + sg[1] + ' 1 0; background:' + (STATE_COLORS[sg[0]] || STATE_COLORS.idle) + ';' }))
       };
@@ -687,7 +714,7 @@ export function buildAccordionItem(E, ui, u) {
     headStyle: 'display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 14px; cursor:pointer;',
     iconWrapStyle: 'width:36px; height:36px; flex-shrink:0; border-radius:12px; display:flex; align-items:center; justify-content:center; color:' + (on ? '#2a1608' : TXT2) + '; background:' + (on ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(255,255,255,0.055)') + '; border:1px solid ' + (on ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)') + ';',
     iconEl: ic(def ? def.icon : 'home', { size: 17 }),
-    nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + CLAMP2,
+    nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + clamp2(ui),
     metaStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + (!mapped ? ORANGE : on ? '#c8a173' : TXT3) + '; margin-top:2px;',
     togglePillStyle: 'display:flex; align-items:center; padding:3px; border-radius:100px; cursor:' + (mapped && avail ? 'pointer' : 'default') + '; width:50px; flex-shrink:0; justify-content:' + (on ? 'flex-end' : 'flex-start') + '; opacity:' + (mapped && avail ? 1 : 0.55) + '; background:' + (on ? PILL_ON : PILL_OFF) + '; border:1px solid ' + (on ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)') + '; ' + (on ? 'box-shadow:0 4px 12px -6px rgba(226,121,58,0.55), inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -2px 4px rgba(150,60,10,0.32);' : PILL_SHADOW_OFF),
     toggleKnobStyle: 'width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:' + (on ? KNOB_ON : KNOB_OFF) + '; ' + KNOB_SHADOW,
@@ -759,7 +786,7 @@ function buildActionTile(E, ui, def, item, cardId, context) {
     value,
     tileStyle: tileStyleFor(on, res.supported) + (res.supported ? '' : ' opacity:0.55;'),
     iconWrapStyle: iconWrapFor(on),
-    labelStyle: labelFor(on) + LABEL_WRAP2,
+    labelStyle: labelFor(on) + labelWrap(ui),
     valueStyle: verifyValueStyle(on, value),
     wrapStyle: 'position:relative; display:flex; min-width:0;',
     tipText: res.supported ? (describe(context, item.label) || item.label) : item.label + ' · ' + res.reason,
@@ -1019,7 +1046,7 @@ export function buildDeviceCard(E, ui, def) {
     cardStyle: 'padding:16px 16px 14px; border-radius:22px; display:flex; flex-direction:column; background:' + CARD_BG + '; border:1px solid ' + CARD_BORDER + ';',
     headIconStyle: 'width:34px; height:34px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:' + (a ? '#2a1608' : TXT2) + '; background:' + (a ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(255,255,255,0.06)') + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)') + ';',
     headIconEl: ic(def.icon, { size: 18 }),
-    nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + CLAMP2,
+    nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + clamp2(ui),
     modelStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT3 + '; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
     togglePillStyle: 'display:flex; align-items:center; padding:3px; border-radius:100px; cursor:' + (canToggle ? 'pointer' : 'default') + '; flex-shrink:0; width:50px; justify-content:' + (a ? 'flex-end' : 'flex-start') + '; opacity:' + (canToggle ? 1 : 0.55) + '; background:' + (a ? PILL_ON : PILL_OFF) + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)') + '; ' + (a ? PILL_SHADOW_ON : PILL_SHADOW_OFF),
     toggleKnobStyle: 'width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:' + (a ? KNOB_ON : KNOB_OFF) + '; ' + KNOB_SHADOW,
@@ -1111,7 +1138,7 @@ export function buildSidebarDevice(E, ui, def) {
     dialVal: !def.dial
       ? (a ? (def.stateLabels ? def.stateLabels[0] : 'Pornit') : (def.stateLabels ? def.stateLabels[1] : 'Oprit'))
       : di.standby ? 'Standby' : dialVal + (di.val === null ? '' : di.unit),
-    nameStyle: 'font-family:' + SANS + '; font-size:13.5px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + CLAMP2,
+    nameStyle: 'font-family:' + SANS + '; font-size:13.5px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + clamp2(ui),
     metaStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT3 + '; margin-top:2px;',
     ambientStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + (ambientText(E, def) === VERIFY ? ORANGE : a ? '#c8a173' : TXT3) + '; margin-top:6px;',
     togglePillStyle: 'display:flex; align-items:center; padding:3px; border-radius:100px; cursor:' + (canToggle ? 'pointer' : 'default') + '; flex-shrink:0; width:44px; justify-content:' + (a ? 'flex-end' : 'flex-start') + '; opacity:' + (canToggle ? 1 : 0.55) + '; background:' + (a ? PILL_ON : PILL_OFF) + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)') + '; ' + (a ? PILL_SHADOW_ON : PILL_SHADOW_OFF),
@@ -1169,7 +1196,7 @@ export function buildModal(E, ui) {
     title: E.friendlyName(def.slot, def.label),
     model: def.model,
     status,
-    titleStyle: 'font-family:' + SANS + '; font-size:17px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + CLAMP2,
+    titleStyle: 'font-family:' + SANS + '; font-size:17px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + clamp2(ui),
     subStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT3 + '; margin-top:2px;',
     iconWrapStyle: 'width:44px; height:44px; flex-shrink:0; border-radius:14px; display:flex; align-items:center; justify-content:center; color:' + (a ? ORANGE : TXT2) + '; background:' + (a ? 'rgba(240,138,44,0.13)' : 'rgba(255,255,255,0.05)') + '; border:1px solid ' + (a ? 'rgba(240,138,44,0.28)' : 'rgba(255,255,255,0.07)') + ';',
     iconEl: ic(def.icon, { size: 20 }),
@@ -1217,7 +1244,7 @@ export function buildModal(E, ui) {
           title: res.supported ? (describe(sec.title, item.label) || item.label) : res.reason,
           tileStyle: tileStyleFor(on, res.supported) + (res.supported ? '' : ' opacity:0.55;'),
           iconWrapStyle: iconWrapFor(on),
-          labelStyle: labelFor(on) + LABEL_WRAP2,
+          labelStyle: labelFor(on) + labelWrap(ui),
           valueStyle: verifyValueStyle(on, val),
           onToggle: () => { if (res.supported) res.run(); }
         };

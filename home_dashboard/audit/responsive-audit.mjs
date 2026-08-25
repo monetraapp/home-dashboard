@@ -121,7 +121,10 @@ async function gotoPage(pg, key, label) {
   return { ok: true, intercepted };
 }
 // Lăţimile — graniţele din breakpoints.js + 360/390/414 cerute + 1440 desktop.
-const WIDTHS = [320, 360, 390, 414, 759, 760, 1179, 1180, 1440];
+// 320/375/430 cerute explicit (iPhone SE, iPhone standard, iPhone Pro Max);
+// 360/390/414 idem; 759/760 si 1179/1180 sunt granitele din breakpoints.js;
+// 1440 desktop tipic. Nicio latime inventata in afara acestora.
+const WIDTHS = [320, 360, 375, 390, 414, 430, 759, 760, 1179, 1180, 1440];
 // Ramura de TABLETA (v1.2.2): aceleasi pagini la latimi de tableta, dar cu
 // hasTouch — Chromium raporteaza atunci `pointer: coarse`, exact ca tableta
 // montata pe perete. Valideaza deciziile care depind de tipul de input
@@ -175,7 +178,7 @@ function auditPage() {
     return selPath(el) + (t ? ' — „' + t + '"' : '');
   };
 
-  const out = { overflowBody: [], outside: [], containerOverflow: [], touch: [], textCut: [], overlap: [], contrast: [], textEllipsis: [], cardGap: [] };
+  const out = { overflowBody: [], outside: [], containerOverflow: [], touch: [], textCut: [], overlap: [], contrast: [], textEllipsis: [], lineClamp: [], cardGap: [] };
 
   // 1) overflow orizontal pe body
   const bodyOver = document.documentElement.scrollWidth - vw;
@@ -281,6 +284,30 @@ function auditPage() {
     const hasText = (el.textContent || '').trim().length > 0;
     if (!hasText) continue;
     out.textEllipsis.push({ el: ident(el), detail: 'textul e tăiat cu ellipsis (' + (el.scrollWidth - el.clientWidth) + 'px nu încap)' });
+  }
+
+  // 8b) text taiat de -webkit-line-clamp (v1.5.6).
+  // De ce exista: detectorul de mai sus cere `text-overflow: ellipsis`, dar
+  // eticheta trunchiata de line-clamp are `text-overflow: clip` si
+  // scrollWidth == clientWidth — browserul pune elipsa pe verticala, la
+  // capatul ultimei linii permise. Rezultatul: „Regim redus" devenea „Re..."
+  // la 320px si auditul raporta ZERO probleme. Fals-negativ demonstrat pe
+  // 26.08 pe pagina Piscina.
+  for (const el of all) {
+    if (out.lineClamp.length >= CAP) break;
+    if (!isVisible(el)) continue;
+    const st = cs(el);
+    const clamp = st.webkitLineClamp || st.lineClamp;
+    if (!clamp || clamp === 'none') continue;
+    // continutul depaseste numarul de linii permise -> text pierdut
+    if (el.scrollHeight <= el.clientHeight + 1) continue;
+    const txt = (el.textContent || '').trim();
+    if (!txt) continue;
+    out.lineClamp.push({
+      el: ident(el),
+      detail: 'text tăiat de line-clamp:' + clamp + ' („' + txt.slice(0, 40) + '") — ' +
+        (el.scrollHeight - el.clientHeight) + 'px pe verticală nu încap'
+    });
   }
 
   // 6) suprapuneri între fraţi cu text (intersecţie >25% din cel mai mic)
@@ -434,6 +461,7 @@ const SEVERITY = {
   touch: ['MEDIU', 'Ţintă tactilă sub 44×44px'],
   textCut: ['MEDIU', 'Text tăiat vertical'],
   textEllipsis: ['MEDIU', 'Text trunchiat cu ellipsis activ'],
+  lineClamp: ['MEDIU', 'Text trunchiat de line-clamp (elipsă pe verticală)'],
   cardGap: ['MEDIU', 'Spaţiu gol excesiv la baza cardului (>48px)'],
   contrast: ['MINOR', 'Contrast sub pragul WCAG']
 };

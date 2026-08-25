@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.5.6
+
+Etichetele nu se mai taie pe ecrane înguste — şi, mai important, **auditul le
+vede acum**. Până acum raporta zero probleme pe Piscină la 320px, în timp ce pe
+ecran scria `Re...` în loc de „Regim redus".
+
+**Fals-negativul.** Detectorul de text trunchiat cerea `text-overflow: ellipsis`.
+Dar aplicaţia nu taie cu ellipsis: foloseşte `-webkit-line-clamp`, care pune
+elipsa pe verticală, la capătul ultimei linii permise, şi lasă
+`text-overflow: clip` cu `scrollWidth == clientWidth`. Nimic de detectat.
+Detectorul nou compară `scrollHeight` cu `clientHeight` pe orice element cu
+line-clamp activ şi raportează câţi pixeli de text s-au pierdut. Pus pe
+build-ul nereparat, a găsit imediat **15 probleme**: nu doar cele trei ştiute de
+pe Piscină, ci şi „Ştergător Speed Dome" pe Camere şi patru etichete de Climat.
+
+Matricea creşte de la 9 la **11 lăţimi** — adăugate 320, 375 şi 430 — deci de la
+99 la **117 combinaţii**.
+
+**Cauzele, două, măsurate.** Prima: chip-urile de sub 360px erau limitate la o
+singură linie, iar „Regim redus" pierdea 44px. Acum au trei, ca restul
+etichetelor la aceeaşi lăţime. A doua, cea care conta de fapt: `grid(3, …)`
+randa trei dale **şi la 320px**, lăsând ~30px de text fiecare — „Regim redus"
+ar fi avut nevoie de patru linii ca să încapă. Nu era problemă de clamp, ci de
+lăţime; sub 360px grilele se plafonează la două coloane.
+
+Ultima ruptură inelegantă a plecat şi ea: `word-break:break-word` rupea
+„Clorinator" în „Clorinat/or" deşi cuvântul încăpea pe linia următoare.
+Înlocuit cu `overflow-wrap:break-word` + `hyphens:auto`.
+
+Nimic nu s-a redesenat, niciun font nu a scăzut, nicio ţintă tactilă nu a
+coborât sub 44px — dalele doar cresc în înălţime acolo unde textul o cere.
+
+Audit responsive: **117 din 117 combinaţii măsurate, 0 probleme.**
+Teste: 229 logică + 44 stil.
+
 ## 1.5.5
 
 Cronometrele LG sunt conectate la bridge-ul `lg_thinq_timers` şi ies din
