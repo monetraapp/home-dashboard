@@ -2,7 +2,12 @@
 import { useMemo } from 'react';
 import { useHa } from './context.js';
 import { fmtUnitAuto, dec } from '../design/format.js';
-import { UNSET, isLgTimerUnset } from './unset.js';
+import { UNSET, isLgTimerUnset, isLgTimerSlot } from './unset.js';
+import {
+  normalizeTimerValue,
+  lgTimerService,
+  lgTimerErrorMessage
+} from './lgTimers.js';
 
 export const VERIFY = 'VERIFY';
 export const NA = '—';
@@ -71,7 +76,10 @@ const FALLBACK = {};
 
 export function useEntities() {
   const ha = useHa();
-  const { states, entityMap, callService, markPending, pending, lastTargets } = ha;
+  const {
+    states, entityMap, callService, callServiceWithResponse, markPending, pending,
+    lastTargets, lastSentTimers, rememberSentTimer, setLastCallError
+  } = ha;
 
   return useMemo(() => {
     /** entity_id-ul mapat direct pentru un slot (fără fallback). */
@@ -311,6 +319,22 @@ export function useEntities() {
       return Number.isFinite(v) ? v : null;
     }
 
+    /** Receipt-ul bridge-ului pentru un timer LG (null dacă nu există). */
+    function lgTimerReceipt(slotKey) {
+      const st = ent(slotKey);
+      if (!st || !isLgTimerSlot(slotKey)) return null;
+      const r = lastSentTimers && lastSentTimers[st.entity_id];
+      return r || null;
+    }
+
+    /** Când AC-ul pornește/opreşte fizic, receipt-ul vechi nu mai e relevant. */
+    function lgTimerReceiptStale(slotKey) {
+      const r = lgTimerReceipt(slotKey);
+      if (!r) return false;
+      const st = ent(slotKey);
+      return !st || parseFloat(st.state) !== r.value;
+    }
+
     function numberBounds(slotKey, fallbackMin, fallbackMax, fallbackStep) {
       const mn = parseFloat(attr(slotKey, 'min'));
       const mx = parseFloat(attr(slotKey, 'max'));
@@ -342,10 +366,48 @@ export function useEntities() {
       if (!id) return false;
       const domain = id.split('.')[0];
       if (domain !== 'number' && domain !== 'input_number') return false;
+      // Timer-ele LG NU se mai scriu prin number.set_value (no-op în ThinQ);
+      // merge exclusiv prin bridge-ul lg_thinq_timers (v1.5.4).
+      if (isLgTimerSlot(slotKey)) {
+        return setLgTimer(slotKey, value);
+      }
       const b = numberBounds(slotKey, 0, 100, 1);
       const v = Math.max(b.min, Math.min(b.max, value));
       markPending('value:' + id, v);
       return callService(domain, 'set_value', { value: v }, { entity_id: id });
+    }
+
+    /**
+     * Trimite un timer LG prin bridge. Returnează true doar dacă serviciul a
+     * fost acceptat; eroarea ajunge în banda de erori cu text onest LG.
+     */
+    async function setLgTimer(slotKey, value) {
+      const id = idOf(slotKey);
+      if (!id) return false;
+      const norm = normalizeTimerValue(slotKey, value);
+      const svc = lgTimerService(slotKey, norm);
+      markPending('value:' + id, norm);
+      try {
+        const receipt = await callServiceWithResponse(svc.domain, svc.service, svc.data);
+        if (receipt && receipt.command_sent) {
+          rememberSentTimer(id, {
+            value: norm,
+            kind: slotKey,
+            ts: Date.now(),
+            requested: receipt.requested || svc.service
+          });
+          return true;
+        }
+        // răspuns fără receipt valid — nu marcăm succes
+        markPending('value:' + id, undefined);
+        setLastCallError('lg_thinq_timers.' + svc.service + ': răspuns fără confirmare');
+        return false;
+      } catch (err) {
+        markPending('value:' + id, undefined);
+        const msg = (err && (err.message || err.error && err.error.message)) || String(err);
+        setLastCallError('lg_thinq_timers.' + svc.service + ': ' + lgTimerErrorMessage(msg));
+        return false;
+      }
     }
 
     // --------------------------------------------------------- media_player
@@ -409,9 +471,9 @@ export function useEntities() {
       climateTarget, climateTargetStale, supportsFeature, tempDecimals,
       climateCurrent, climateStep, climateMin, climateMax,
       setClimateTarget, bumpClimate, setHvacMode, setFanMode, setSwingMode, setPresetMode,
-      numberValue, numberBounds, numberWritable, numberControllable, setNumber,
+      numberValue, lgTimerReceipt, lgTimerReceiptStale, numberBounds, numberWritable, numberControllable, setNumber, setLgTimer,
       volume, setVolume, isMuted, setMute, selectSource, mediaCommand, sourceList, currentSource,
       friendlyName, matchOption
     };
-  }, [ha, states, entityMap, callService, markPending, pending, lastTargets]);
+  }, [ha, states, entityMap, callService, callServiceWithResponse, markPending, pending, lastTargets, lastSentTimers, rememberSentTimer, setLastCallError]);
 }

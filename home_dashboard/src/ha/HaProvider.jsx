@@ -113,6 +113,34 @@ export function HaProvider({ children }) {
     });
   }, [states, status, lastTargets]);
 
+  // Receipts pentru cronometrele LG trimise prin bridge-ul lg_thinq_timers.
+  // WRITE-ONLY: nu reprezintă stare confirmată de LG, doar faptul că HA a
+  // acceptat comanda. Max 3 intrări, fără istoric nelimitat (v1.5.4).
+  const [lastSentTimers, setLastSentTimers] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('hd.ha.lastSentTimers')) || {};
+    } catch {
+      return {};
+    }
+  });
+  const rememberSentTimer = useCallback((entityId, receipt) => {
+    setLastSentTimers((prev) => {
+      const next = Object.assign({}, prev);
+      if (receipt === null || receipt === undefined) delete next[entityId];
+      else next[entityId] = receipt;
+      const bounded = Object.keys(next)
+        .sort((a, b) => (next[b].ts || 0) - (next[a].ts || 0))
+        .slice(0, 3)
+        .reduce((acc, k) => { acc[k] = next[k]; return acc; }, {});
+      try {
+        localStorage.setItem('hd.ha.lastSentTimers', JSON.stringify(bounded));
+      } catch {
+        /* ignore */
+      }
+      return bounded;
+    });
+  }, []);
+
   // valori "optimiste" pentru comenzi trimise dar neconfirmate încă de HA
   const [pending, setPending] = useState({});
   const pendingTimers = useRef({});
@@ -239,8 +267,20 @@ export function HaProvider({ children }) {
 
   // ------------------------------------------------------------ optimistic UI
   const markPending = useCallback((key, value) => {
-    setPending((p) => Object.assign({}, p, { [key]: value }));
+    setPending((p) => {
+      const n = Object.assign({}, p);
+      if (value === undefined) {
+        delete n[key];
+      } else {
+        n[key] = value;
+      }
+      return n;
+    });
     if (pendingTimers.current[key]) clearTimeout(pendingTimers.current[key]);
+    if (value === undefined) {
+      delete pendingTimers.current[key];
+      return;
+    }
     pendingTimers.current[key] = setTimeout(() => {
       setPending((p) => {
         const n = Object.assign({}, p);
@@ -287,6 +327,26 @@ export function HaProvider({ children }) {
     return conn.sendMessagePromise(msg);
   }, []);
 
+  /**
+   * Apel de serviciu cu receipt (return_response). Returnează receipt-ul real
+   * ({command_sent, timestamp, ...}) sau aruncă eroarea HA — folosit de bridge-ul
+   * lg_thinq_timers pentru feedback onest, fără state inventat (v1.5.4).
+   */
+  const callServiceWithResponse = useCallback(async (domain, service, data) => {
+    const conn = connRef.current;
+    if (!conn) throw new Error('Nu sunt conectat la Home Assistant');
+    const res = await conn.sendMessagePromise({
+      id: Date.now(),
+      type: 'call_service',
+      domain,
+      service,
+      service_data: data || {},
+      return_response: true
+    });
+    const receipt = res && (res.response || res.result && res.result.response);
+    return receipt || null;
+  }, []);
+
   /** Abonament la un mesaj WS (ex. weather/subscribe_forecast). */
   const subscribeMessage = useCallback(async (cb, msg) => {
     const conn = connRef.current;
@@ -305,19 +365,24 @@ export function HaProvider({ children }) {
       error,
       states,
       lastTargets,
+      lastSentTimers,
+      rememberSentTimer,
       entityMap,
       setEntityMap,
       callService,
+      callServiceWithResponse,
       sendMessagePromise,
       subscribeMessage,
       pending,
       markPending,
       lastCallError,
+      setLastCallError,
       clearCallError: () => setLastCallError(null)
     }),
     [
-      config, setConfig, resetConfig, retry, status, error, states, lastTargets, entityMap,
-      setEntityMap, callService, sendMessagePromise, subscribeMessage, pending, markPending, lastCallError
+      config, setConfig, resetConfig, retry, status, error, states, lastTargets, lastSentTimers,
+      rememberSentTimer, entityMap, setEntityMap, callService, callServiceWithResponse,
+      sendMessagePromise, subscribeMessage, pending, markPending, lastCallError
     ]
   );
 

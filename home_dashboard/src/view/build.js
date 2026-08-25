@@ -12,6 +12,14 @@ import { VERIFY, NA, HVAC_SHORT } from '../ha/entities.js';
 import { describe } from '../model/descriptions.js';
 import { fmtPow, fmtText, dec as decSep } from '../design/format.js';
 import { UNSET, isLgTimerUnset } from '../ha/unset.js';
+import {
+  bumpTimerValue,
+  formatTimerReceipt,
+  lgTimerBlockedReason,
+  lgTimerBounds,
+  lgTimerKindOf,
+  lgTimerUnit
+} from '../ha/lgTimers.js';
 import { bumpNumber } from '../ha/numberStep.js';
 import { resolveAction } from '../model/actions.js';
 import { dailyAverage, dailyLast, fillGaps, timelineSegments, lastDayLabels } from '../ha/history.js';
@@ -40,6 +48,23 @@ function accCols(ui, cols) {
 }
 
 function numberBumpHandlers(info) {
+  // Timer-ele LG: bump write-only prin bridge (sub minim → anulare/nesetat).
+  if (info.lgTimer) {
+    return {
+      onMinus: (e) => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        if (!info.writable) return;
+        const next = bumpTimerValue(info.lgTimer, info.val, -1);
+        if (next !== info.val || next === null) info.set(next);
+      },
+      onPlus: (e) => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        if (!info.writable) return;
+        const next = bumpTimerValue(info.lgTimer, info.val, 1);
+        if (next !== null) info.set(next);
+      }
+    };
+  }
   const bounds = { min: info.min, max: info.max, step: info.step };
   return {
     onMinus: (e) => {
@@ -84,6 +109,13 @@ export function buildItem(E, ui, d, keyCtx) {
     value = '';
   } else if (!mapped) {
     value = VERIFY;
+  } else if (lgTimerKindOf(slot)) {
+    // Diagnostic timer LG (write-only): arătăm receipt-ul bridge-ului,
+    // nu valoarea number.* (care rămâne unknown fără readback LG).
+    const r = E.lgTimerReceipt(slot);
+    value = r
+      ? (r.kind === 'sensor.lg_somn_min' ? String(r.value) : String(r.value)) + (d.opts && d.opts.unit ? ' ' + d.opts.unit : '')
+      : UNSET;
   } else if (!avail) {
     value = slot && isLgTimerUnset(slot, E.rawState(slot), E.numberValue(slot)) ? UNSET : NA;
   } else if (d.opts && d.opts.hvac) {
@@ -100,7 +132,8 @@ export function buildItem(E, ui, d, keyCtx) {
   const key = 'tile:' + (keyCtx || '') + ':' + (slot || d.label);
   let tip;
   if (!mapped && slot) tip = 'VERIFY · slotul „' + slot + '" nu are entitate mapată — deschide „Mapare entităţi".';
-  else if (!avail && slot) tip = d.label + ' · entitate indisponibilă în HA';
+  else if (!avail && slot && !lgTimerKindOf(slot)) tip = d.label + ' · entitate indisponibilă în HA';
+  else if (lgTimerKindOf(slot)) tip = d.label + ' · comandă trimisă prin bridge, fără confirmare continuă LG';
   else if (d.toggleable) tip = d.label + ' · ' + (active ? 'pornit — apasă pentru a opri' : 'oprit — apasă pentru a porni');
   else tip = d.label + ' · ' + value + ' — doar informativ';
 
@@ -581,6 +614,30 @@ function setpointInfo(E, cardDef, sp) {
   }
   // limitele entitatii au prioritate; bounds din definitie doar ca fallback
   const fb = sp.bounds || {};
+  // Timer-ele LG: contract write-only prin bridge — bounds, gate și receipt.
+  const lgKind = lgTimerKindOf(sp.slot);
+  if (lgKind) {
+    const b = lgTimerBounds(lgKind);
+    const receipt = E.lgTimerReceipt(sp.slot);
+    const blocked = lgTimerBlockedReason(lgKind, E.rawState(climateSlotOfCard(cardDef)));
+    const unit = lgTimerUnit(lgKind);
+    return {
+      label: sp.label,
+      unit,
+      val: receipt ? receipt.value : null,
+      min: b.min,
+      max: b.max,
+      step: b.step,
+      decimals: 0,
+      mapped: E.mapped(sp.slot),
+      unset: !receipt,
+      lgTimer: lgKind,
+      blocked,
+      receiptText: receipt ? formatTimerReceipt(receipt) : '',
+      writable: E.mapped(sp.slot) && !blocked,
+      set: (v) => E.setNumber(sp.slot, v)
+    };
+  }
   const b = E.numberBounds(sp.slot, fb.min !== undefined ? fb.min : 0, fb.max !== undefined ? fb.max : 100, fb.step || 1);
   const unset = isLgTimerUnset(sp.slot, E.rawState(sp.slot), E.numberValue(sp.slot));
   return {
@@ -596,6 +653,11 @@ function setpointInfo(E, cardDef, sp) {
     writable: E.numberControllable(sp.slot),
     set: (v) => E.setNumber(sp.slot, v)
   };
+}
+
+/** Slotul climate al cardului (pentru gating-ul timerelor LG). */
+function climateSlotOfCard(cardDef) {
+  return cardDef && cardDef.slot ? cardDef.slot : null;
 }
 
 export function buildAccordionItem(E, ui, u) {
@@ -641,15 +703,28 @@ export function buildAccordionItem(E, ui, u) {
     setpointGridStyle: 'display:grid; grid-template-columns:repeat(' + (bpOf(ui).mob ? 1 : 2) + ',minmax(0,1fr)); gap:8px;',
     setpoints: (u.setpoints || []).map((sp) => {
       const i = setpointInfo(E, def, sp);
-      const shown = !i.mapped ? VERIFY : i.unset ? UNSET : i.val === null ? NA : (i.decimals ? decSep(i.val.toFixed(i.decimals)) : String(Math.round(i.val))) + (i.unit ? ' ' + i.unit : '');
+      const shown = !i.mapped
+        ? VERIFY
+        : i.lgTimer
+          ? (i.unset ? UNSET : (i.val === null ? NA : String(i.val) + (i.unit ? ' ' + i.unit : '')))
+          : i.unset ? UNSET : i.val === null ? NA : (i.decimals ? decSep(i.val.toFixed(i.decimals)) : String(Math.round(i.val))) + (i.unit ? ' ' + i.unit : '');
       const bump = numberBumpHandlers(i);
+      const hint = !i.mapped
+        ? 'slot nemapat'
+        : i.lgTimer
+          ? (i.blocked
+              ? i.blocked
+              : i.unset
+                ? (i.lgTimer === 'sensor.lg_somn_min' ? 'Nesetat · ore întregi' : 'Nesetat · pas 15 min, 0 = anulare')
+                : 'Trimis ' + i.receiptText + ' · fără confirmare continuă LG')
+          : i.unset ? 'Niciun temporizator activ · setează cu +/−' : 'pas ' + i.step + ' · ' + i.min + '–' + i.max + ' ' + i.unit;
       return {
         label: i.label,
-        wrapStyle: 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.07);',
+        wrapStyle: 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.07);' + (i.blocked ? ' opacity:0.55;' : ''),
         labelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:400; color:#bdb1a4;',
-        hintStyle: 'font-family:' + SANS + '; font-size:10px; font-weight:300; color:' + (i.mapped ? TXT3 : ORANGE) + '; margin-top:2px;',
-        hint: !i.mapped ? 'slot nemapat' : i.unset ? 'Niciun temporizator activ · setează cu +/−' : 'pas ' + i.step + ' · ' + i.min + '–' + i.max + ' ' + i.unit,
-        valStyle: 'font-family:' + DOTO + '; font-size:20px; font-weight:600; color:' + (shown === VERIFY ? ORANGE : ORANGE) + '; letter-spacing:0.02em;' + (shown === VERIFY ? ' font-size:13px;' : '') + (i.stale ? ' opacity:0.55;' : ''),
+        hintStyle: 'font-family:' + SANS + '; font-size:10px; font-weight:300; color:' + (i.mapped && !i.blocked ? TXT3 : ORANGE) + '; margin-top:2px;',
+        hint,
+        valStyle: 'font-family:' + DOTO + '; font-size:20px; font-weight:600; color:' + (shown === VERIFY ? ORANGE : ORANGE) + '; letter-spacing:0.02em;' + (shown === VERIFY ? ' font-size:13px;' : '') + (i.lgTimer && !i.unset ? ' opacity:0.55;' : ''),
         val: shown,
         // 44 şi pe tabletele cu deget (pointer: coarse), nu doar sub 760px
         btnStyle: 'width:' + (bpOf(ui).mob || bpOf(ui).coarse ? 44 : 30) + 'px; height:' + (bpOf(ui).mob || bpOf(ui).coarse ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (i.writable ? 'pointer' : 'default') + '; opacity:' + (i.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
@@ -777,10 +852,29 @@ export function dialInfo(E, def) {
     };
   }
   if (d.kind === 'number') {
+    const lgKind = lgTimerKindOf(d.slot);
+    if (lgKind) {
+      const b = lgTimerBounds(lgKind);
+      const receipt = E.lgTimerReceipt(d.slot);
+      return {
+        val: receipt ? receipt.value : null,
+        unit: lgTimerUnit(lgKind),
+        min: b.min,
+        max: b.max,
+        step: b.step,
+        decimals: 0,
+        unset: !receipt,
+        lgTimer: lgKind,
+        receiptText: receipt ? formatTimerReceipt(receipt) : '',
+        writable: E.mapped(d.slot),
+        mapped: E.mapped(d.slot),
+        set: (v) => E.setNumber(d.slot, v)
+      };
+    }
     const b = E.numberBounds(d.slot, d.min, d.max, d.step);
     return {
       val: E.numberValue(d.slot),
-      unit: d.unit || '%',
+      unit: d.unit || E.attr(d.slot, 'unit_of_measurement') || '%',
       min: b.min,
       max: b.max,
       step: b.step,

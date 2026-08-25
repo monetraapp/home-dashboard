@@ -18,6 +18,11 @@ import {
 } from '../src/design/format.js';
 import { monotoneTangents, monotonePath, contiguousRuns, trimEdges } from '../src/design/curve.js';
 import { buildZones, sortFloors } from '../src/ha/registries.js';
+import {
+  LG_AC_DEVICE_ID, LG_TIMER_KIND, lgTimerUnit, lgTimerBounds, splitDuration,
+  normalizeTimerValue, bumpTimerValue, lgTimerBlockedReason, lgTimerService,
+  formatTimerReceipt, lgErrorCode, lgTimerErrorMessage
+} from '../src/ha/lgTimers.js';
 import { NAV } from '../src/model/devices.js';
 import { PAGE_HERO } from '../src/model/pages.js';
 import { UNSET, isLgTimerUnset, isLgTimerSlot } from '../src/ha/unset.js';
@@ -597,6 +602,112 @@ eq('entitatea absenta din state machine e ignorata',
    buildZones(REG, { 'climate.ac': {} }).reduce((n, f) => n + f.zone.reduce((m, z) => m + z.entities.length, 0), 0), 1);
 eq('registru gol nu arunca', buildZones({ floors: [], areas: [], devices: [], entities: [] }, {}), []);
 
+// ---- cronometre LG prin bridge-ul lg_thinq_timers (v1.5.4) ------------------
+// Semantica vine din schema REALA a serviciilor, citita din HA:
+//   set_schedule_on/off : device_id + hours(0-100) + minutes(0-59), cu gating
+//                         de stare (ON cere AC oprit, OFF cere AC pornit);
+//   set_sleep_timer     : device_id + hours(1-100), FARA minutes (LG 2201).
+console.log('cronometre LG (bridge):');
+
+const ON = LG_TIMER_KIND.ON, OFF = LG_TIMER_KIND.OFF, SLEEP = LG_TIMER_KIND.SLEEP;
+
+eq('unitati: schedule in minute, sleep in ore',
+   [lgTimerUnit(ON), lgTimerUnit(OFF), lgTimerUnit(SLEEP)], ['min', 'min', 'h']);
+eq('limite schedule', lgTimerBounds(ON), { min: 0, max: 480, step: 15 });
+eq('limite sleep (minim 1h, ca in schema LG)', lgTimerBounds(SLEEP), { min: 1, max: 12, step: 1 });
+
+eq('splitDuration 0 -> 0h0m', splitDuration(0), { hours: 0, minutes: 0 });
+eq('splitDuration 1 -> 0h1m (cazul E2E din 27_)', splitDuration(1), { hours: 0, minutes: 1 });
+eq('splitDuration 90 -> 1h30m', splitDuration(90), { hours: 1, minutes: 30 });
+eq('splitDuration 480 -> 8h0m', splitDuration(480), { hours: 8, minutes: 0 });
+eq('splitDuration negativ -> 0h0m, fara NaN', splitDuration(-5), { hours: 0, minutes: 0 });
+
+eq('normalizare: se lipeste de pas', normalizeTimerValue(ON, 22), 15);
+eq('normalizare: peste maxim se plafoneaza', normalizeTimerValue(ON, 9999), 480);
+eq('normalizare: sub minimul sleep -> nesetat', normalizeTimerValue(SLEEP, 0), null);
+eq('normalizare: NaN -> nesetat', normalizeTimerValue(ON, NaN), null);
+
+eq('bump din nesetat in jos ramane nesetat', bumpTimerValue(ON, null, -1), null);
+eq('bump din nesetat in sus da primul pas', bumpTimerValue(ON, null, +1), 15);
+eq('bump sleep din nesetat da minimul (1h)', bumpTimerValue(SLEEP, null, +1), 1);
+eq('bump sub minim -> nesetat, nu zero', bumpTimerValue(SLEEP, 1, -1), null);
+eq('bump se plafoneaza la maxim', bumpTimerValue(ON, 480, +1), 480);
+
+// gating de stare: exact conditiile pe care LG le respinge cu 2302 / 2304
+eq('pornire programata blocata cand AC-ul e pornit (2302)',
+   lgTimerBlockedReason(ON, 'cool') !== null, true);
+eq('pornire programata permisa cand AC-ul e oprit', lgTimerBlockedReason(ON, 'off'), null);
+eq('oprire programata blocata cand AC-ul e oprit (2304)',
+   lgTimerBlockedReason(OFF, 'off') !== null, true);
+eq('oprire programata permisa cand AC-ul e pornit', lgTimerBlockedReason(OFF, 'heat'), null);
+eq('sleep nu e blocat de stare', [lgTimerBlockedReason(SLEEP, 'off'), lgTimerBlockedReason(SLEEP, 'cool')], [null, null]);
+eq('fara stare cunoscuta nu blocam preventiv', lgTimerBlockedReason(ON, null), null);
+
+// maparea pe servicii — payload-ul exact trimis catre bridge
+eq('schedule off 0h1m -> set_schedule_off cu ore si minute',
+   lgTimerService(OFF, 1),
+   { domain: 'lg_thinq_timers', service: 'set_schedule_off',
+     data: { device_id: LG_AC_DEVICE_ID, hours: 0, minutes: 1 } });
+eq('schedule on 90m -> 1h30m',
+   lgTimerService(ON, 90).data, { device_id: LG_AC_DEVICE_ID, hours: 1, minutes: 30 });
+eq('nesetat -> cancel, nu set cu zero',
+   [lgTimerService(ON, null).service, lgTimerService(OFF, null).service, lgTimerService(SLEEP, null).service],
+   ['cancel_schedule_on', 'cancel_schedule_off', 'cancel_sleep_timer']);
+eq('cancel nu trimite durata', Object.keys(lgTimerService(ON, null).data), ['device_id']);
+
+// INVARIANTUL care produce LG 2201 daca e incalcat
+eq('sleep NU trimite niciodata minute',
+   Object.prototype.hasOwnProperty.call(lgTimerService(SLEEP, 3).data, 'minutes'), false);
+eq('sleep trimite orele ca ore, nu convertite din minute',
+   lgTimerService(SLEEP, 3).data, { device_id: LG_AC_DEVICE_ID, hours: 3 });
+eq('toate comenzile merg catre device-ul ThinQ corect',
+   [lgTimerService(ON, 60), lgTimerService(OFF, 60), lgTimerService(SLEEP, 2), lgTimerService(ON, null)]
+     .every((c) => c.data.device_id === LG_AC_DEVICE_ID), true);
+eq('domeniul e mereu bridge-ul, niciodata number.*',
+   [lgTimerService(ON, 15), lgTimerService(SLEEP, 1)].every((c) => c.domain === 'lg_thinq_timers'), true);
+
+// receipt: write-only, fara countdown inventat
+eq('receipt gol cand nu s-a trimis nimic', formatTimerReceipt(null), '');
+eq('receipt fara valoare numerica -> gol', formatTimerReceipt({ kind: ON, ts: Date.now() }), '');
+eq('receipt schedule arata durata',
+   formatTimerReceipt({ kind: OFF, value: 90, ts: new Date('2026-08-26T00:42:00').getTime() }).indexOf('1h 30m') === 0, true);
+eq('receipt sleep arata orele',
+   formatTimerReceipt({ kind: SLEEP, value: 3, ts: new Date('2026-08-26T00:42:00').getTime() }).indexOf('3h') === 0, true);
+
+// Erori LG propagate onest. Sirurile de mai jos sunt COPIATE din sursa
+// bridge-ului (custom_components/lg_thinq_timers/services.py), nu inventate:
+// exista doua familii, iar prima versiune a regexului o rata pe a doua.
+const ERR_SERVER = {
+  '2302': 'Command not supported in the current device state (LG 2302)',
+  '2201': 'Feature not provided for this device/timer type (LG 2201)',
+  '2304': 'Command not supported while the device is POWER_OFF (LG 2304)'
+};
+// mesajul REAL primit pe 26.08 la apelul live cu AC-ul oprit
+const ERR_LOCAL_2304 = 'set_schedule_off requires the AC to be POWER_ON (LG rejects with 2304 while it is off). Turn the AC on first.';
+const ERR_LOCAL_2302 = 'set_schedule_on requires the AC to be POWER_OFF (LG rejects with 2302 while it is running). Turn the AC off first.';
+const ERR_LOCAL_2201 = 'sleep timer accepts whole hours only (LG rejects minutes with 2201).';
+
+eq('cod extras din eroarea de server', lgErrorCode(ERR_SERVER['2302']), '2302');
+eq('cod extras din pre-validarea locala (formatul real)', lgErrorCode(ERR_LOCAL_2304), '2304');
+eq('cod extras din pre-validarea 2302', lgErrorCode(ERR_LOCAL_2302), '2302');
+eq('cod extras din pre-validarea 2201', lgErrorCode(ERR_LOCAL_2201), '2201');
+eq('mesaj fara cod -> null', lgErrorCode('bridge unavailable'), null);
+// device_id-ul contine cifre; nu trebuie confundate cu un cod de eroare
+eq('id-ul de device nu produce cod fals',
+   lgErrorCode("Unknown LG device_id '" + LG_AC_DEVICE_ID + "'. Available: ..."), null);
+eq('2302: explicatia in romana, nu mesajul brut, pe ambele formate',
+   [lgTimerErrorMessage(ERR_SERVER['2302']), lgTimerErrorMessage(ERR_LOCAL_2302)]
+     .every((t) => /2302/.test(t) && !/^Comanda LG a e/.test(t)), true);
+eq('2304: explicatia in romana, nu mesajul brut, pe ambele formate',
+   [lgTimerErrorMessage(ERR_SERVER['2304']), lgTimerErrorMessage(ERR_LOCAL_2304)]
+     .every((t) => /2304/.test(t) && !/^Comanda LG a e/.test(t)), true);
+eq('2201: explicatia in romana, nu mesajul brut, pe ambele formate',
+   [lgTimerErrorMessage(ERR_SERVER['2201']), lgTimerErrorMessage(ERR_LOCAL_2201)]
+     .every((t) => /2201/.test(t) && !/^Comanda LG a e/.test(t)), true);
+eq('metoda lipsa din thinqconnect e semnalata ca bridge indisponibil',
+   /[Bb]ridge/.test(lgTimerErrorMessage('thinqconnect version does not provide set_sleep_timer_relative_time_to_stop()')), true);
+eq('eroare necunoscuta nu inventeaza cod', lgErrorCode(null), null);
+
 // ---- navigatie: contractul dintre NAV si restul (v1.5.1) --------------------
 // Lectia din 24.08: auditul responsive avea lista de pagini HARDCODATA si o
 // copie manuala a subtitlurilor. Pagina `zone`, adaugata in v1.5.0, n-a fost
@@ -629,7 +740,7 @@ eq('growatt unknown -> not lg unset', isLgTimerUnset('gw.frecv', 'unknown', null
 
 console.log('number bump from unset:');
 const lgBounds = { min: 0, max: 100, step: 1 };
-eq('+ from null -> 1 (min=0 sentinel)', bumpNumber(null, 1, lgBounds), 1);
+eq('+ from null -> 1 (min=0 sentinel, 1 hour)', bumpNumber(null, 1, lgBounds), 1);
 eq('- from null -> null', bumpNumber(null, -1, lgBounds), null);
 eq('+ from 1 -> 2', bumpNumber(1, 1, lgBounds), 2);
 eq('- from 1 -> 0', bumpNumber(1, -1, lgBounds), 0);

@@ -34,13 +34,13 @@ export const SLOTS = [
   // Cheile păstrează prefixul istoric "sensor." ca să nu orfanizeze mapările
   // deja salvate în localStorage; acum ţintesc entităţile number.* (controlabile).
   slot('sensor.lg_pornire_min', 'AC Etaj LG · pornire peste (min)', 'climat', ['number', 'sensor'], {
-    note: 'Decalaj în minute faţă de acum, nu o oră fixă — confirmat manual în appul LG ThinQ. Mapat pe number.* pentru control (set_value); unitatea afişată e cea reală (min), nu cea declarată greşit de number (h).'
+    note: 'Control prin bridge lg_thinq_timers (write-only, v1.5.4): minute cu pas 15, convertite intern în hours+minutes. number.* oficial rămâne doar diagnostic (no-op la scriere).'
   }),
   slot('sensor.lg_oprire_min', 'AC Etaj LG · oprire peste (min)', 'climat', ['number', 'sensor'], {
-    note: 'Decalaj în minute, nu oră fixă — confirmat manual. Mapat pe number.* pentru control.'
+    note: 'Control prin bridge lg_thinq_timers: minute cu pas 15 (0h1m demonstrat fizic). Cancel = valoare 0/nesetat.'
   }),
-  slot('sensor.lg_somn_min', 'AC Etaj LG · temporizator somn (min)', 'climat', ['number', 'sensor'], {
-    note: 'Countdown în minute — mapat pe number.* pentru control.'
+  slot('sensor.lg_somn_min', 'AC Etaj LG · temporizator somn (h)', 'climat', ['number', 'sensor'], {
+    note: 'Sleep timer prin bridge: ore întregi 1–12 (LG respinge minutele cu 2201).'
   }),
   // Serii pentru graficele de istoric (doar citire). Recorder-ul HA nu poate
   // reda ISTORICUL unui atribut (fetch-ul foloseşte no_attributes:true), deci

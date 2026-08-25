@@ -1,5 +1,59 @@
 # Changelog
 
+## 1.5.5
+
+Cronometrele LG sunt conectate la bridge-ul `lg_thinq_timers` şi ies din
+regimul de estimare. Până acum dashboard-ul scria în `number.*`-urile LG, care
+raportau valori pe care aparatul nu le respecta; acum fiecare comandă merge
+prin cele şase servicii ale bridge-ului, cu schema lor reală citită din HA.
+
+**Semantica e cea a aparatului, nu una inventată.** Pornirea şi oprirea
+programată acceptă ore + minute; temporizatorul de somn acceptă **doar ore**,
+fiindcă LG respinge minutele cu 2201 pe acest model. Pornirea programată cere
+aparatul oprit, oprirea îl cere pornit — condiţii pe care UI-ul le blochează
+înainte de trimitere, cu motivul scris, iar bridge-ul rămâne autoritatea
+finală. Sub valoarea minimă comanda devine *anulare*, nu „zero minute": un
+timer de zero nu există la LG.
+
+**Timerele rămân WRITE-ONLY.** Nu există readback continuu, deci nu inventăm
+nici countdown, nici confirmare. După o comandă acceptată, cardul arată
+`Trimis 1h 30m · 00:42 · fără confirmare continuă LG`. Confirmarea fizică e
+schimbarea stării din integrarea oficială, nu un număr desenat de noi.
+Receipt-urile se ţin în `localStorage`, maximum trei, fără istoric nelimitat.
+
+**Erorile se afişează aşa cum sunt.** 2302, 2304 şi 2201 primesc explicaţie în
+română; lipsa unei metode din `thinqconnect` e semnalată ca bridge indisponibil,
+iar deconectarea spune că nu s-a trimis nimic.
+
+Aici a ieşit la iveală un bug pe care testele nu-l puteau vedea: bridge-ul
+produce **două** formate de eroare — unul venit de la LG, `"(LG 2302)"`, şi unul
+din pre-validarea locală, `"(LG rejects with 2304 while it is off)"`. Regexul
+cerea cifrele imediat după „LG" şi îl rata pe al doilea, deci mesajul ar fi
+apărut netradus. L-am prins printr-un **apel real pe bridge**, nu din teste,
+pentru că testele foloseau formatul presupus. Testele au fost rescrise pe
+şirurile copiate din sursa bridge-ului, iar potrivirea acoperă acum ambele
+formate fără să extragă un cod fals din `device_id`-ul hexazecimal.
+
+Teste: 229 logică (+46 pe cronometre) + 44 stil.
+
+## 1.5.4
+
+Butoanele +/- ale cronometrelor LG porneau corect din starea „nesetat", cu
+valoare optimistă până la confirmarea HA. Adăugat `ha/numberStep.js`.
+*(Intrare completată retroactiv în 1.5.5 — commitul `4a8248e` a rămas
+nepublicat până atunci.)*
+
+## 1.5.3
+
+Semantica „nesetat" pentru cronometrele LG când ThinQ raportează `unknown`:
+un timer inexistent nu se mai afişează ca zero. **Versiunea live până la 1.5.5.**
+*(Intrare completată retroactiv.)*
+
+## 1.5.2
+
+Reparat textul tăiat pe cardurile Piscinei la 320px şi accesibilitatea
+modalului. *(Intrare completată retroactiv.)*
+
 ## 1.5.1
 
 Reparaţie de accesibilitate şi de unealtă, plus două defecte reale pe pagina

@@ -15,11 +15,9 @@ export const SUGGESTED_MAP = {
   'climate.vortex': 'climate.aux_cloud_ec0baeae4fb7_ac',
   'climate.etaj': 'climate.etaj_aer_conditionat_lg_etaj',
   'climate.vivax': 'climate.mansarda_aer_conditionat_vivax_mansarda',
-  // Confirmate manual în appul LG ThinQ (2026-08-21): decalaje în minute, nu ore
-  // fixe. Remapate 2026-08-22 de pe sensor.* pe number.* la cererea explicită a
-  // utilizatorului: number.* e controlabil (number.set_value), sensor.* e doar
-  // oglinda read-only. Unitatea declarată de number ('h') e greşită — etichetele
-  // noastre spun explicit "(min)", valoarea brută fiind aceeaşi pe ambele.
+  // Timer-ele LG (v1.5.4): controlul merge prin bridge-ul lg_thinq_timers,
+  // NU prin number.set_value (no-op în ThinQ — fără alt_setter). Maparea pe
+  // number.* rămâne pentru sloturile de DIAGNOSTIC read-only din acordeon.
   'sensor.lg_pornire_min': 'number.etaj_aer_conditionat_lg_etaj_schedule_turn_on',
   'sensor.lg_oprire_min': 'number.etaj_aer_conditionat_lg_etaj_schedule_turn_off',
   'sensor.lg_somn_min': 'number.etaj_aer_conditionat_lg_etaj_sleep_timer',

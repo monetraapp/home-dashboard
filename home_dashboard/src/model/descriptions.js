@@ -45,12 +45,12 @@ const D = {
 
   // ------------------------------------------------------------------- LG
   'Economie': 'Modul de economisire al LG-ului: reduce consumul acceptând o abatere mică de la ţintă.',
-  'Temporizator somn (min)': 'Peste câte minute se opreşte singură unitatea. Gol = niciun temporizator activ.',
-  'Pornire peste (min)': 'Peste câte minute porneşte singură unitatea. Gol = neprogramat.',
-  'Oprire peste (min)': 'Peste câte minute se opreşte unitatea. Gol = neprogramat.',
-  'Somn peste': 'Peste câte minute se opreşte singură unitatea.',
-  'Pornire peste': 'Peste câte minute porneşte singură unitatea.',
-  'Oprire peste': 'Peste câte minute se opreşte unitatea.',
+  'Somn trimis (h)': 'Ultima comandă de sleep timer trimisă prin bridge, în ore. „Nesetat" = nicio comandă recentă; LG nu oferă readback continuu.',
+  'Pornire trimisă (min)': 'Ultima comandă de pornire programată trimisă prin bridge, în minute (pas 15). „Nesetat" = nicio comandă recentă.',
+  'Oprire trimisă (min)': 'Ultima comandă de oprire programată trimisă prin bridge, în minute (pas 15). „Nesetat" = nicio comandă recentă.',
+  'Somn peste': 'Peste câte ore se opreşte singură unitatea (ore întregi — LG respinge minutele).',
+  'Pornire peste': 'Peste câte minute porneşte singură unitatea (pas 15; cere AC oprit).',
+  'Oprire peste': 'Peste câte minute se opreşte unitatea (pas 15; cere AC pornit).',
 
   // -------------------------------------------------------------- Fairland
   'Încălzire apă': 'Încălzeşte apa piscinei până la temperatura ţintă.',

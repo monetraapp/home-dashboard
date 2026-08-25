@@ -87,8 +87,11 @@ export const CLIMAT_ACCORDION = [
     card: 'ac-etaj',
     setpoints: [
       spClimate('Temperatură ţintă'),
-      // Cronometrele LG sunt entităţi number controlabile (valoare = minute).
-      spNumber('sensor.lg_somn_min', 'Somn peste', 'min'),
+      // Cronometrele LG sunt WRITE-ONLY prin bridge-ul lg_thinq_timers
+      // (v1.5.4): schedule în minute cu pas 15 (conversie internă h+m),
+      // sleep în ore întregi (LG respinge minutele cu 2201). Receipt-ul
+      // local arată „Trimis", nu stare confirmată.
+      spNumber('sensor.lg_somn_min', 'Somn peste', 'h'),
       spNumber('sensor.lg_pornire_min', 'Pornire peste', 'min'),
       spNumber('sensor.lg_oprire_min', 'Oprire peste', 'min')
     ],
@@ -109,11 +112,12 @@ export const CLIMAT_ACCORDION = [
         act('leaf', 'Economie', A.slot('switch.lg_economie'))
       ]),
       sec('Cronometre', 3, [
-        // "Nesetat" aici e corect: LG ThinQ raportează state=unknown când
-        // native_value=null (niciun temporizator activ în cloud).
-        ro('moon', 'Temporizator somn (min)', 'sensor.lg_somn_min', { unit: 'min', decimals: 0 }),
-        ro('calDown', 'Pornire peste (min)', 'sensor.lg_pornire_min', { unit: 'min', decimals: 0 }),
-        ro('calUp', 'Oprire peste (min)', 'sensor.lg_oprire_min', { unit: 'min', decimals: 0 })
+        // Diagnostic read-only: numărul trimis ultima dată prin bridge.
+        // Readback-ul LG nu există (write-only), deci „Nesetat" = fără
+        // comandă locală recentă, nu neapărat fără timer în cloud.
+        ro('moon', 'Somn trimis (h)', 'sensor.lg_somn_min', { unit: 'h', decimals: 0 }),
+        ro('calDown', 'Pornire trimisă (min)', 'sensor.lg_pornire_min', { unit: 'min', decimals: 0 }),
+        ro('calUp', 'Oprire trimisă (min)', 'sensor.lg_oprire_min', { unit: 'min', decimals: 0 })
       ]),
       sec('Consum', 4, [
         ro('bolt', 'Azi', 'energy.ac_etaj_azi'),
