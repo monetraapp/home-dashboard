@@ -571,7 +571,29 @@ criteriul corect e „îl recunosc / nu-l recunosc", nu „pare nefolosit".
 ## 6. TASK-URI DESCHISE
 
 ### Prioritar — funcțional
-- **De ce a căzut canalul MCP către HA pe 25.08** — fără explicaţie. Când revine, de citit logul supervisor/core în jurul intervalului. **Nu se speculează până atunci** — vezi §3.8 pentru ce se întâmplă când un diagnostic se construieşte pe dovezi care nu susţin concluzia.
+- ~~De ce a căzut canalul MCP către HA~~ — **ÎNCHIS, cauza e pe PC, nu în HA.**
+  Din jurnalul de sistem Windows: **oprire necurată la 06:51:49 pe 25.08**
+  (Event 6008, „the previous system shutdown was unexpected"; Event 41,
+  „rebooted without cleanly shutting down first"), cu pornirea următoare la
+  **13:29**. Serverul `home-assistant-full` e de tip **HTTP** (`.mcp.json`,
+  url din `${HA_MCP_FULL_URL}`); conexiunea a murit odată cu mașina, iar
+  sesiunea reluată după boot nu a mai reatașat-o. Variabila de mediu e
+  intactă (setată la nivel de utilizator), deci nu ea a fost problema —
+  reparația e reconectarea serverului MCP / o sesiune nouă.
+
+  Cronologie exactă, din transcriptul sesiunii: ultimul apel `ha_*` reușit la
+  **24.08, 13:31:25** (ora locală), primul prompt de după la **25.08, 13:52**.
+  Între cele două nu am făcut niciun apel `ha_*`, deci **nu se poate spune
+  dacă legătura mai trăia înainte de crash** — crash-ul e o cauză suficientă,
+  nu neapărat singura.
+
+  **Ce NU s-a verificat:** logul supervisor/core din HA, dacă a repornit HA
+  Core sau Supervisor, dacă integrarea `ha_mcp_tools` a picat, şi dacă există
+  erori pe intrarea ei de configurare sau pe token. Nu există canal
+  autentificat către HA din sesiunea asta (uneltele `ha_*` lipsesc, Chrome nu
+  e conectat, token nu am), deci întrebările rămân neverificate — dar nu mai
+  sunt necesare pentru a explica pierderea uneltelor. Partea de HA s-a
+  restabilit singură: release-ul v1.5.1 şi auditul au rulat normal după.
 - **ONVIF**: 5 camere Dahua în „Failed setup, will retry". **Singura problemă
   funcțională rămasă.** Neatins în această sesiune, la cerere.
 - **Backup-uri pe destinație externă** — toate sunt încă pe HA Green. Singurul
@@ -688,6 +710,9 @@ dispărut, și că a rămas doar `lovelace` — Overview-ul implicit.)*
   execuție cu HTML-ul de design original (44 de aserțiuni).
 - Registrele Growatt respinse (26) și cele de contor (3) au teste dedicate — nu
   pot fi mapate accidental fără să pice suita.
+- **Capcană PC (2)**: PC-ul a avut o oprire necurată pe 25.08 la 06:51 (Event 6008/41). Serverul MCP `home-assistant-full` e **HTTP**, iar conexiunea
+  nu se reataşează singură la reluarea unei sesiuni de după boot — uneltele `ha_*`
+  dispar tăcut. Dacă lipsesc, verifică întâi dacă maşina a repornit, nu HA.
 - **Capcană PC**: serviciul Windows **ICS/SharedAccess** pe `192.168.0.111`
   (pornit de Hyper-V/WSL) invalidează testele DNS locale. Folosește laptopul MSI
   pentru teste din VLAN 20.
