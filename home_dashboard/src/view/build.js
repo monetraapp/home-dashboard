@@ -11,6 +11,7 @@ import { dialTicks, lineChart, barChart } from '../design/graphics.js';
 import { VERIFY, NA, HVAC_SHORT } from '../ha/entities.js';
 import { describe } from '../model/descriptions.js';
 import { fmtPow, fmtText, dec as decSep } from '../design/format.js';
+import { UNSET, isLgTimerUnset } from '../ha/unset.js';
 import { resolveAction } from '../model/actions.js';
 import { dailyAverage, dailyLast, fillGaps, timelineSegments, lastDayLabels } from '../ha/history.js';
 
@@ -65,7 +66,7 @@ export function buildItem(E, ui, d, keyCtx) {
   } else if (!mapped) {
     value = VERIFY;
   } else if (!avail) {
-    value = NA;
+    value = slot && isLgTimerUnset(slot, E.rawState(slot)) ? UNSET : NA;
   } else if (d.opts && d.opts.hvac) {
     value = HVAC_SHORT[E.rawState(slot)] || E.rawState(slot);
   } else if (d.toggleable) {
@@ -562,6 +563,7 @@ function setpointInfo(E, cardDef, sp) {
   // limitele entitatii au prioritate; bounds din definitie doar ca fallback
   const fb = sp.bounds || {};
   const b = E.numberBounds(sp.slot, fb.min !== undefined ? fb.min : 0, fb.max !== undefined ? fb.max : 100, fb.step || 1);
+  const unset = isLgTimerUnset(sp.slot, E.rawState(sp.slot));
   return {
     label: sp.label,
     unit: sp.unit === undefined ? E.attr(sp.slot, 'unit_of_measurement') || '' : sp.unit,
@@ -571,7 +573,8 @@ function setpointInfo(E, cardDef, sp) {
     step: b.step,
     decimals: b.step < 1 ? 1 : 0,
     mapped: E.mapped(sp.slot),
-    writable: E.numberWritable(sp.slot) && E.available(sp.slot),
+    unset,
+    writable: E.numberControllable(sp.slot),
     set: (v) => E.setNumber(sp.slot, v)
   };
 }
@@ -619,13 +622,13 @@ export function buildAccordionItem(E, ui, u) {
     setpointGridStyle: 'display:grid; grid-template-columns:repeat(' + (bpOf(ui).mob ? 1 : 2) + ',minmax(0,1fr)); gap:8px;',
     setpoints: (u.setpoints || []).map((sp) => {
       const i = setpointInfo(E, def, sp);
-      const shown = !i.mapped ? VERIFY : i.val === null ? NA : (i.decimals ? decSep(i.val.toFixed(i.decimals)) : String(Math.round(i.val))) + (i.unit ? ' ' + i.unit : '');
+      const shown = !i.mapped ? VERIFY : i.unset ? UNSET : i.val === null ? NA : (i.decimals ? decSep(i.val.toFixed(i.decimals)) : String(Math.round(i.val))) + (i.unit ? ' ' + i.unit : '');
       return {
         label: i.label,
         wrapStyle: 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.07);',
         labelStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:400; color:#bdb1a4;',
         hintStyle: 'font-family:' + SANS + '; font-size:10px; font-weight:300; color:' + (i.mapped ? TXT3 : ORANGE) + '; margin-top:2px;',
-        hint: i.mapped ? 'pas ' + i.step + ' · ' + i.min + '–' + i.max + ' ' + i.unit : 'slot nemapat',
+        hint: !i.mapped ? 'slot nemapat' : i.unset ? 'Niciun temporizator activ · setează cu +/−' : 'pas ' + i.step + ' · ' + i.min + '–' + i.max + ' ' + i.unit,
         valStyle: 'font-family:' + DOTO + '; font-size:20px; font-weight:600; color:' + (shown === VERIFY ? ORANGE : ORANGE) + '; letter-spacing:0.02em;' + (shown === VERIFY ? ' font-size:13px;' : '') + (i.stale ? ' opacity:0.55;' : ''),
         val: shown,
         // 44 şi pe tabletele cu deget (pointer: coarse), nu doar sub 760px
@@ -762,7 +765,8 @@ export function dialInfo(E, def) {
       max: b.max,
       step: b.step,
       decimals: 0,
-      writable: E.numberWritable(d.slot) && E.available(d.slot),
+      unset: isLgTimerUnset(d.slot, E.rawState(d.slot)),
+      writable: E.numberControllable(d.slot),
       mapped: E.mapped(d.slot),
       set: (v) => E.setNumber(d.slot, v)
     };

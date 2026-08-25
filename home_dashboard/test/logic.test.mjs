@@ -20,6 +20,7 @@ import { monotoneTangents, monotonePath, contiguousRuns, trimEdges } from '../sr
 import { buildZones, sortFloors } from '../src/ha/registries.js';
 import { NAV } from '../src/model/devices.js';
 import { PAGE_HERO } from '../src/model/pages.js';
+import { UNSET, isLgTimerUnset, isLgTimerSlot } from '../src/ha/unset.js';
 
 let pass = 0, fail = 0;
 function eq(name, got, want) {
@@ -616,6 +617,13 @@ eq('antetele au si titlu si subtitlu',
 // pagina de alta intr-o captura de audit.
 eq('subtitlurile din PAGE_HERO sunt unice',
    Object.keys(PAGE_HERO).length, new Set(Object.keys(PAGE_HERO).map((k) => PAGE_HERO[k][1])).size);
+
+console.log('lg timer unset:');
+eq('UNSET label', UNSET, 'Nesetat');
+eq('lg pornire slot', isLgTimerSlot('sensor.lg_pornire_min'), true);
+eq('lg pornire unknown -> unset', isLgTimerUnset('sensor.lg_pornire_min', 'unknown'), true);
+eq('lg pornire numeric -> not unset', isLgTimerUnset('sensor.lg_pornire_min', '30'), false);
+eq('growatt unknown -> not lg unset', isLgTimerUnset('gw.frecv', 'unknown'), false);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

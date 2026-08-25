@@ -2,9 +2,11 @@
 import { useMemo } from 'react';
 import { useHa } from './context.js';
 import { fmtUnitAuto, dec } from '../design/format.js';
+import { UNSET, isLgTimerUnset } from './unset.js';
 
 export const VERIFY = 'VERIFY';
 export const NA = '—';
+export { UNSET };
 
 const ON_STATES = ['on', 'open', 'home', 'playing', 'heat', 'cool', 'auto', 'dry', 'fan_only', 'heat_cool', 'active', 'true', 'connected'];
 const UNAVAILABLE = ['unavailable', 'unknown', 'none', null, undefined, ''];
@@ -135,6 +137,7 @@ export function useEntities() {
       if (!mapped(slotKey)) return VERIFY;
       const st = ent(slotKey);
       if (!st) return VERIFY;
+      if (isLgTimerUnset(slotKey, st.state)) return UNSET;
       if (isUnavailable(st)) return NA;
       const useAttr = o.attr || resolve(slotKey).attr;
       let v = useAttr ? st.attributes[useAttr] : st.state;
@@ -326,6 +329,14 @@ export function useEntities() {
       return d === 'number' || d === 'input_number';
     }
 
+    /** Number entity exists and accepts set_value; `unknown` is OK (LG timers unset). */
+    function numberControllable(slotKey) {
+      if (!numberWritable(slotKey)) return false;
+      const st = ent(slotKey);
+      if (!st) return false;
+      return st.state !== 'unavailable';
+    }
+
     async function setNumber(slotKey, value) {
       const id = idOf(slotKey);
       if (!id) return false;
@@ -398,7 +409,7 @@ export function useEntities() {
       climateTarget, climateTargetStale, supportsFeature, tempDecimals,
       climateCurrent, climateStep, climateMin, climateMax,
       setClimateTarget, bumpClimate, setHvacMode, setFanMode, setSwingMode, setPresetMode,
-      numberValue, numberBounds, numberWritable, setNumber,
+      numberValue, numberBounds, numberWritable, numberControllable, setNumber,
       volume, setVolume, isMuted, setMute, selectSource, mediaCommand, sourceList, currentSource,
       friendlyName, matchOption
     };

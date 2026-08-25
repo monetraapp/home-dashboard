@@ -109,8 +109,8 @@ export const CLIMAT_ACCORDION = [
         act('leaf', 'Economie', A.slot('switch.lg_economie'))
       ]),
       sec('Cronometre', 3, [
-        // "—" aici e corect: LG raportează unknown cât timp niciun temporizator
-        // nu e setat; valorile apar imediat ce setezi ceva (aici sau din ThinQ).
+        // "Nesetat" aici e corect: LG ThinQ raportează state=unknown când
+        // native_value=null (niciun temporizator activ în cloud).
         ro('moon', 'Temporizator somn (min)', 'sensor.lg_somn_min', { unit: 'min', decimals: 0 }),
         ro('calDown', 'Pornire peste (min)', 'sensor.lg_pornire_min', { unit: 'min', decimals: 0 }),
         ro('calUp', 'Oprire peste (min)', 'sensor.lg_oprire_min', { unit: 'min', decimals: 0 })
