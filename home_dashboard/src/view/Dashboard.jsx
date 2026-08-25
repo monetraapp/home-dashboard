@@ -58,6 +58,18 @@ export default function Dashboard({ onOpenMapping }) {
   const [hoverChart, setHoverChart] = useState(null);
   const [modalId, setModalId] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!modalId && !pickerOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        if (pickerOpen) setPickerOpen(false);
+        else if (modalId) setModalId(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [modalId, pickerOpen]);
   const [dragId, setDragId] = useState(null);
   const [acIndex, setAcIndex] = useState(0);
   const [openAcc, setOpenAcc] = useState('ac-vortex');
@@ -420,7 +432,16 @@ export default function Dashboard({ onOpenMapping }) {
             })}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <div style={s(circleBtnStyle)} title="Mapare entităţi" onClick={onOpenMapping}>
+            <div
+              role="button"
+              tabIndex={0}
+              data-action="open-entity-mapping"
+              aria-label="Mapare entități"
+              style={s(circleBtnStyle)}
+              title="Mapare entităţi"
+              onClick={onOpenMapping}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenMapping(); } }}
+            >
               {ic('sliders', { size: 16 })}
             </div>
             <div
@@ -728,8 +749,13 @@ export default function Dashboard({ onOpenMapping }) {
                   </div>
                   {isAcasa ? (
                     <div
+                      role="button"
+                      tabIndex={0}
+                      data-action="open-device-picker"
+                      aria-label="Gestionează dispozitive urmărite"
                       style={s('display:flex; align-items:center; gap:8px; padding:9px 15px; min-height:44px; border-radius:100px; cursor:pointer; flex-shrink:0; font-family:' + SANS + '; font-size:12px; font-weight:400; color:#d8ccbe; background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.085);')}
                       onClick={() => setPickerOpen(true)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPickerOpen(true); } }}
                     >
                       <span style={s('display:flex; color:' + ORANGE + ';')}>{ic('plus', { size: 15 })}</span>
                       Gestionează
@@ -1025,7 +1051,16 @@ function DeviceCard({ c }) {
         ))}
       </div>
 
-      <div style={s(c.advBtnStyle)} onClick={c.onOpen}>
+      <div
+        className="hdTapY"
+        role="button"
+        tabIndex={0}
+        data-action="open-device-modal"
+        aria-label={'Setări avansate ' + c.label}
+        style={s(c.advBtnStyle)}
+        onClick={c.onOpen}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.onOpen(e); } }}
+      >
         <span style={s(c.advIconStyle)}>{c.advIconEl}</span>Setări avansate
       </div>
     </div>
@@ -1405,21 +1440,34 @@ function Picker({ tracked, setTracked, dragId, setDragId, onClose }) {
   });
 
   return (
-    <div style={s(overlayStyle(mob))} onClick={onClose}>
+    <div style={s(overlayStyle(mob))} onClick={onClose} role="presentation">
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hd-picker-title"
         style={s('width:100%; max-width:520px; padding:22px; border-radius:26px; background:linear-gradient(158deg,#1d1712 0%,#141110 100%); border:1px solid rgba(240,138,44,0.28); box-shadow:0 40px 90px -30px rgba(0,0,0,0.85);')}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 }}>
           <div>
-            <div style={s('font-family:' + SANS + '; font-size:17px; font-weight:500; color:' + TXT + ';')}>
+            <div id="hd-picker-title" style={s('font-family:' + SANS + '; font-size:17px; font-weight:500; color:' + TXT + ';')}>
               Dispozitive pe pagina Acasă
             </div>
             <div style={s('font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT3 + '; margin-top:3px;')}>
               {tracked.length} din {DEVICE_CARDS.length} selectate · trage de ⣿ pentru a schimba ordinea
             </div>
           </div>
-          <div style={s(closeBtnStyle)} onClick={onClose}>{ic('close', { size: 16, sw: 1.6 })}</div>
+          <div
+            role="button"
+            tabIndex={0}
+            data-action="close-modal"
+            aria-label="Închide"
+            style={s(closeBtnStyle)}
+            onClick={onClose}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }}
+          >
+            {ic('close', { size: 16, sw: 1.6 })}
+          </div>
         </div>
         <div style={s('margin-top:18px; max-height:52vh; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-right:4px;')}>
           {sorted.map((c) => {
@@ -1479,8 +1527,11 @@ function Picker({ tracked, setTracked, dragId, setDragId, onClose }) {
 function Modal({ m, onClose }) {
   const { mob } = useBreakpoint();
   return (
-    <div style={s(overlayStyle(mob))} onClick={onClose}>
+    <div style={s(overlayStyle(mob))} onClick={onClose} role="presentation">
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hd-device-modal-title"
         style={s('width:100%; max-width:560px; padding:22px; border-radius:26px; background:linear-gradient(158deg,#1d1712 0%,#141110 100%); border:1px solid rgba(240,138,44,0.28); box-shadow:0 40px 90px -30px rgba(0,0,0,0.85);')}
         onClick={(e) => e.stopPropagation()}
       >
@@ -1488,7 +1539,7 @@ function Modal({ m, onClose }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 13, minWidth: 0 }}>
             <div style={s(m.iconWrapStyle)}>{m.iconEl}</div>
             <div style={{ minWidth: 0 }}>
-              <div style={s(m.titleStyle)}>{m.title}</div>
+              <div id="hd-device-modal-title" style={s(m.titleStyle)}>{m.title}</div>
               <div style={s(m.subStyle)}>{m.model + ' • ' + m.status}</div>
             </div>
           </div>
@@ -1497,7 +1548,17 @@ function Modal({ m, onClose }) {
               <div style={s(m.toggleKnobStyle)}>{m.toggleIconEl}</div>
               <span style={s(m.toggleTextStyle)}>{m.toggleText}</span>
             </div>
-            <div style={s(closeBtnStyle)} onClick={onClose}>{ic('close', { size: 16, sw: 1.6 })}</div>
+            <div
+              role="button"
+              tabIndex={0}
+              data-action="close-modal"
+              aria-label="Închide"
+              style={s(closeBtnStyle)}
+              onClick={onClose}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }}
+            >
+              {ic('close', { size: 16, sw: 1.6 })}
+            </div>
           </div>
         </div>
 

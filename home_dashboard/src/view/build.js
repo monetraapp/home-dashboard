@@ -90,10 +90,10 @@ export function buildItem(E, ui, d, keyCtx) {
     iconEl: ic(d.icon, { size: 16, color: active ? '#2a1608' : TXT2 }),
     label: d.label,
     value,
-    tileStyle: tileStyleFor(active, canToggle) + (d.toggleable && !canToggle ? ' opacity:0.72;' : ''),
+    tileStyle: tileStyleFor(active, canToggle) + (d.toggleable ? toggleItemTileExtra(ui) : '') + (d.toggleable && !canToggle ? ' opacity:0.72;' : ''),
     iconWrapStyle: iconWrapFor(active),
-    labelStyle: labelFor(active) + LABEL_WRAP2,
-    valueStyle: verifyValueStyle(active, value),
+    labelStyle: d.toggleable ? toggleItemLabelStyle(active, ui) : labelFor(active) + LABEL_WRAP2,
+    valueStyle: d.toggleable ? toggleItemValueStyle(active) : verifyValueStyle(active, value),
     wrapStyle: 'position:relative; display:flex; min-width:0;',
     tipText: tip,
     showTip: ui.hoverKey === key,
@@ -216,6 +216,24 @@ const CLAMP2 = 'display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:ve
 // hyphens:auto desparte cu cratima cuvintele unice lungi ('Dezumidificare');
 // <html lang="ro"> exista deja.
 const LABEL_WRAP2 = ' white-space:normal; text-overflow:clip; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; hyphens:auto; overflow-wrap:break-word; line-height:1.25;';
+
+// Chip-uri toggle (Pornit/Oprit) pe grile înguste: valoarea nu se taie cu
+// ellipsis — audit 320px Piscină. Sub 360px comprimăm ușor padding/label.
+function ultraNarrow(ui) {
+  return bpOf(ui).vw <= 360;
+}
+function toggleItemLabelStyle(active, ui) {
+  const base = labelFor(active);
+  if (!ultraNarrow(ui)) return base + LABEL_WRAP2;
+  return base + ' white-space:normal; text-overflow:clip; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; line-height:1.2;';
+}
+function toggleItemValueStyle(active) {
+  const color = active ? 'rgba(42,22,8,0.72)' : TXT3;
+  return 'font-family:' + SANS + '; font-size:10px; font-weight:600; color:' + color + '; white-space:nowrap; flex-shrink:0; overflow:visible; text-overflow:clip; min-width:max-content;';
+}
+function toggleItemTileExtra(ui) {
+  return ultraNarrow(ui) ? ' padding:10px 8px; gap:6px;' : '';
+}
 
 const MON_WRAP = 'border:1px solid rgba(255,255,255,0.065); border-radius:14px; overflow:hidden; margin-bottom:12px;';
 const MON_CAP = 'display:flex; align-items:center; gap:8px; padding:9px 14px; font-family:' + SANS + '; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + '; background:rgba(255,255,255,0.022);';

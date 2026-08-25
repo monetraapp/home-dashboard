@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { s, SANS, SERIF, ORANGE, TXT, TXT2, TXT3, CARD_BG, CARD_BORDER, PILL_ON, glassCard } from '../design/tokens.js';
 import { ic } from '../design/icons.js';
 import { useHa } from '../ha/context.js';
@@ -33,6 +33,12 @@ export default function Mapping({ onClose }) {
   }, [allIds]);
 
   const mappedCount = SLOTS.filter((sl) => entityMap[sl.key]).length;
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   function setSlot(key, value) {
     const next = Object.assign({}, entityMap);
@@ -83,6 +89,9 @@ export default function Mapping({ onClose }) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hd-mapping-title"
       style={s(
         'position:fixed; inset:0; z-index:90; overflow-y:auto; padding:26px; background:#0b0908; font-family:' + SANS + ';'
       )}
@@ -90,7 +99,7 @@ export default function Mapping({ onClose }) {
       <div style={{ maxWidth: 1080, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
-            <div style={s('font-family:' + SERIF + '; font-size:34px; color:#f7f1e9; line-height:1.1;')}>Mapare entităţi</div>
+            <div id="hd-mapping-title" style={s('font-family:' + SERIF + '; font-size:34px; color:#f7f1e9; line-height:1.1;')}>Mapare entităţi</div>
             <div style={s('font-family:' + SANS + '; font-size:12px; font-weight:300; color:' + TXT3 + '; margin-top:6px; max-width:620px; line-height:1.6;')}>
               Fiecare rând este un loc din dashboard. Alege entitatea reală din Home Assistant.
               Sloturile nemapate rămân vizibile în interfaţă, marcate <span style={{ color: ORANGE, fontWeight: 500 }}>VERIFY</span>.

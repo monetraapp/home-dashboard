@@ -121,7 +121,7 @@ async function gotoPage(pg, key, label) {
   return { ok: true, intercepted };
 }
 // Lăţimile — graniţele din breakpoints.js + 360/390/414 cerute + 1440 desktop.
-const WIDTHS = [360, 390, 414, 759, 760, 1179, 1180, 1440];
+const WIDTHS = [320, 360, 390, 414, 759, 760, 1179, 1180, 1440];
 // Ramura de TABLETA (v1.2.2): aceleasi pagini la latimi de tableta, dar cu
 // hasTouch — Chromium raporteaza atunci `pointer: coarse`, exact ca tableta
 // montata pe perete. Valideaza deciziile care depind de tipul de input
