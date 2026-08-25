@@ -13,11 +13,11 @@ layout **greșită și revertită**, și un grafic de piscină refăcut de la ze
 
 | Componentă | Stare |
 |:--|:--|
-| Add-on Home Dashboard | **v1.5.1** in repo si pe GitHub; **add-on-ul din HA a ramas pe v1.5.0** (`index-c3ETjZJm.js`) — vezi §7 |
+| Add-on Home Dashboard | **v1.5.1**, `state: started`, bundle `index-DkkF_dMJ.js`. `update.home_dashboard_update` raportează `installed_version 1.5.1`, `binary_sensor.home_dashboard_running` e `on` (reload pe `hassio` executat — lecţia 1) |
 | `ingress_panel` | **`true`, setat prin Supervisor API** — bifa „Show in sidebar" nu se mai pune manual. Confirmat cu `get_panels` |
 | Catalog de sloturi | **291**, toate mapate, zero nemapate (era 293) |
 | Suită de teste | **170 logică + 44 stil, 0 picate** |
-| Audit responsive | **90/90 combinaţii măsurate, 0 probleme** pe v1.5.1, rulat împotriva unui mock. Matricea a crescut de la 80 la 90: pagina „Zone" nu fusese măsurată niciodată (§3.7). **De rerulat pe instanţa reală** după ce add-on-ul ajunge la v1.5.1 |
+| Audit responsive | **0 probleme distincte, 90 din 90 de combinaţii măsurate**, pe v1.5.1 (`index-DkkF_dMJ.js`), rulat pe **instanţa reală**. Cele 9 pagini au fost descoperite din DOM, inclusiv „Zone" — matricea a crescut de la 80 la 90 fiindcă pagina nouă nu fusese măsurată niciodată (§3.7) |
 | Dashboard-uri Lovelace | **0 în registru** — rămâne doar Overview-ul implicit (auto-generat) |
 | Etaje / zone HA | **6 etaje, 14 zone, toate atribuite** (§2.11). 60 de dispozitive rămân deliberat fără zonă |
 | Pagini în Home Dashboard | **9** (a noua: „Zone"), bara fără derulare pe tabletă |
@@ -608,8 +608,9 @@ Toate punctele din secțiunea C a `13_AUDIT_HA_READONLY.md` sunt rezolvate:
   Argumentul e în CHANGELOG-ul v1.3.5: e un motor de layout în JS cu
   re-măsurare la fiecare resize și la fiecare schimbare de valoare live, pe o
   tabletă montată sub Fully Kiosk.
-- ~~rerularea auditului responsive~~ — închis pe v1.4.2 (80/80 combinații).
-  **Redeschis pentru v1.5.0** — vezi §7.
+- ~~rerularea auditului responsive~~ — **ÎNCHIS pe v1.5.1**: 0 probleme pe
+  **90 din 90** de combinații, pe instanța reală. Matricea a crescut de la 80 la
+  90 după ce unealta a încetat să mai folosească o listă hardcodată de pagini (§3.7).
 - ~~pagină pe zone~~ — **FĂCUT** (§2.11): 6 etaje, 14 zone, pagina derivată din
   registrele HA, deci se actualizează singură la mutări.
 - **NOU:** iconițele de navigație — `Cctv` e cea mai densă glifă din set și stă
@@ -639,31 +640,24 @@ Toate punctele din secțiunea C a `13_AUDIT_HA_READONLY.md` sunt rezolvate:
 
 ## 7. NECESITĂ BOGDAN
 
-1. **Ciclul de release pentru v1.5.1 nu s-a putut face** — conexiunea MCP
-   către Home Assistant a căzut în timpul lucrului. Codul e comis şi împins
-   (`bbd8475`), dar add-on-ul din HA a rămas pe **v1.5.0**. De rulat ciclul
-   obişnuit: uninstall → `remove_repository(e382af62)` → `add_repository` →
-   install → start, apoi `ingress_panel=true` şi **`reload_config_entry` pe
-   `hassio`** (lecţia 1). După aceea, rerularea auditului pe instanţa reală:
-   aştept 90 de combinaţii, toate măsurate, zero probleme.
-
-2. **Revocarea tokenurilor long-lived** — nu există API. Profil → Securitate.
+1. **Revocarea tokenurilor long-lived** — nu există API. Profil → Securitate.
    Cele două sunt „Claude MCP" (19.08) și „HA-MCP Server" (19.08, canalul meu
    activ — dacă îl revoci, îmi tai accesul). Criteriul: îl recunoști sau nu,
    **nu** „pare nefolosit" (vezi B3).
 
-3. **Hard refresh (Ctrl+Shift+R)** pe orice tab care are dashboard-ul deschis.
+2. **Hard refresh (Ctrl+Shift+R)** pe orice tab care are dashboard-ul deschis.
    Tab-urile vechi rulează JS din memorie și par funcționale la nesfârșit.
 
-4. **Permisiunea de locație în fundal** pentru aplicația companion (§6).
+3. **Permisiunea de locație în fundal** pentru aplicația companion (§6).
 
-5. **Testarea automatizărilor WOL** dimineața, cu televizoarele oprite peste
+4. **Testarea automatizărilor WOL** dimineața, cu televizoarele oprite peste
    noapte — cum ai spus. Integrarea a rămas pe loc, deci testul e valid.
 
-*(Rerularea auditului responsive a ieșit de pe listă: rulat pe instanța reală
-pe v1.4.2, antet `index-BVn9WZ_Y.js`, **0 probleme distincte** pe toate cele
-80 de combinații — inclusiv cele 6 de pe Mentenanță, fără efecte colaterale.
-Măsurătoarea mea pe mock, 53px → 15px, e confirmată de instanța reală.)*
+*(Release-ul v1.5.1 a ieşit de pe listă: ciclul a rulat, `reload_config_entry` pe
+`hassio` la fel, iar auditul pe instanţa reală a dat 0 probleme pe 90 din 90 de
+combinaţii, cu cele 9 pagini descoperite din DOM. Închide şi rularea anterioară,
+pe v1.4.2, care confirmase pe instanţa reală reparaţia cardGap de pe Mentenanţă.
+Canalul MCP a revenit — de ce căzuse rămâne deschis în §6, fără speculaţie.)*
 
 *(Sidebar-ul nu mai e pe listă: `get_panels` confirmă panoul
 `e382af62_home_dashboard`, titlu „Home Dashboard", `show_in_sidebar: true`.
