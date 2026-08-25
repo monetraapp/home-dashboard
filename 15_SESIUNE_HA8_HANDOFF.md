@@ -351,6 +351,46 @@ treacă testul — e reparația reală, iar testul se sprijină pe ea.
 
 ---
 
+
+### 3.8 „Rescrierea Growatt a dispărut" — diagnostic fals-pozitiv
+
+Înainte de release-ul v1.5.1 am verificat starea instalării și am raportat că
+rescrierea DNS `server.growatt.com → 192.168.0.100` **nu mai există**, cu
+concluzia că dongle-ul trimite datele către cloud-ul Growatt și că fluxul spre
+Grott e rupt. **Era fals. Nimic nu era rupt.**
+
+Realitatea, din Query Log-ul AdGuard filtrat pe clientul `192.168.0.20`:
+`server.growatt.com`, Type A, Plain DNS, răspuns **Rewritten**, la 06:53:23,
+06:53:25, 06:53:27 și 06:55:03 pe 25.08.2026. În Filters → DNS rewrites
+rescrierea e prezentă și bifată, cu „Rewrites are enabled".
+
+**Cauza nu a fost lipsa rigorii, ci un martor compromis.** Toate testele au
+rulat cu `nslookup` de pe `192.168.0.111` — exact PC-ul pe care `11_` şi `15_`
+îl declară martor DNS invalid, din cauza serviciului Windows ICS/SharedAccess.
+Handoff-ul numeşte şi martorul curat: laptopul MSI, din VLAN 20.
+
+Ce face cazul instructiv e că **aparenţa de rigoare a fost chiar problema**. Am
+produs un tabel cu cinci nume de gazdă Growatt, am verificat explicit dacă
+`SharedAccess` rulează, am confirmat că nimic nu ascultă pe `:53` local, am
+verificat ruta către `.100`, am comparat cu gateway-ul şi cu 1.1.1.1, şi am
+adăugat două controale negative cu servere DNS inexistente (`.198`, `.199`) ca
+să demonstrez că interogările ajung la adresa cerută. Şase verificări
+independente — dar **toate au ieşit prin aceeaşi uşă defectă**. Un control care
+foloseşte instrumentul suspect nu poate valida instrumentul suspect;
+circularitatea era chiar miezul problemei, iar volumul de verificări a
+ascuns-o în loc s-o scoată la iveală.
+
+Am scris explicit „am verificat capcana şi rezultatul e valid". Regula din
+handoff nu avea excepţia aceea, iar eu am fabricat-o dintr-un sub-test rulat pe
+acelaşi martor pe care regula îl declară invalid.
+
+Consecinţa practică a fost mică — nu s-a modificat nimic în instalare, iar
+release-ul oricum nu putea rula fără canalul MCP. Costul real a fost al lui
+Bogdan: a trebuit să deschidă AdGuard şi să infirme un raport care suna sigur
+pe el.
+
+---
+
 ## 4. VERDICTELE VERIFICĂRILOR (B1 / B2 / B3)
 
 ### B1 — template-urile, cu grep pe TOATĂ clona
@@ -517,11 +557,21 @@ criteriul corect e „îl recunosc / nu-l recunosc", nu „pare nefolosit".
     aici, citită din DOM-ul randat de aplicație — sau, dacă nu se poate, se
     pune un test care compară cele două liste și pică la divergență.
 
+15. **O regulă documentată despre un martor invalid nu se ocolește cu
+    sub-teste rulate prin acel martor.** Dacă o infirmi, o infirmi cu martorul
+    pe care regula îl recomandă — aici, laptopul MSI din VLAN 20, numit
+    explicit în `11_` și `15_`. Corolarul, care e partea contraintuitivă:
+    **numărul de verificări nu compensează un instrument compromis.** Șase
+    controale independente care trec toate prin același rezolver defect nu sunt
+    șase dovezi, sunt una singură, repetată — iar aparența de rigoare face
+    eroarea mai greu de văzut, nu mai ușor (§3.8).
+
 ---
 
 ## 6. TASK-URI DESCHISE
 
 ### Prioritar — funcțional
+- **De ce a căzut canalul MCP către HA pe 25.08** — fără explicaţie. Când revine, de citit logul supervisor/core în jurul intervalului. **Nu se speculează până atunci** — vezi §3.8 pentru ce se întâmplă când un diagnostic se construieşte pe dovezi care nu susţin concluzia.
 - **ONVIF**: 5 camere Dahua în „Failed setup, will retry". **Singura problemă
   funcțională rămasă.** Neatins în această sesiune, la cerere.
 - **Backup-uri pe destinație externă** — toate sunt încă pe HA Green. Singurul
