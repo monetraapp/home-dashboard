@@ -8,7 +8,8 @@
 // pe disc şi nu apare în repo. Se injectează în localStorage-ul contextului
 // Playwright (cheia hd.ha.config, aceeaşi pe care o scrie ecranul de Setup).
 //
-// Matricea: cele 8 pagini din NAV × lăţimile derivate din breakpoint-urile
+// Matricea: paginile CITITE din bara de navigaţie a aplicaţiei (v1.5.1 — nu
+// mai sunt hardcodate) × lăţimile derivate din breakpoint-urile
 // proiectului (MOBILE_MAX=760, NARROW_MAX=1180 în src/design/breakpoints.js):
 // graniţele 759/760 şi 1179/1180, plus 360/390/414 (cerute explicit) şi 1440
 // ca desktop tipic. Nicio lăţime inventată în afara acestora.
@@ -41,49 +42,82 @@ const HA_URL = process.env.HD_HA_URL || 'http://192.168.0.100';
 const HA_TOKEN = process.env.HD_HA_TOKEN || '';
 
 // Paginile — aceleaşi chei şi etichete ca în src/model/devices.js (NAV).
-const PAGES = [
-  ['acasa', 'Acasă'], ['climat', 'Climat'], ['piscina', 'Piscină'], ['energie', 'Energie'],
-  ['camere', 'Camere'], ['retea', 'Reţea'], ['media', 'Media'], ['mentenanta', 'Mentenanţă']
-];
-// Subtitlurile din PAGE_HERO (src/model/pages.js) — unice per pagină; le
-// folosim ca dovadă că navigarea chiar a schimbat pagina.
-const PAGE_SUBTITLE = {
-  acasa: 'Centrul de operaţiuni', climat: 'Confort termic pe trei niveluri',
-  piscina: 'Apă, chimie şi filtrare', energie: 'Producţie, stocare şi consum',
-  camere: 'Cinci camere, perimetru complet', retea: 'Infrastructură şi conectivitate',
-  media: 'Opt televizoare, patru zone', mentenanta: 'Starea sistemului sub control'
-};
+// Lista de pagini NU mai e hardcodată (v1.5.1). Se citeşte din bara de
+// navigaţie a aplicaţiei, prin `[role="tab"][data-page]` — adică din chiar
+// configuraţia de rute pe care o randează aplicaţia. Înainte era o copie
+// manuală a lui NAV, iar pagina „Zone", adăugată în v1.5.0, n-a fost măsurată
+// niciodată: raportul spunea 80 de combinaţii şi părea complet.
+// `PAGES` se umple în runAudit, după prima încărcare.
+let PAGES = [];
+// Câte combinaţii au fost chiar auditate. Raportul îl pune lângă totalul
+// teoretic: dacă cele două nu coincid, „0 probleme" nu înseamnă „curat",
+// înseamnă „nemăsurat" — exact capcana din 24.08, când 8 pagini din 9 au
+// picat la navigare şi raportul părea complet.
+let masurate = 0;
+
+async function citestePagini(pg) {
+  const p = await pg.evaluate(() =>
+    Array.from(document.querySelectorAll('[role="tab"][data-page]')).map((el) => [
+      el.getAttribute('data-page'),
+      el.getAttribute('aria-label') || ''
+    ])
+  );
+  if (!p.length) {
+    throw new Error(
+      'Bara de navigaţie nu expune [role="tab"][data-page]. Auditul nu poate ' +
+      'deriva lista de pagini şi se opreşte, ca să nu raporteze un subset ' +
+      'drept întreg.'
+    );
+  }
+  return p;
+}
 
 /**
- * Navigare rezistentă la eşecuri (v2 al auditului). Aplicaţia NU are rute URL
- * (pagina e stare React), deci echivalentul "navigării directe" e clickul
- * programatic pe tab, care ocoleşte hit-testing-ul (deci şi orice element
- * care ar intercepta pointerul). Ordinea:
+ * Navigare rezistentă la eşecuri (v3 al auditului). Aplicaţia NU are rute URL
+ * (pagina e stare React), deci echivalentul "navigării directe" e clickul pe
+ * tab. Selecţia se face pe `[data-page="<cheie>"]` — identificator stabil —
+ * NU pe textul vizibil.
+ *
+ * De ce s-a schimbat: v1.5.0 a ascuns eticheta de pe taburile inactive, iar
+ * unealta căuta taburile prin `getByText(label, { exact: true })`. Rezultatul
+ * a fost 8 pagini din 9 NEMĂSURATE, raportate ca 26 de probleme de navigaţie —
+ * o unealtă care se rupe tăcut la o schimbare de prezentare. Mai rău: pentru
+ * „Piscină" exista pe Acasă un alt element cu exact acelaşi text, deci clickul
+ * a nimerit un element greşit şi eşecul a apărut abia la verificarea de final.
+ *
+ * Ordinea:
  *   1) click normal Playwright (detectează interceptări reale — le raportăm);
  *   2) click programatic prin evaluate;
- *   3) verificare că pagina chiar s-a schimbat (subtitlul din hero).
+ *   3) verificare că pagina chiar s-a schimbat, pe `aria-selected` — tot un
+ *      identificator stabil, nu subtitlul din hero.
  * Întoarce { ok, reason, intercepted } — nu aruncă niciodată.
  */
 async function gotoPage(pg, key, label) {
+  const sel = '[role="tab"][data-page="' + key + '"]';
   let intercepted = null;
   try {
-    await pg.getByText(label, { exact: true }).first().click({ timeout: 8000 });
+    await pg.locator(sel).first().click({ timeout: 8000 });
   } catch (e) {
     intercepted = (e.message || '').split('\n').find((l) => l.includes('intercepts pointer events')) || e.message.split('\n')[0];
     try {
-      await pg.evaluate((lbl) => {
-        const spans = Array.from(document.querySelectorAll('span')).filter((sp) => sp.textContent.trim() === lbl);
-        const tab = spans.map((sp) => sp.closest('div')).find((d) => d && getComputedStyle(d).cursor === 'pointer');
-        if (!tab) throw new Error('tabul „' + lbl + '" nu există în DOM');
+      await pg.evaluate((q) => {
+        const tab = document.querySelector(q);
+        if (!tab) throw new Error('tabul cu ' + q + ' nu există în DOM');
         tab.click();
-      }, label);
+      }, sel);
     } catch (e2) {
       return { ok: false, intercepted, reason: 'click interceptat ŞI click programatic eşuat: ' + e2.message.split('\n')[0] };
     }
   }
   await pg.waitForTimeout(key === 'energie' ? 3000 : 1500);
-  const changed = await pg.evaluate((sub) => document.body.innerText.includes(sub), PAGE_SUBTITLE[key]);
-  if (!changed) return { ok: false, intercepted, reason: 'pagina nu s-a schimbat după click (subtitlul „' + PAGE_SUBTITLE[key] + '" absent)' };
+  const activ = await pg.evaluate(() => {
+    const el = document.querySelector('[role="tab"][aria-selected="true"]');
+    return el ? el.getAttribute('data-page') : null;
+  });
+  if (activ !== key) {
+    return { ok: false, intercepted, reason: 'pagina nu s-a schimbat după click (aria-selected e „' + (activ || 'niciunul') + '", aşteptam „' + key + '")' };
+  }
+  void label;
   return { ok: true, intercepted };
 }
 // Lăţimile — graniţele din breakpoints.js + 360/390/414 cerute + 1440 desktop.
@@ -475,9 +509,12 @@ async function main() {
       const pg = await ctx.newPage();
       await pg.goto(BASE, { waitUntil: 'networkidle' });
 
-      // aşteptăm dashboard-ul (tab-ul Acasă); Setup vizibil = token respins
+      // aşteptăm dashboard-ul (bara de navigaţie); Setup vizibil = token respins.
+      // Aşteptarea e pe `[role="tab"]`, nu pe textul „Acasă": după v1.5.0
+      // eticheta apare doar pe tabul activ, iar o aşteptare pe text s-ar rupe
+      // din nou la orice schimbare de prezentare.
       try {
-        await pg.getByText('Acasă', { exact: true }).first().waitFor({ timeout: 30000 });
+        await pg.locator('[role="tab"][data-page]').first().waitFor({ timeout: 30000 });
       } catch (e) {
         const html = await pg.content();
         if (html.includes('token') || html.includes('Token')) {
@@ -501,6 +538,12 @@ async function main() {
           'Verifică HD_HA_URL şi HD_HA_TOKEN. Auditul se opreşte ca să nu măsoare o aplicaţie deconectată.');
       }
       await pg.waitForTimeout(3000); // istoric + statistici + fonturi
+
+      // Lista de pagini se citeşte O DATĂ, din bara randată de aplicaţie.
+      if (!PAGES.length) {
+        PAGES = await citestePagini(pg);
+        console.log('  pagini descoperite în navigaţie (' + PAGES.length + '): ' + PAGES.map((x) => x[0]).join(', '));
+      }
 
       if (touch) {
         const coarse = await pg.evaluate(() => window.matchMedia('(pointer: coarse)').matches);
@@ -529,6 +572,7 @@ async function main() {
         }
         try {
           const res = await pg.evaluate(auditPage);
+          masurate++;
           const shot = key + '_' + width + tag + '.png';
           await pg.screenshot({ path: path.join(SHOTS, shot), fullPage: true });
           for (const [type, list] of Object.entries(res)) {
@@ -569,7 +613,8 @@ async function main() {
 
   let md = '# Audit responsive — ' + new Date().toISOString().slice(0, 16).replace('T', ' ') + '\n\n';
   md += '**Aplicatie v' + appVersion + ' · bundle `' + bundleFile + '` (build proaspat la rulare).**' + '\n\n';
-  md += 'Matrice: ' + PAGES.length + ' pagini × ' + WIDTHS.length + ' lăţimi (' + WIDTHS.join(', ') + 'px) + ramura de tabletă cu touch (' + TOUCH_WIDTHS.join(', ') + 'px, pointer: coarse). ';
+  const nCombos = PAGES.length * (WIDTHS.length + TOUCH_WIDTHS.length);
+  md += 'Matrice: **' + PAGES.length + ' pagini** (' + PAGES.map((x) => x[0]).join(', ') + ') × ' + WIDTHS.length + ' lăţimi (' + WIDTHS.join(', ') + 'px) + ramura de tabletă cu touch (' + TOUCH_WIDTHS.join(', ') + 'px, pointer: coarse) = **' + nCombos + ' combinaţii**, dintre care ' + masurate + ' măsurate efectiv. ';
   md += 'Total: ' + rows.length + ' probleme distincte (' + findings.length + ' apariţii).\n';
   for (const sev of ['CRITIC', 'MEDIU', 'MINOR']) {
     const group = rows.filter((r) => SEVERITY[r.type][0] === sev);

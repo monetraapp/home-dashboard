@@ -373,6 +373,8 @@ export default function Dashboard({ onOpenMapping }) {
           <div
             ref={navScrollRef}
             onScroll={updateNavFade}
+            role="tablist"
+            aria-label="Pagini"
             style={s('display:flex; align-items:center; gap:9px; flex:1; min-width:0; padding:2px 2px 2px 4px; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; mask-image:' + navMask + '; -webkit-mask-image:' + navMask + ';')}
           >
             {/* (v1.5.0) Eticheta apare DOAR pe tabul activ. Cu a noua pagină,
@@ -386,15 +388,30 @@ export default function Dashboard({ onOpenMapping }) {
                 fidelitate), deci NU se modifică: se adaugă la locul apelului,
                 iar `s()` e last-wins. Padding-ul simetric înlocuieşte perechea
                 22px/22px doar când eticheta lipseşte, altfel pilula ar rămâne
-                un oval gol în jurul unei iconiţe de 19px. */}
+                un oval gol în jurul unei iconiţe de 19px.
+
+                Fiecare tab poartă `aria-label` cu numele COMPLET al paginii,
+                indiferent dacă eticheta vizuală e afişată — altfel taburile
+                inactive ar fi nenumite pentru un cititor de ecran, o regresie
+                de accesibilitate introdusă chiar de ascunderea etichetelor.
+                `data-page` e identificatorul stabil pe care se navighează în
+                teste şi în auditul responsive: textul vizibil NU mai e o
+                proprietate stabilă a navigaţiei. `aria-selected` spune care
+                pagină e activă, tot fără să depindă de ce se vede. */}
             {NAV.map((n) => {
               const a = n.key === page;
               return (
                 <div
                   key={n.key}
+                  role="tab"
+                  data-page={n.key}
+                  aria-selected={a}
+                  aria-label={n.label}
+                  tabIndex={0}
                   title={n.label}
                   style={s(navItemStyle(a) + ' scroll-snap-align:start; min-height:44px;' + (a ? '' : ' padding:11px 15px; gap:0;'))}
                   onClick={() => setPage(n.key)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPage(n.key); } }}
                 >
                   <span style={s(navIconBox(a))}>{ic(n.icon, { size: 19, sw: 1.7 })}</span>
                   {a ? <span style={s(navLabel(a))}>{n.label}</span> : null}

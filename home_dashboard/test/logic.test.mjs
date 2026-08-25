@@ -18,6 +18,8 @@ import {
 } from '../src/design/format.js';
 import { monotoneTangents, monotonePath, contiguousRuns, trimEdges } from '../src/design/curve.js';
 import { buildZones, sortFloors } from '../src/ha/registries.js';
+import { NAV } from '../src/model/devices.js';
+import { PAGE_HERO } from '../src/model/pages.js';
 
 let pass = 0, fail = 0;
 function eq(name, got, want) {
@@ -592,6 +594,28 @@ eq('zona fara etaj nu inventeaza un etaj, dar nu se pierde', Z[Z.length - 1].id,
 eq('entitatea absenta din state machine e ignorata',
    buildZones(REG, { 'climate.ac': {} }).reduce((n, f) => n + f.zone.reduce((m, z) => m + z.entities.length, 0), 0), 1);
 eq('registru gol nu arunca', buildZones({ floors: [], areas: [], devices: [], entities: [] }, {}), []);
+
+// ---- navigatie: contractul dintre NAV si restul (v1.5.1) --------------------
+// Lectia din 24.08: auditul responsive avea lista de pagini HARDCODATA si o
+// copie manuala a subtitlurilor. Pagina `zone`, adaugata in v1.5.0, n-a fost
+// masurata niciodata, iar raportul spunea 80 de combinatii si parea complet.
+// Unealta citeste acum lista din DOM; testele de aici pazesc invariantele care
+// nu se pot verifica din DOM.
+console.log('navigatie:');
+const navKeys = NAV.map((n) => n.key);
+eq('fiecare pagina din NAV are antet in PAGE_HERO',
+   navKeys.filter((k) => !PAGE_HERO[k]), []);
+eq('fiecare antet din PAGE_HERO are pagina in NAV',
+   Object.keys(PAGE_HERO).filter((k) => navKeys.indexOf(k) < 0), []);
+eq('cheile din NAV sunt unice', navKeys.length, new Set(navKeys).size);
+eq('fiecare pagina are eticheta si iconita',
+   NAV.filter((n) => !n.label || !n.icon).map((n) => n.key), []);
+eq('antetele au si titlu si subtitlu',
+   Object.keys(PAGE_HERO).filter((k) => !PAGE_HERO[k][0] || !PAGE_HERO[k][1]), []);
+// Subtitlurile trebuie sa ramana unice: sunt singurul text care distinge o
+// pagina de alta intr-o captura de audit.
+eq('subtitlurile din PAGE_HERO sunt unice',
+   Object.keys(PAGE_HERO).length, new Set(Object.keys(PAGE_HERO).map((k) => PAGE_HERO[k][1])).size);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

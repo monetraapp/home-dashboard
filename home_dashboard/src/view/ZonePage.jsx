@@ -108,9 +108,13 @@ function CardZona({ z, states, onOpen }) {
   const r = rezumat(z.entities, states);
   return (
     <div className="hdTap" style={s(cardZona())} data-card={'zona:' + z.id} onClick={() => onOpen(z)}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-        <span style={{ display: 'flex', color: ORANGE, flexShrink: 0 }}>{ic('layoutGrid', { size: 15 })}</span>
-        <span style={s(numeZona + ' overflow:hidden; text-overflow:ellipsis; white-space:nowrap;')}>{z.name}</span>
+      {/* Numele zonei se ÎNFĂŞOARĂ, nu se taie: „Camera Tehnica Piscina" şi
+          „Dormitor Sofia Parter" pierdeau până la 60px cu ellipsis pe ecrane
+          înguste, iar numele încăperii e chiar informaţia cardului. Iconiţa
+          se aliniază la prima linie. */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, minWidth: 0 }}>
+        <span style={{ display: 'flex', color: ORANGE, flexShrink: 0, marginTop: 2 }}>{ic('layoutGrid', { size: 15 })}</span>
+        <span style={s(numeZona + ' min-width:0; overflow-wrap:anywhere;')}>{z.name}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, flex: '1 1 auto' }}>
         <div style={s(metaZona)}>
@@ -208,7 +212,10 @@ export function ZonePage({ etaje, loading, error, states, mob, sel, setSel }) {
           <div style={s(titluEtaj)}>
             {f.icon ? null : null}
             {f.name}
-            <span style={{ color: TXT3, fontWeight: 400, letterSpacing: 0, textTransform: 'none' }}>
+            {/* TXT2, nu TXT3: pe fundalul paginii (nu pe card) TXT3 dădea
+                3,81:1 la 13px, sub pragul WCAG de 4,5:1 — prins de auditul
+                responsive pe v1.5.0, în 16 combinaţii. */}
+            <span style={{ color: TXT2, fontWeight: 400, letterSpacing: 0, textTransform: 'none' }}>
               {f.zone.length} {f.zone.length === 1 ? 'zonă' : 'zone'}
             </span>
           </div>

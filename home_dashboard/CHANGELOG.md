@@ -1,5 +1,49 @@
 # Changelog
 
+## 1.5.1
+
+Reparaţie de accesibilitate şi de unealtă, plus două defecte reale pe pagina
+„Zone" pe care abia auditul reparat le-a putut vedea.
+
+**Fiecare tab de navigaţie poartă acum `aria-label` cu numele complet al
+paginii**, indiferent dacă eticheta vizuală e afişată, plus `role="tab"`,
+`data-page`, `aria-selected` şi acces de la tastatură (Enter/Space).
+Ascunderea etichetelor în 1.5.0 lăsase opt taburi din nouă **nenumite pentru un
+cititor de ecran** — o regresie de accesibilitate pe care n-a văzut-o nimeni,
+fiindcă arăta bine.
+
+**Auditul responsive nu mai navighează după textul vizibil.** Selecta taburile
+cu `getByText(label, { exact: true })`, iar în 1.5.0 textul dispăruse de pe
+taburile inactive: opt pagini din nouă au picat la navigare şi au fost raportate
+ca 26 de „probleme", deşi în realitate erau **nemăsurate**. Un caz a fost şi mai
+neplăcut: pentru „Piscină" exista pe Acasă un alt element cu exact acelaşi text,
+deci clickul a nimerit un element greşit şi eşecul a apărut abia la verificarea
+de final, cu alt mesaj. Selecţia se face acum pe `[data-page]`, iar confirmarea
+că pagina s-a schimbat pe `aria-selected` — nu pe subtitlul din hero.
+
+**Lista de pagini a auditului nu mai e hardcodată.** Era o copie manuală a lui
+`NAV`, iar pagina „Zone", adăugată în 1.5.0, nu fusese măsurată niciodată:
+raportul spunea 80 de combinaţii şi părea complet. Acum lista se citeşte din
+bara randată de aplicaţie (`[role="tab"][data-page]`), deci orice pagină nouă
+intră automat în matrice. Dacă bara nu expune atributele, auditul **se opreşte**
+în loc să raporteze un subset drept întreg. Raportul scrie explicit numele
+paginilor, totalul de combinaţii şi **câte au fost măsurate efectiv** — dacă
+cele două numere nu coincid, „0 probleme" nu mai poate fi confundat cu „curat".
+
+Cele două defecte găsite astfel, ambele pe pagina „Zone" şi ambele reale:
+numărătorul de zone de lângă numele etajului avea **contrast 3,81:1** la 13px,
+sub pragul WCAG de 4,5:1, în 16 combinaţii; iar numele lungi de zone
+(„Camera Tehnica Piscina", „Dormitor Sofia Parter") erau **tăiate cu ellipsis**
+pe ecrane înguste, pierzând până la 60px — exact informaţia pentru care există
+cardul. Primul: TXT2 în loc de TXT3. Al doilea: numele se înfăşoară pe mai multe
+rânduri, cu iconiţa aliniată la prima linie.
+
+Matricea trece de la 80 la **90 de combinaţii** (9 pagini × 8 lăţimi + 2 ramuri
+de tabletă × 9 pagini), toate măsurate, zero probleme.
+
+Teste: 170 logică (+6 pe contractul de navigaţie: fiecare pagină din `NAV` are
+antet în `PAGE_HERO` şi invers, chei unice, subtitluri unice) + 44 stil.
+
 ## 1.5.0
 
 Pagină nouă, **„Zone"** — a noua axă de navigare: pe încăperi, nu pe funcţie.
