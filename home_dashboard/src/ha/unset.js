@@ -12,6 +12,8 @@ export function isLgTimerSlot(slotKey) {
 }
 
 /** LG ThinQ number timers report HA state `unknown` when cloud native_value is null. */
-export function isLgTimerUnset(slotKey, rawState) {
-  return isLgTimerSlot(slotKey) && rawState === 'unknown';
+export function isLgTimerUnset(slotKey, rawState, numericValue) {
+  if (!isLgTimerSlot(slotKey)) return false;
+  if (numericValue !== null && numericValue !== undefined) return false;
+  return rawState === 'unknown' || rawState === 'none';
 }

@@ -12,6 +12,7 @@ import { VERIFY, NA, HVAC_SHORT } from '../ha/entities.js';
 import { describe } from '../model/descriptions.js';
 import { fmtPow, fmtText, dec as decSep } from '../design/format.js';
 import { UNSET, isLgTimerUnset } from '../ha/unset.js';
+import { bumpNumber } from '../ha/numberStep.js';
 import { resolveAction } from '../model/actions.js';
 import { dailyAverage, dailyLast, fillGaps, timelineSegments, lastDayLabels } from '../ha/history.js';
 
@@ -36,6 +37,24 @@ function accCols(ui, cols) {
   if (b.mob) return Math.min(want, 2);
   if (b.tab) return Math.min(want, 3);
   return want;
+}
+
+function numberBumpHandlers(info) {
+  const bounds = { min: info.min, max: info.max, step: info.step };
+  return {
+    onMinus: (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      if (!info.writable || info.val === null) return;
+      const next = bumpNumber(info.val, -1, bounds);
+      if (next !== null) info.set(next);
+    },
+    onPlus: (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      if (!info.writable) return;
+      const next = bumpNumber(info.val, 1, bounds);
+      if (next !== null) info.set(next);
+    }
+  };
 }
 
 function verifyValueStyle(active, value) {
@@ -66,7 +85,7 @@ export function buildItem(E, ui, d, keyCtx) {
   } else if (!mapped) {
     value = VERIFY;
   } else if (!avail) {
-    value = slot && isLgTimerUnset(slot, E.rawState(slot)) ? UNSET : NA;
+    value = slot && isLgTimerUnset(slot, E.rawState(slot), E.numberValue(slot)) ? UNSET : NA;
   } else if (d.opts && d.opts.hvac) {
     value = HVAC_SHORT[E.rawState(slot)] || E.rawState(slot);
   } else if (d.toggleable) {
@@ -563,7 +582,7 @@ function setpointInfo(E, cardDef, sp) {
   // limitele entitatii au prioritate; bounds din definitie doar ca fallback
   const fb = sp.bounds || {};
   const b = E.numberBounds(sp.slot, fb.min !== undefined ? fb.min : 0, fb.max !== undefined ? fb.max : 100, fb.step || 1);
-  const unset = isLgTimerUnset(sp.slot, E.rawState(sp.slot));
+  const unset = isLgTimerUnset(sp.slot, E.rawState(sp.slot), E.numberValue(sp.slot));
   return {
     label: sp.label,
     unit: sp.unit === undefined ? E.attr(sp.slot, 'unit_of_measurement') || '' : sp.unit,
@@ -623,6 +642,7 @@ export function buildAccordionItem(E, ui, u) {
     setpoints: (u.setpoints || []).map((sp) => {
       const i = setpointInfo(E, def, sp);
       const shown = !i.mapped ? VERIFY : i.unset ? UNSET : i.val === null ? NA : (i.decimals ? decSep(i.val.toFixed(i.decimals)) : String(Math.round(i.val))) + (i.unit ? ' ' + i.unit : '');
+      const bump = numberBumpHandlers(i);
       return {
         label: i.label,
         wrapStyle: 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.07);',
@@ -633,8 +653,8 @@ export function buildAccordionItem(E, ui, u) {
         val: shown,
         // 44 şi pe tabletele cu deget (pointer: coarse), nu doar sub 760px
         btnStyle: 'width:' + (bpOf(ui).mob || bpOf(ui).coarse ? 44 : 30) + 'px; height:' + (bpOf(ui).mob || bpOf(ui).coarse ? 44 : 30) + 'px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (i.writable ? 'pointer' : 'default') + '; opacity:' + (i.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:16px; font-weight:400; color:#d6cabb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);',
-        onMinus: (e) => { stop(e); if (i.writable && i.val !== null) i.set(i.val - i.step); },
-        onPlus: (e) => { stop(e); if (i.writable) i.set((i.val === null ? i.min : i.val) + i.step); }
+        onMinus: bump.onMinus,
+        onPlus: bump.onPlus
       };
     }),
     sections: (u.sections || []).map((section) => ({
@@ -765,7 +785,7 @@ export function dialInfo(E, def) {
       max: b.max,
       step: b.step,
       decimals: 0,
-      unset: isLgTimerUnset(d.slot, E.rawState(d.slot)),
+      unset: isLgTimerUnset(d.slot, E.rawState(d.slot), E.numberValue(d.slot)),
       writable: E.numberControllable(d.slot),
       mapped: E.mapped(d.slot),
       set: (v) => E.setNumber(d.slot, v)
@@ -848,7 +868,13 @@ export function buildDeviceCard(E, ui, def) {
   const dialVal = di.val === null ? NA : (di.decimals ? decSep(di.val.toFixed(di.decimals)) : String(Math.round(di.val)));
   // fără unitate lângă valoarea lipsă ("—", nu "—%")
   const dialUnitShown = di.val === null ? '' : di.unit;
-  const targetLabel = di.standby ? 'Standby' : !di.mapped ? VERIFY : di.val === null ? NA : dialVal + di.unit;
+  const dialBump = def.dial && def.dial.kind === 'number'
+    ? numberBumpHandlers(di)
+    : {
+      onMinus: (e) => { stop(e); if (di.writable && di.val !== null) di.set(di.val - di.step); },
+      onPlus: (e) => { stop(e); if (di.writable) di.set((di.val === null ? di.min : di.val) + di.step); }
+    };
+  const targetLabel = di.standby ? 'Standby' : !di.mapped ? VERIFY : di.unset ? UNSET : di.val === null ? NA : dialVal + di.unit;
   // (v1.3.4) TV în standby: volumul nu există, deci cadranul se desena plin dar
   // cu "—" în centru, iar −/+ păreau active. Estompăm TOT blocul (0.55 — aceeaşi
   // convenţie ca la cadranul static Hisense), nu doar butoanele. Butoanele
@@ -923,8 +949,8 @@ export function buildDeviceCard(E, ui, def) {
     stepLabel: (di.step === 0.5 ? '0.5' : String(di.step)) + di.unit,
     targetLabelStyle: 'font-family:' + SANS + '; font-size:13px; font-weight:' + (targetLabel === VERIFY ? 600 : 500) + '; color:' + (targetLabel === VERIFY ? ORANGE : a ? ORANGE : TXT3) + '; white-space:nowrap;',
     targetLabel,
-    onMinus: (e) => { stop(e); if (di.writable && di.val !== null) di.set(di.val - di.step); },
-    onPlus: (e) => { stop(e); if (di.writable) di.set((di.val === null ? di.min : di.val) + di.step); },
+    onMinus: dialBump.onMinus,
+    onPlus: dialBump.onPlus,
     miniRowStyle: 'flex-shrink:0; display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06);',
     miniToggles: def.minis.map((mt, mi) => {
       const b = buildToggleAction(E, ui, def, mt);
@@ -1038,6 +1064,13 @@ export function buildModal(E, ui) {
   // "pas · interval" care ar promite un control inexistent.
   const staticVol = !!def.dial && def.dial.kind === 'volume' && E.mapped(def.slot) && !E.supportsFeature(def.slot, 4);
 
+  const modalBump = def.dial && def.dial.kind === 'number'
+    ? numberBumpHandlers(di)
+    : {
+      onMinus: () => { if (!staticVol && di.writable && di.val !== null) di.set(di.val - di.step); },
+      onPlus: () => { if (!staticVol && di.writable) di.set((di.val === null ? di.min : di.val) + di.step); }
+    };
+
   return {
     title: E.friendlyName(def.slot, def.label),
     model: def.model,
@@ -1063,15 +1096,15 @@ export function buildModal(E, ui) {
         : 'VERIFY · nu ai mapat încă entitatea pentru această valoare',
     targetVal: staticVol
       ? (!E.available(def.slot) ? NA : E.isOn(def.slot) ? (E.currentSource(def.slot) || 'Pornit') : 'Standby')
-      : di.val === null ? NA : (di.unit === '%' || !di.decimals ? String(Math.round(di.val)) : decSep(di.val.toFixed(di.decimals))),
+      : di.unset ? UNSET : di.val === null ? NA : (di.unit === '%' || !di.decimals ? String(Math.round(di.val)) : decSep(di.val.toFixed(di.decimals))),
     targetWrapStyle: 'margin-top:18px; padding:16px; border-radius:18px; text-align:center; background:rgba(240,138,44,0.07); border:1px solid rgba(240,138,44,0.2);',
     targetCapStyle: 'font-family:' + SANS + '; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:' + ORANGE + ';',
     targetValStyle: 'font-family:' + DOTO + '; font-size:44px; font-weight:400; color:#f7f1e9; line-height:1;' + (di.stale ? ' opacity:0.55;' : ''),
     targetUnitStyle: 'font-family:' + SANS + '; font-size:13px; color:' + TXT2 + ';',
     targetHintStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + (di.mapped ? TXT3 : ORANGE) + '; margin-top:10px;',
     stepBtnStyle: 'width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; cursor:' + (di.writable ? 'pointer' : 'default') + '; opacity:' + (di.writable ? 1 : 0.45) + '; font-family:' + SANS + '; font-size:19px; font-weight:400; color:#e2d6c7; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);',
-    onMinus: () => { if (!staticVol && di.writable && di.val !== null) di.set(di.val - di.step); },
-    onPlus: () => { if (!staticVol && di.writable) di.set((di.val === null ? di.min : di.val) + di.step); },
+    onMinus: modalBump.onMinus,
+    onPlus: modalBump.onPlus,
     bodyStyle: 'margin-top:18px; max-height:44vh; overflow-y:auto; padding-right:4px;',
     sections: sections.map((sec) => ({
       title: sec.title,

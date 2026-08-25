@@ -137,7 +137,7 @@ export function useEntities() {
       if (!mapped(slotKey)) return VERIFY;
       const st = ent(slotKey);
       if (!st) return VERIFY;
-      if (isLgTimerUnset(slotKey, st.state)) return UNSET;
+      if (isLgTimerUnset(slotKey, st.state, num(slotKey))) return UNSET;
       if (isUnavailable(st)) return NA;
       const useAttr = o.attr || resolve(slotKey).attr;
       let v = useAttr ? st.attributes[useAttr] : st.state;

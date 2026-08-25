@@ -21,6 +21,7 @@ import { buildZones, sortFloors } from '../src/ha/registries.js';
 import { NAV } from '../src/model/devices.js';
 import { PAGE_HERO } from '../src/model/pages.js';
 import { UNSET, isLgTimerUnset, isLgTimerSlot } from '../src/ha/unset.js';
+import { bumpNumber, firstNumberFromUnset, snapNumber } from '../src/ha/numberStep.js';
 
 let pass = 0, fail = 0;
 function eq(name, got, want) {
@@ -621,9 +622,20 @@ eq('subtitlurile din PAGE_HERO sunt unice',
 console.log('lg timer unset:');
 eq('UNSET label', UNSET, 'Nesetat');
 eq('lg pornire slot', isLgTimerSlot('sensor.lg_pornire_min'), true);
-eq('lg pornire unknown -> unset', isLgTimerUnset('sensor.lg_pornire_min', 'unknown'), true);
-eq('lg pornire numeric -> not unset', isLgTimerUnset('sensor.lg_pornire_min', '30'), false);
-eq('growatt unknown -> not lg unset', isLgTimerUnset('gw.frecv', 'unknown'), false);
+eq('lg pornire unknown -> unset', isLgTimerUnset('sensor.lg_pornire_min', 'unknown', null), true);
+eq('lg pornire pending -> not unset', isLgTimerUnset('sensor.lg_pornire_min', 'unknown', 1), false);
+eq('lg pornire numeric -> not unset', isLgTimerUnset('sensor.lg_pornire_min', '30', 30), false);
+eq('growatt unknown -> not lg unset', isLgTimerUnset('gw.frecv', 'unknown', null), false);
+
+console.log('number bump from unset:');
+const lgBounds = { min: 0, max: 100, step: 1 };
+eq('+ from null -> 1 (min=0 sentinel)', bumpNumber(null, 1, lgBounds), 1);
+eq('- from null -> null', bumpNumber(null, -1, lgBounds), null);
+eq('+ from 1 -> 2', bumpNumber(1, 1, lgBounds), 2);
+eq('- from 1 -> 0', bumpNumber(1, -1, lgBounds), 0);
+eq('first from unset min=5', firstNumberFromUnset({ min: 5, max: 100, step: 1 }), 5);
+eq('snap respects max', snapNumber(150, lgBounds), 100);
+eq('never NaN', Number.isFinite(bumpNumber(null, 1, lgBounds)), true);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);
