@@ -13,11 +13,11 @@ layout **greșită și revertită**, și un grafic de piscină refăcut de la ze
 
 | Componentă | Stare |
 |:--|:--|
-| Add-on Home Dashboard | **v1.5.0**, `state: started`, bundle servit `index-c3ETjZJm.js` |
+| Add-on Home Dashboard | **v1.5.1** in repo si pe GitHub; **add-on-ul din HA a ramas pe v1.5.0** (`index-c3ETjZJm.js`) — vezi §7 |
 | `ingress_panel` | **`true`, setat prin Supervisor API** — bifa „Show in sidebar" nu se mai pune manual. Confirmat cu `get_panels` |
 | Catalog de sloturi | **291**, toate mapate, zero nemapate (era 293) |
-| Suită de teste | **164 logică + 44 stil, 0 picate** |
-| Audit responsive | **0/0/0 pe v1.4.2**, rulat pe instanţa reală (80/80 combinaţii). **De rerulat pe v1.5.0** (`index-c3ETjZJm.js`), care aduce a noua pagină şi bara fără etichete — vezi §7 |
+| Suită de teste | **170 logică + 44 stil, 0 picate** |
+| Audit responsive | **90/90 combinaţii măsurate, 0 probleme** pe v1.5.1, rulat împotriva unui mock. Matricea a crescut de la 80 la 90: pagina „Zone" nu fusese măsurată niciodată (§3.7). **De rerulat pe instanţa reală** după ce add-on-ul ajunge la v1.5.1 |
 | Dashboard-uri Lovelace | **0 în registru** — rămâne doar Overview-ul implicit (auto-generat) |
 | Etaje / zone HA | **6 etaje, 14 zone, toate atribuite** (§2.11). 60 de dispozitive rămân deliberat fără zonă |
 | Pagini în Home Dashboard | **9** (a noua: „Zone"), bara fără derulare pe tabletă |
@@ -315,6 +315,42 @@ manual. **Comportamentul corect a fost să mă opresc, nu să găsesc altă rut�
 
 ---
 
+
+### 3.7 Unealta de audit, ruptă tăcut de propria mea schimbare
+
+Ascunderea etichetelor de pe taburile inactive (v1.5.0) a rupt auditul
+responsive, care selecta taburile cu `getByText(label, { exact: true })`.
+Rezultatul raportat a fost **26 de „probleme"**; realitatea era că **8 pagini
+din 9 nu fuseseră măsurate deloc**. Singura care ieșea curată, `acasa`, era
+curată pentru că e tabul activ inițial — deci singurul cu etichetă.
+
+Un caz a fost mai urât decât restul. Pentru `piscina`, `getByText` **a găsit
+ceva**: pe pagina Acasă există un alt element cu exact textul „Piscină" (un DIV
+de 10,5px, `cursor: auto` — măsurat, nu presupus; celelalte opt etichete
+returnau zero potriviri). Clickul a nimerit acel element, pagina nu s-a
+schimbat, iar eșecul a apărut abia la verificarea finală, cu alt mesaj. Aceeași
+cauză, altă etapă — și cu atât mai greu de diagnosticat.
+
+Peste asta, lista de pagini a uneltei era o **copie manuală** a lui `NAV`. Pagina
+„Zone", adăugată tot în v1.5.0, nu apărea deloc în raport: matricea spunea 80 de
+combinații și părea completă, deși pagina nouă nu fusese măsurată niciodată.
+
+Reparat în v1.5.1: selecție pe `[data-page]`, confirmare pe `aria-selected`,
+listă citită din bara randată de aplicație, iar dacă bara nu expune atributele
+auditul **se oprește** în loc să raporteze un subset drept întreg. Raportul
+scrie acum numărul de combinații și **câte au fost măsurate efectiv**.
+
+Auditul reparat a găsit imediat **două defecte reale pe pagina Zone**, pe care
+verificările mele nu le prinseseră: contrast 3,81:1 la numărătorul de zone și
+nume de zone tăiate cu ellipsis pe ecrane înguste. Ambele reparate.
+
+Și încă una, care nu e despre unelte: ascunderea etichetelor lăsase opt taburi
+din nouă **nenumite pentru un cititor de ecran**. O regresie de accesibilitate
+pe care n-am văzut-o pentru că arăta bine. `aria-label` nu e un artificiu ca să
+treacă testul — e reparația reală, iar testul se sprijină pe ea.
+
+---
+
 ## 4. VERDICTELE VERIFICĂRILOR (B1 / B2 / B3)
 
 ### B1 — template-urile, cu grep pe TOATĂ clona
@@ -460,6 +496,27 @@ criteriul corect e „îl recunosc / nu-l recunosc", nu „pare nefolosit".
     greșeala: `git status --short` trebuie să fie **gol**, iar hash-ul
     bundle-ului reconstruit trebuie să revină la cel de dinainte.
 
+12. **O unealtă de test care navighează după text vizibil se rupe tăcut la
+    orice schimbare de prezentare.** Navigarea în teste se face pe
+    identificatori stabili — `data-*`, `aria-label`, rute — nu pe ce se vede pe
+    ecran. Textul e o decizie de design și se schimbă; identificatorul e un
+    contract. Corolarul, la fel de important: dacă textul e totuși folosit,
+    poate exista un al doilea element cu exact același text, iar unealta va
+    face clic pe el fără să se plângă (cazul `piscina`, §3.7).
+
+13. **Orice unealtă care iterează peste o listă trebuie să spună câte elemente
+    a procesat, nu doar câte probleme a găsit.** Raportul spunea „80 de
+    combinații" din numărul teoretic, în timp ce 8 pagini din 9 eșuau la
+    navigare. Acum tipărește combinațiile totale ȘI câte au fost măsurate
+    efectiv: dacă cele două nu coincid, „0 probleme" nu mai poate fi confundat
+    cu „curat". Un „0" trebuie să fie mereu însoțit de numitorul lui.
+
+14. **Listele hardcodate care oglindesc altă structură se învechesc tăcut.**
+    Lista de pagini a auditului era o copie manuală a lui `NAV`; pagina nouă
+    n-a fost măsurată niciodată și nimic nu a semnalat-o. Se derivă din sursă —
+    aici, citită din DOM-ul randat de aplicație — sau, dacă nu se poate, se
+    pune un test care compară cele două liste și pică la divergență.
+
 ---
 
 ## 6. TASK-URI DESCHISE
@@ -532,12 +589,13 @@ Toate punctele din secțiunea C a `13_AUDIT_HA_READONLY.md` sunt rezolvate:
 
 ## 7. NECESITĂ BOGDAN
 
-1. **Rerularea auditului responsive pe v1.5.0.** Tot nu o pot face eu — tokenul
-   nu e persistat nici la nivel de utilizator, nici de mașină (verificat).
-   **Verifică în antet că scrie `index-c3ETjZJm.js`.** Aici e cea mai mare
-   suprafață nouă din sesiune: o pagină întreagă plus o bară de navigație
-   schimbată. Măsurătorile mele sunt pe mock, la 1180px și 360px, cu zero
-   cardGap — dar auditul acoperă 8 lățimi × 9 pagini, inclusiv ramurile touch.
+1. **Ciclul de release pentru v1.5.1 nu s-a putut face** — conexiunea MCP
+   către Home Assistant a căzut în timpul lucrului. Codul e comis şi împins
+   (`bbd8475`), dar add-on-ul din HA a rămas pe **v1.5.0**. De rulat ciclul
+   obişnuit: uninstall → `remove_repository(e382af62)` → `add_repository` →
+   install → start, apoi `ingress_panel=true` şi **`reload_config_entry` pe
+   `hassio`** (lecţia 1). După aceea, rerularea auditului pe instanţa reală:
+   aştept 90 de combinaţii, toate măsurate, zero probleme.
 
 2. **Revocarea tokenurilor long-lived** — nu există API. Profil → Securitate.
    Cele două sunt „Claude MCP" (19.08) și „HA-MCP Server" (19.08, canalul meu
