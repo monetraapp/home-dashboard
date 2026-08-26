@@ -26,6 +26,7 @@ import { fmtBytes, APP_VERSION } from '../ha/systemHealth.js';
 // două ar face pagina să pară în alarmă permanentă.
 export const CULOARE = {
   healthy: '#7FA96B',
+  partial: '#B8695E',
   slow: '#C8A173',
   stale: '#D9A441',
   offline_expected: '#7C8AA0',

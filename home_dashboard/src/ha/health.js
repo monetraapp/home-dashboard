@@ -24,6 +24,14 @@
  *  2. vârsta contează DOAR dacă provine dintr-o sursă reală de comunicare, şi
  *     se compară cu intervalul normal al acelei surse, nu cu un prag unic.
  *
+ * INVARIANT (verificat cu test de proprietate, nu doar cu exemple)
+ * Pentru un dispozitiv FĂRĂ sursă reală de ultimă comunicare:
+ *   - `freshness` e mereu UNKNOWN şi `ageMs` e mereu null;
+ *   - `HEALTHY` înseamnă strict „integrare încărcată + toate entităţile
+ *     disponibile" — nimic despre când a comunicat;
+ *   - `SLOW` şi `STALE` sunt INACCESIBILE. Sunt verdicte de freshness şi cer
+ *     `freshness === REAL`.
+ *
  * REGULA DE PROIECTARE (impusă explicit, 26.08)
  * Un interval dedus din schimbări de stare NU este un interval de comunicare.
  * Freshness se calculează DOAR dintr-o sursă reală de ultimă comunicare:
@@ -48,6 +56,7 @@
 /** Clasele de sănătate, în ordinea gravităţii. */
 export const HEALTH = {
   HEALTHY: 'healthy',
+  PARTIAL: 'partial',
   SLOW: 'slow',
   STALE: 'stale',
   OFFLINE_EXPECTED: 'offline_expected',
@@ -58,12 +67,13 @@ export const HEALTH = {
 
 /** Ordinea de sortare/afişare: întâi ce cere atenţie. */
 export const HEALTH_ORDER = [
-  HEALTH.INTEGRATION_ERROR, HEALTH.OFFLINE, HEALTH.STALE,
+  HEALTH.INTEGRATION_ERROR, HEALTH.OFFLINE, HEALTH.PARTIAL, HEALTH.STALE,
   HEALTH.SLOW, HEALTH.UNKNOWN, HEALTH.OFFLINE_EXPECTED, HEALTH.HEALTHY
 ];
 
 export const HEALTH_LABEL = {
   healthy: 'Sănătos',
+  partial: 'Parţial indisponibil',
   slow: 'Întârziat',
   stale: 'Învechit',
   offline_expected: 'Oprit aşteptat',
@@ -152,7 +162,11 @@ export function classifyDevice(entities, nowMs, opts) {
       : { ...base, health: HEALTH.OFFLINE, reason: 'Toate entităţile sunt indisponibile' };
   }
   if (unav > 0) {
-    return { ...base, health: HEALTH.SLOW, reason: unav + ' din ' + list.length + ' entităţi indisponibile' };
+    // NU „întârziat": asta ar fi un verdict de COMUNICARE dat din
+    // disponibilitate, pe un dispozitiv care în majoritatea cazurilor n-are
+    // nicio sursă de comunicare. `SLOW` şi `STALE` rămân exclusiv verdicte de
+    // freshness şi sunt accesibile doar cu `freshness === REAL`.
+    return { ...base, health: HEALTH.PARTIAL, reason: unav + ' din ' + list.length + ' entităţi indisponibile' };
   }
 
   // De aici încolo dispozitivul e disponibil. Fără sursă reală de comunicare

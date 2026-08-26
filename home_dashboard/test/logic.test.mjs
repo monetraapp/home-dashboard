@@ -24,7 +24,7 @@ import {
   formatTimerReceipt, lgErrorCode, lgTimerErrorMessage
 } from '../src/ha/lgTimers.js';
 import {
-  HEALTH, FRESHNESS, median, expectedInterval, gapsFromStamps, classifyDevice,
+  HEALTH, HEALTH_LABEL, FRESHNESS, median, expectedInterval, gapsFromStamps, classifyDevice,
   healthTotals, fmtAge, sortDevices, SLOW_FACTOR, STALE_FACTOR
 } from '../src/ha/health.js';
 import { NAV } from '../src/model/devices.js';
@@ -781,8 +781,8 @@ eq('toate entitatile indisponibile -> offline',
    cls([ent('a', 'unavailable', 1), ent('b', 'unavailable', 1)], REAL(1)), HEALTH.OFFLINE);
 eq('acelasi caz, dar oprirea e asteptata -> offline_expected',
    cls([ent('a', 'unavailable', 1)], { ...REAL(1), offlineExpected: true }), HEALTH.OFFLINE_EXPECTED);
-eq('doar o parte indisponibile -> intarziat, nu offline',
-   cls([ent('a', 'unavailable', 1), ent('b', '21', 1)], REAL(1)), HEALTH.SLOW);
+eq('doar o parte indisponibile -> partial, nu offline si nu intarziat',
+   cls([ent('a', 'unavailable', 1), ent('b', '21', 1)], REAL(1)), HEALTH.PARTIAL);
 
 // praguri, fata de intervalul real (5 min, cadenta masurata a push-ului Grott)
 eq('in ritm normal -> sanatos', cls([ent('a', '21', 1)], REAL(4)), HEALTH.HEALTHY);
@@ -1020,6 +1020,71 @@ eq('sir lipsa -> fara momente', stampsDinIstoric(null), []);
 eq('inelul ramane marginit',
    stampsDinIstoric(Array.from({ length: 100 }, (_, i) => ({ s: new Date(T0 + i * 300000).toISOString() }))).length,
    ISTORIC_MAX);
+
+console.log('INVARIANT semantic (fara sursa reala):');
+
+// Test de PROPRIETATE, nu de exemple: se plimba prin toate combinatiile de
+// integrare x numar de entitati x cate sunt indisponibile x oprire asteptata x
+// vechime a starii, cu lastCommMs ABSENT, si verifica invariantul pe fiecare.
+// Exemplele alese de mine ar fi confirmat exact ce ma asteptam sa vad.
+{
+  const stari = ['on', 'off', 'unavailable', 'unknown', '21.5'];
+  let cazuri = 0;
+  let rupte = [];
+  for (const integrationOk of [true, false, undefined]) {
+    for (const offlineExpected of [true, false]) {
+      for (const n of [0, 1, 2, 3]) {
+        for (let nUnav = 0; nUnav <= n; nUnav++) {
+          for (const varstaMin of [0, 1, 60, 1440, 100000]) {
+            for (const expectedMs of [undefined, 5 * MIN]) {
+              const ents = [];
+              for (let i = 0; i < n; i++) {
+                ents.push(ent('x.e' + i, i < nUnav ? 'unavailable' : stari[i % stari.length], varstaMin));
+              }
+              // lastCommMs LIPSESTE deliberat -- asta e ipoteza testului
+              const r = classifyDevice(ents, T0, { integrationOk, offlineExpected, expectedMs });
+              cazuri++;
+              const acuz = (cond, ce) => { if (cond) rupte.push(ce + ' @ ' + JSON.stringify({ integrationOk, offlineExpected, n, nUnav, varstaMin, expectedMs, got: r.health })); };
+              acuz(r.freshness !== FRESHNESS.UNKNOWN, 'freshness nu e UNKNOWN');
+              acuz(r.ageMs !== null, 'ageMs nu e null');
+              acuz(r.health === HEALTH.STALE, 'STALE accesibil fara sursa reala');
+              acuz(r.health === HEALTH.SLOW, 'SLOW accesibil fara sursa reala');
+              // HEALTHY inseamna STRICT integrare incarcata + toate entitatile disponibile
+              if (r.health === HEALTH.HEALTHY) {
+                acuz(integrationOk === false, 'HEALTHY cu integrarea cazuta');
+                acuz(n === 0, 'HEALTHY fara entitati');
+                acuz(nUnav > 0, 'HEALTHY cu entitati indisponibile');
+                acuz(/acum|comunicat|ritm/.test(r.reason), 'motivul sugereaza comunicare recenta');
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  eq('combinatii verificate', cazuri, 3 * 2 * 10 * 5 * 2);
+  eq('invariantul tine pe toate', rupte.slice(0, 3), []);
+}
+
+// Contra-proba: cu sursa reala, SLOW si STALE redevin accesibile.
+eq('cu sursa reala STALE e accesibil',
+   classifyDevice([ent('a', 'on', 1)], T0, { lastCommMs: T0 - 60 * MIN, expectedMs: 5 * MIN }).health,
+   HEALTH.STALE);
+eq('cu sursa reala SLOW e accesibil',
+   classifyDevice([ent('a', 'on', 1)], T0, { lastCommMs: T0 - 20 * MIN, expectedMs: 5 * MIN }).health,
+   HEALTH.SLOW);
+
+// Indisponibilitatea partiala NU mai imprumuta eticheta de comunicare.
+{
+  const partial = classifyDevice([ent('a', 'unavailable', 1), ent('b', 'on', 1)], T0, {});
+  eq('partial indisponibil are clasa proprie', partial.health, HEALTH.PARTIAL);
+  eq('eticheta lui nu vorbeste despre intarziere',
+     HEALTH_LABEL[partial.health], 'Parţial indisponibil');
+  eq('si ramane fara freshness', partial.freshness, FRESHNESS.UNKNOWN);
+}
+eq('textul de sub nume spune explicit ca lipseste sursa',
+   textFreshness(classifyDevice([ent('a', 'on', 1)], T0, {})),
+   'fără sursă de ultimă comunicare');
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

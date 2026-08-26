@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.6.1
+
+Un invariant semantic, verificat cu test de proprietate în loc de exemple: pentru
+un dispozitiv **fără sursă reală de ultimă comunicare**, `HEALTHY` înseamnă
+strict „integrare încărcată + toate entităţile disponibile", `freshness` rămâne
+`UNKNOWN`, iar `SLOW` şi `STALE` sunt **inaccesibile**. Testul plimbă 600 de
+combinaţii de integrare × entităţi × indisponibilitate × vechime şi cade dacă
+vreuna produce un verdict de comunicare fără sursă de comunicare.
+
+Verificarea a scos la iveală o margine care îl încălca. Un dispozitiv cu doar o
+parte din entităţi indisponibile primea **`SLOW`**, etichetat „Întârziat" — adică
+un verdict despre *cât de repede comunică*, dedus din disponibilitate, pe un
+dispozitiv care în 83 de cazuri din 85 nu are nicio sursă de comunicare. Acum
+primeşte clasa proprie **„Parţial indisponibil"**, iar `SLOW`/`STALE` rămân
+exclusiv verdicte de freshness.
+
+Niciun dispozitiv real nu era afectat în momentul reparaţiei — ramura avea zero
+ocupanţi. Era latentă, nu vizibilă.
+
 ## 1.6.0
 
 Pagina a zecea, **Dispozitive**: starea celor 85 de dispozitive din registre,
