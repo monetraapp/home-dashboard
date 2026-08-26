@@ -15,7 +15,10 @@ WORKDIR /build
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY index.html vite.config.js ./
+# config.yaml intra in contextul de build fiindca `vite.config.js` citeste din el
+# versiunea add-on-ului si o injecteaza in aplicatie. Fara el, build-ul din
+# Docker cade — `npm run build` local nu poate prinde asta, contextul difera.
+COPY index.html vite.config.js config.yaml ./
 COPY src ./src
 COPY public ./public
 

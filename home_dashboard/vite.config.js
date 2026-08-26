@@ -5,8 +5,17 @@ import { readFileSync } from 'node:fs';
 // Versiunea add-on-ului, injectata la build. Pana acum o stia doar auditul, care
 // citea config.yaml direct; aplicatia nu si-o putea spune singura, iar panoul de
 // observabilitate are nevoie de ea ca sa poti compara ce ruleaza cu ce e instalat.
-const APP_VERSION = (readFileSync(new URL('./config.yaml', import.meta.url), 'utf8')
-  .match(/version:\s*"([^"]+)"/) || [])[1] || 'necunoscuta';
+// Lipsa fisierului nu trebuie sa doboare build-ul: versiunea e informativa, nu
+// esentiala. Fallback explicit, nu exceptie.
+function citesteVersiunea() {
+  try {
+    return (readFileSync(new URL('./config.yaml', import.meta.url), 'utf8')
+      .match(/version:\s*"([^"]+)"/) || [])[1] || 'necunoscuta';
+  } catch (e) {
+    return 'necunoscuta';
+  }
+}
+const APP_VERSION = citesteVersiunea();
 
 export default defineConfig({
   plugins: [react()],
