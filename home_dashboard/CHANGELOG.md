@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.7.1
+
+**Interfaţa nu mai pretinde o stare pe care dispozitivul n-a confirmat-o.**
+
+Măsurat, nu dedus. Comutatorul „Economie" al LG-ului, apăsat cu aerul
+condiţionat oprit — caz în care LG răspunde `Command not supported in POWER
+OFF`:
+
+| moment | ce se întâmpla ÎNAINTE |
+|:--|:--|
+| t = 136 ms | dala trece pe PORNIT (valoare optimistă) |
+| t = 543 ms | LG respinge comanda; HA raportează eroarea |
+| t = 4.057 ms | dala revine pe OPRIT (expiră cronometrul de 4 s) |
+
+Adică **3,9 secunde de stare inventată după ce eşecul era deja cunoscut**. Exact
+simptomul „apăs ON, pare că merge, apoi revine OFF" — nu o ciudăţenie de
+televizor, ci mecanismul de „optimistic UI" al aplicaţiei, vizibil pe orice
+control care nu confirmă în patru secunde.
+
+**Trei schimbări, toate în stratul de stare, niciuna cosmetică:**
+
+1. `isOn()` întoarce starea **reală**, niciodată valoarea optimistă.
+2. Un apel eşuat stinge marcajul **pe loc**, nu după patru secunde.
+3. Marcajul se stinge şi când HA publică o stare nouă pentru entitate —
+   comparând şiruri `last_updated`, nu ceasuri, fiindcă o diferenţă de ceas
+   între PC şi HA ar fi greşit tăcut.
+
+Comanda în zbor rămâne vizibilă, dar ca **ce este**: un contur portocaliu subţire
+care spune „a plecat", nu o stare care spune „s-a făcut". Fără el o dală de
+televizor ar părea moartă zeci de secunde.
+
+Costul e zero pe căile rapide: podeaua măsurată e **19 ms** cap-coadă
+(clic → pixeli), iar starea AUX ajunge în HA în **8 ms**.
+
+**Rezultat măsurat pe acelaşi scenariu:** reversia de la 4.057 ms **a
+dispărut**. Overhead-ul aplicaţiei rămâne neschimbat — T0→T1 = 0,1 ms, exact un
+apel de serviciu per apăsare, un singur WebSocket, un singur abonament.
+
+Teste: 365 logică + 44 stil. Audit responsive: 130/130, 0 probleme.
+
 ## 1.7.0
 
 **Programare la oră exactă pentru AC Etaj LG.** Secţiune nouă „Programare" în

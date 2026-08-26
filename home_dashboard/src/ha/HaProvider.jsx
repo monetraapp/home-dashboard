@@ -274,7 +274,20 @@ export function HaProvider({ children }) {
     if (added > 0) setEntityMap(map);
   }, [status, states, entityMap, setEntityMap]);
 
-  // ------------------------------------------------------------ optimistic UI
+  // ------------------------------------------------- marcaj de comandă în zbor
+  // `lastUpdatedLaTrimitere` reţine ce ştia HA despre entitate în momentul
+  // comenzii. Când valoarea se schimbă, HA are un adevăr proaspăt şi marcajul
+  // nu mai are ce căuta — se stinge, indiferent dacă rezultatul e cel cerut.
+  // Comparăm ŞIRURI, nu ceasuri: o diferenţă de ceas între PC şi HA ar fi făcut
+  // o comparaţie temporală să greşească tăcut.
+  const lastUpdatedLaTrimitere = useRef({});
+
+  // Oglindă a stărilor pentru `markPending`, care e un useCallback cu deps [].
+  // Citirea directă a lui `states` de acolo ar fi fost o închidere învechită:
+  // ar fi văzut mereu starea de la primul render.
+  const statesRef = useRef({});
+  useEffect(() => { statesRef.current = states; }, [states]);
+
   const markPending = useCallback((key, value) => {
     setPending((p) => {
       const n = Object.assign({}, p);
@@ -288,7 +301,13 @@ export function HaProvider({ children }) {
     if (pendingTimers.current[key]) clearTimeout(pendingTimers.current[key]);
     if (value === undefined) {
       delete pendingTimers.current[key];
+      delete lastUpdatedLaTrimitere.current[key];
       return;
+    }
+    if (key.indexOf('onoff:') === 0) {
+      const id = key.slice(6);
+      const st = statesRef.current && statesRef.current[id];
+      lastUpdatedLaTrimitere.current[key] = st ? st.last_updated : null;
     }
     pendingTimers.current[key] = setTimeout(() => {
       setPending((p) => {
@@ -297,6 +316,7 @@ export function HaProvider({ children }) {
         return n;
       });
       delete pendingTimers.current[key];
+      delete lastUpdatedLaTrimitere.current[key];
     }, PENDING_MS);
   }, []);
 
@@ -307,6 +327,32 @@ export function HaProvider({ children }) {
     },
     []
   );
+
+  // Reconciliere: din clipa în care HA publică o stare nouă pentru entitate,
+  // marcajul de comandă în zbor se stinge. Fără asta, controlul rămânea marcat
+  // „în lucru" până la expirarea cronometrului, chiar şi după ce rezultatul
+  // sosise — un al doilea fel de a arăta altceva decât realitatea.
+  useEffect(() => {
+    const chei = Object.keys(pending).filter((k) => k.indexOf('onoff:') === 0);
+    if (!chei.length) return;
+    const deStins = chei.filter((k) => {
+      const st = states[k.slice(6)];
+      if (!st) return false;
+      const laTrimitere = lastUpdatedLaTrimitere.current[k];
+      return laTrimitere !== undefined && st.last_updated !== laTrimitere;
+    });
+    if (!deStins.length) return;
+    for (const k of deStins) {
+      clearTimeout(pendingTimers.current[k]);
+      delete pendingTimers.current[k];
+      delete lastUpdatedLaTrimitere.current[k];
+    }
+    setPending((p) => {
+      const n = Object.assign({}, p);
+      for (const k of deStins) delete n[k];
+      return n;
+    });
+  }, [states, pending]);
 
   // --------------------------------------------------------------- servicii
   const callService = useCallback(

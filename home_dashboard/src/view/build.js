@@ -101,6 +101,11 @@ export function buildItem(E, ui, d, keyCtx) {
   const mapped = slot ? E.mapped(slot) : true;
   const avail = slot ? E.available(slot) : true;
   const active = !!(d.toggleable && slot && E.isOn(slot));
+  // (v1.7.1) Comanda trimisa si neconfirmata inca. NU schimba starea afisata —
+  // doar marcheaza ca a plecat ceva. Un televizor porneste in zeci de secunde;
+  // fara acest semn dala ar parea moarta, iar cu vechea metoda (pending citit
+  // ca stare) ar fi mintit ca e deja pornit.
+  const inZbor = !!(d.toggleable && slot && E.isPending && E.isPending(slot));
 
   let value;
   if (d.text !== undefined) {
@@ -143,7 +148,7 @@ export function buildItem(E, ui, d, keyCtx) {
     iconEl: ic(d.icon, { size: 16, color: active ? '#2a1608' : TXT2 }),
     label: d.label,
     value,
-    tileStyle: tileStyleFor(active, canToggle) + (d.toggleable ? toggleItemTileExtra(ui) : '') + (d.toggleable && !canToggle ? ' opacity:0.72;' : ''),
+    tileStyle: tileStyleFor(active, canToggle) + (d.toggleable ? toggleItemTileExtra(ui) : '') + (d.toggleable && !canToggle ? ' opacity:0.72;' : '') + (inZbor ? ' outline:1px solid rgba(240,138,44,0.45); outline-offset:-1px;' : ''),
     iconWrapStyle: iconWrapFor(active),
     labelStyle: d.toggleable ? toggleItemLabelStyle(active, ui) : labelFor(active) + labelWrap(ui),
     valueStyle: d.toggleable ? toggleItemValueStyle(active) : verifyValueStyle(active, value),

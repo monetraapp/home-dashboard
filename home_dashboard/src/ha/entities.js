@@ -184,13 +184,30 @@ export function useEntities() {
       return text === VERIFY;
     }
 
-    /** Stare booleană a unui slot (pentru toggle-uri). */
+    /**
+     * Stare booleană a unui slot (pentru toggle-uri).
+     *
+     * (v1.7.1) Întoarce starea REALĂ, niciodată valoarea optimistă. Măsurat pe
+     * 26.08: la „Economie" cu aerul condiţionat oprit, LG respinge comanda în
+     * 543 ms cu „Command not supported in POWER OFF", iar interfaţa continua să
+     * arate PORNIT până la 4.057 ms — adică 3,9 secunde de stare inventată
+     * după ce eşecul era deja cunoscut. Exact simptomul „apăs ON, pare că
+     * merge, apoi revine OFF".
+     *
+     * Comanda în zbor se arată acum ca atare (`isPending`), nu deghizată în
+     * rezultat. Costul e zero pe căile rapide: podeaua măsurată e ~19 ms
+     * cap-coadă, iar starea AUX ajunge în ~8 ms.
+     */
     function isOn(slotKey) {
       const st = ent(slotKey);
       if (!st || isUnavailable(st)) return false;
-      const pKey = 'onoff:' + st.entity_id;
-      if (pending[pKey] !== undefined) return pending[pKey];
       return ON_STATES.indexOf(String(st.state).toLowerCase()) >= 0;
+    }
+
+    /** Există o comandă trimisă pentru acest slot şi neconfirmată încă? */
+    function isPending(slotKey) {
+      const id = idOf(slotKey);
+      return !!id && pending['onoff:' + id] !== undefined;
     }
 
     /** Pornire/oprire generică pentru switch, light, automation, media_player, climate. */
@@ -201,17 +218,27 @@ export function useEntities() {
       if (!st) return false;
       const domain = id.split('.')[0];
       const currentlyOn = isOn(slotKey);
-      markPending('onoff:' + id, !currentlyOn);
+      const pKey = 'onoff:' + id;
+      markPending(pKey, !currentlyOn);
+
+      // Un apel eşuat trebuie să stingă marcajul PE LOC. Înainte, marcajul
+      // expira doar pe cronometrul de 4 s, deci o comandă respinsă în 543 ms
+      // lăsa controlul „în lucru" încă trei secunde şi jumătate.
+      const trimite = async (d, sv, data) => {
+        const ok = await callService(d, sv, data || {}, { entity_id: id });
+        if (!ok) markPending(pKey, undefined);
+        return ok;
+      };
 
       if (domain === 'climate') {
-        if (currentlyOn) return callService('climate', 'turn_off', {}, { entity_id: id });
+        if (currentlyOn) return trimite('climate', 'turn_off');
         const modes = (st.attributes && st.attributes.hvac_modes) || [];
         const preferred = matchOption(modes, ['cool', 'heat_cool', 'auto', 'heat']);
-        if (preferred) return callService('climate', 'set_hvac_mode', { hvac_mode: preferred }, { entity_id: id });
-        return callService('climate', 'turn_on', {}, { entity_id: id });
+        if (preferred) return trimite('climate', 'set_hvac_mode', { hvac_mode: preferred });
+        return trimite('climate', 'turn_on');
       }
-      if (domain === 'button') return callService('button', 'press', {}, { entity_id: id });
-      return callService('homeassistant', currentlyOn ? 'turn_off' : 'turn_on', {}, { entity_id: id });
+      if (domain === 'button') return trimite('button', 'press');
+      return trimite('homeassistant', currentlyOn ? 'turn_off' : 'turn_on');
     }
 
     // -------------------------------------------------------------- climate
@@ -467,7 +494,7 @@ export function useEntities() {
 
     return {
       ha, states, entityMap,
-      idOf, ent, mapped, available, attr, rawState, num, fmt, isVerify, isOn, toggle,
+      idOf, ent, mapped, available, attr, rawState, num, fmt, isVerify, isOn, isPending, toggle,
       climateTarget, climateTargetStale, supportsFeature, tempDecimals,
       climateCurrent, climateStep, climateMin, climateMax,
       setClimateTarget, bumpClimate, setHvacMode, setFanMode, setSwingMode, setPresetMode,
