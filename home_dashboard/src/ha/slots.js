@@ -52,6 +52,38 @@ export const SLOTS = [
   slot('switch.lg_economie', 'AC Etaj LG · economie energie', 'climat', ['switch'], {
     note: 'Funcţia Economie e un switch separat în LG ThinQ, nu un preset al entităţii climate.'
   }),
+  // ------------------------------------------------ PROGRAMARE la oră exactă
+  // (v1.7.0) Helpere create în HA pentru scheduler-ul de oră exactă. Sunt
+  // SEPARATE de cronometrele relative LG de mai sus: acolo scheduler-ul e
+  // cloud-ul LG, aici e Home Assistant. Cele două nu se ating.
+  slot('prog.pornire_activ', 'Programare pornire · activă', 'climat', ['input_boolean']),
+  slot('prog.pornire_ora', 'Programare pornire · oră', 'climat', ['input_datetime']),
+  slot('prog.pornire_repeta', 'Programare pornire · repetare', 'climat', ['input_select']),
+  slot('prog.pornire_zi_lu', 'Programare pornire · L', 'climat', ['input_boolean']),
+  slot('prog.pornire_zi_ma', 'Programare pornire · Ma', 'climat', ['input_boolean']),
+  slot('prog.pornire_zi_mi', 'Programare pornire · Mi', 'climat', ['input_boolean']),
+  slot('prog.pornire_zi_jo', 'Programare pornire · J', 'climat', ['input_boolean']),
+  slot('prog.pornire_zi_vi', 'Programare pornire · V', 'climat', ['input_boolean']),
+  slot('prog.pornire_zi_sa', 'Programare pornire · S', 'climat', ['input_boolean']),
+  slot('prog.pornire_zi_du', 'Programare pornire · D', 'climat', ['input_boolean']),
+  slot('prog.pornire_mod', 'Programare pornire · mod HVAC', 'climat', ['input_select']),
+  slot('prog.pornire_ventilator', 'Programare pornire · ventilator', 'climat', ['input_select']),
+  slot('prog.pornire_temp_activ', 'Programare pornire · temperatură activă', 'climat', ['input_boolean']),
+  slot('prog.pornire_temp', 'Programare pornire · temperatură ţintă', 'climat', ['input_number']),
+  slot('prog.pornire_ultima', 'Programare pornire · ultima execuţie', 'climat', ['input_datetime']),
+  slot('prog.pornire_urmatoarea', 'Programare pornire · următoarea execuţie', 'climat', ['sensor']),
+  slot('prog.oprire_activ', 'Programare oprire · activă', 'climat', ['input_boolean']),
+  slot('prog.oprire_ora', 'Programare oprire · oră', 'climat', ['input_datetime']),
+  slot('prog.oprire_repeta', 'Programare oprire · repetare', 'climat', ['input_select']),
+  slot('prog.oprire_zi_lu', 'Programare oprire · L', 'climat', ['input_boolean']),
+  slot('prog.oprire_zi_ma', 'Programare oprire · Ma', 'climat', ['input_boolean']),
+  slot('prog.oprire_zi_mi', 'Programare oprire · Mi', 'climat', ['input_boolean']),
+  slot('prog.oprire_zi_jo', 'Programare oprire · J', 'climat', ['input_boolean']),
+  slot('prog.oprire_zi_vi', 'Programare oprire · V', 'climat', ['input_boolean']),
+  slot('prog.oprire_zi_sa', 'Programare oprire · S', 'climat', ['input_boolean']),
+  slot('prog.oprire_zi_du', 'Programare oprire · D', 'climat', ['input_boolean']),
+  slot('prog.oprire_ultima', 'Programare oprire · ultima execuţie', 'climat', ['input_datetime']),
+  slot('prog.oprire_urmatoarea', 'Programare oprire · următoarea execuţie', 'climat', ['sensor']),
   // Funcţiile AC Vortex sunt switch-uri separate expuse de AUX Cloud, nu
   // preset_modes pe entitatea climate (care nu are preset_modes deloc).
   slot('switch.vx_eco', 'Vortex · Eco', 'climat', ['switch']),

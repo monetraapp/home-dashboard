@@ -36,6 +36,9 @@ import {
   textFreshness, textStare, claseleePrezente, stampsDinIstoric, ISTORIC_MAX
 } from '../src/ha/deviceHealth.js';
 import { parseSize, fmtBytes, dbGrowth, citesteSystemHealth } from '../src/ha/systemHealth.js';
+import {
+  oraScurta, textZile, textRepetare, textSetari, textUrmatoarea, textUltima, stareProgram, slotProg
+} from '../src/ha/acSchedule.js';
 
 let pass = 0, fail = 0;
 function eq(name, got, want) {
@@ -296,7 +299,9 @@ eq('sloturile ramase au toate un motiv explicit',
 
 // 293 -> 291: sloturile addon.fusion si addon.get_hacs au iesit odata cu
 // dezinstalarea add-on-urilor (curatenia din 23.08.2026).
-eq('total: 291 mapate din 291 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [291, 291]);
+// 291 -> 319: cele 28 de sloturi de programare la ora exacta (v1.7.0), toate
+// cu mapare implicita, deci invariantul „zero nemapate" ramane intact.
+eq('total: 319 mapate din 319 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [319, 319]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------
@@ -1085,6 +1090,71 @@ eq('cu sursa reala SLOW e accesibil',
 eq('textul de sub nume spune explicit ca lipseste sursa',
    textFreshness(classifyDevice([ent('a', 'on', 1)], T0, {})),
    'fără sursă de ultimă comunicare');
+
+console.log('programare AC la ora exacta:');
+
+eq('ora se scurteaza', oraScurta('22:48:00'), '22:48');
+eq('ora cu o cifra se completeaza', oraScurta('7:05:00'), '07:05');
+eq('ora necitibila -> null', oraScurta('unknown'), null);
+eq('non-string -> null', oraScurta(null), null);
+
+const zileGoale = { lu: false, ma: false, mi: false, jo: false, vi: false, sa: false, du: false };
+const cuZile = (...k) => Object.assign({}, zileGoale, ...k.map((x) => ({ [x]: true })));
+
+eq('L-V se compacteaza', textZile(cuZile('lu', 'ma', 'mi', 'jo', 'vi')), 'L–V');
+eq('weekend se compacteaza', textZile(cuZile('sa', 'du')), 'S–D');
+eq('toate sapte', textZile(cuZile('lu', 'ma', 'mi', 'jo', 'vi', 'sa', 'du')), 'în fiecare zi');
+eq('nicio zi e spus explicit', textZile(zileGoale), 'nicio zi');
+// zilele neadiacente NU se prezinta ca interval — nu inventam un „L–V" fals
+eq('zile razlete se enumera', textZile(cuZile('lu', 'mi', 'vi')), 'L Mi V');
+
+eq('repetarea zilnica', textRepetare({ repeta: 'Zilnic' }), 'Zilnic');
+eq('repetarea o data are diacritice in UI', textRepetare({ repeta: 'O singura data' }), 'O singură dată');
+eq('la zile alese se arata zilele',
+   textRepetare({ repeta: 'Zile alese', zile: cuZile('lu', 'ma', 'mi', 'jo', 'vi') }), 'L–V');
+
+// setarile optionale: ce nu e ales NU apare
+eq('toate trei setarile',
+   textSetari({ tempActiv: true, temp: 20, mod: 'Racire', ventilator: 'Auto' }), '20°C · Răcire · Auto');
+eq('doar modul', textSetari({ tempActiv: false, mod: 'Incalzire', ventilator: 'Nu schimba' }), 'Încălzire');
+eq('temperatura cu virgula zecimala',
+   textSetari({ tempActiv: true, temp: 20.5, mod: 'Nu schimba', ventilator: 'Nu schimba' }), '20,5°C');
+eq('nimic ales se spune explicit, nu se lasa gol',
+   textSetari({ tempActiv: false, mod: 'Nu schimba', ventilator: 'Nu schimba' }), 'fără modificări de setări');
+eq('temperatura activa dar fara valoare nu produce "NaN°C"',
+   textSetari({ tempActiv: true, temp: null, mod: 'Nu schimba', ventilator: 'Nu schimba' }),
+   'fără modificări de setări');
+
+// urmatoarea executie: formatam un instant decis de HA, nu il calculam
+const T = Date.parse('2026-08-26T22:00:00+03:00');
+eq('azi', textUrmatoarea('2026-08-26T23:30:00+03:00', T), 'azi, 23:30');
+eq('maine', textUrmatoarea('2026-08-27T07:15:00+03:00', T), 'mâine, 07:15');
+eq('mai departe -> ziua saptamanii', textUrmatoarea('2026-08-28T22:30:00+03:00', T), 'vineri, 22:30');
+eq('lipsa -> null', textUrmatoarea(null, T), null);
+eq('unknown -> null', textUrmatoarea('unknown', T), null);
+
+// ultima executie: miezul noptii = marcaj nescris, NU o executie reala
+eq('marcaj scris', textUltima('2026-08-26 22:48:03'), '26.08, 22:48');
+eq('miezul noptii = inca nimic', textUltima('2026-08-26 00:00:00'), null);
+eq('unknown -> null', textUltima('unknown'), null);
+
+// starea afisata
+eq('dezactivata', stareProgram({ activ: false }).text, 'Dezactivată');
+eq('activa simpla', stareProgram({ activ: true, repeta: 'Zilnic' }).text, 'Activ');
+// activa pe „zile alese" fara nicio zi nu s-ar declansa niciodata -- o spunem
+const faraZi = stareProgram({ activ: true, repeta: 'Zile alese', zile: zileGoale });
+eq('zile alese fara nicio zi e semnalat', faraZi.text, 'Nicio zi aleasă');
+eq('si e marcat ca avertisment', faraZi.avertisment, true);
+eq('cu o zi bifata e activ',
+   stareProgram({ activ: true, repeta: 'Zile alese', zile: cuZile('jo') }).text, 'Activ');
+
+// cheile de slot corespund helperelor create in HA
+eq('cheie slot pornire', slotProg('pornire', 'ora'), 'prog.pornire_ora');
+eq('cheie slot zi', slotProg('oprire', 'zi_vi'), 'prog.oprire_zi_vi');
+eq('cele 28 de sloturi de programare exista in catalog',
+   SLOTS.filter((x) => x.key.indexOf('prog.') === 0).length, 28);
+eq('toate au mapare implicita',
+   SLOTS.filter((x) => x.key.indexOf('prog.') === 0).every((x) => !!SUGGESTED_MAP[x.key]), true);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

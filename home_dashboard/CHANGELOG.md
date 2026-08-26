@@ -1,5 +1,53 @@
 # Changelog
 
+## 1.7.0
+
+**Programare la oră exactă pentru AC Etaj LG.** Secţiune nouă „Programare" în
+cardul existent, sub „Cronometre" — care rămâne neatinsă. Cele două nu se
+amestecă deliberat: la „Cronometre" scheduler-ul e cloud-ul LG (cronometre
+relative, prin bridge-ul `lg_thinq_timers`), la „Programare" e **Home
+Assistant** (oră exactă, prin helpere + automatizări). Ora exactă NU se
+converteşte într-un cronometru relativ LG.
+
+**Arhitectura.** 26 de helpere + 2 senzori template + 2 automatizări, toate în
+HA. Programarea supravieţuieşte reîncărcării paginii, repornirii add-on-ului şi
+repornirii Home Assistant, fiindcă dashboard-ul nu ţine nimic — e doar interfaţă
+de configurare şi afişare.
+
+**Şapte booleeni de zi, nu un şir „1,2,3".** Aşa condiţia din automatizare
+rămâne 100% nativă — `condition: time` cu `weekday` plus `condition: state` —
+deci e validată la încărcarea configuraţiei şi nu poate eşua tăcut pe un şir
+malformat. În plus o zi se comută cu un singur apel de serviciu, fără
+citeşte-modifică-scrie peste un CSV care s-ar bate cu el însuşi la două
+atingeri rapide.
+
+**Ordinea comenzilor, măsurată live, nu presupusă.** `climate.set_hvac_mode`
+porneşte **şi** setează modul dintr-un singur apel; temperatura şi ventilatorul
+sunt acceptate imediat după, fără pauză. Readback-ul LG întârzie ~15 s, dar
+comanda intră — deci nu am pus un `delay` pe care măsurătoarea nu îl cere.
+Dacă modul e „Nu schimba", se foloseşte `climate.turn_on` şi modul anterior
+rămâne. Ce nu e ales nu se atinge.
+
+**Ce nu inventează interfaţa.** „Următoarea execuţie" vine din HA
+(`sensor.*_urmatoarea`, device_class timestamp) — browserul doar formatează un
+instant deja decis, nu calculează el fusul orar. „Ultima execuţie" e scrisă de
+automatizare ca **ultim pas**, deci un apel eşuat opreşte secvenţa înainte de
+marcaj şi dashboard-ul nu poate pretinde că a executat. O programare activă pe
+„zile alese" fără nicio zi bifată nu s-ar declanşa niciodată — scrie asta, în
+loc să arate „Activ" lângă un „Următoarea: —".
+
+**Testat cap-coadă pe dispozitivul real**, nu doar pe urma automatizării:
+oprire programată `off` la 22:57:03, pornire programată din `off` la 23:00:07 cu
+`cool` · 25 °C · ventilator mic — toate trei setările opţionale aplicate,
+one-shot dezactivat singur, marcaj de execuţie scris. Ramura recurentă a fost
+verificată pe o zi care nu era cea curentă: declanşatorul a pornit, condiţia a
+blocat (`execution: failed_conditions`), aerul condiţionat neatins.
+
+Cronometrele relative LG au rămas `unknown` pe tot parcursul — nu au fost
+apelate niciodată.
+
+Catalog: 291 → **319 sloturi**, toate mapate. Teste: 365 logică + 44 stil.
+
 ## 1.6.1
 
 Un invariant semantic, verificat cu test de proprietate în loc de exemple: pentru

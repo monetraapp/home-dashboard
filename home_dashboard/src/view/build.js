@@ -747,6 +747,7 @@ export function buildAccordionItem(E, ui, u) {
     chevIconStyle: 'display:flex; transform:rotate(' + (open ? '180deg' : '0deg') + '); transition:transform .18s ease;',
     chevEl: ic('chevronDown', { size: 15, sw: 1.9 }),
     bodyStyle: 'padding:2px 14px 14px; border-top:1px solid rgba(255,255,255,0.055);',
+    hasSchedule: !!u.schedule,
     hasSetpoints: (u.setpoints || []).length > 0,
     setpointHeaderStyle: 'font-family:' + SANS + '; font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + '; margin:15px 0 8px; padding-top:13px; border-top:1px solid rgba(255,255,255,0.05);',
     setpointGridStyle: 'display:grid; grid-template-columns:repeat(' + (bpOf(ui).mob ? 1 : 2) + ',minmax(0,1fr)); gap:8px;',

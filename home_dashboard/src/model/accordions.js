@@ -85,6 +85,10 @@ export const CLIMAT_ACCORDION = [
   },
   {
     card: 'ac-etaj',
+    // (v1.7.0) Singurul acordeon cu sectiunea „Programare" (ora exacta, prin
+    // helpere + automatizari HA). Separata deliberat de „Cronometre", care
+    // raman relative si trec prin cloud-ul LG. Nu se amesteca.
+    schedule: true,
     setpoints: [
       spClimate('Temperatură ţintă'),
       // Cronometrele LG sunt WRITE-ONLY prin bridge-ul lg_thinq_timers

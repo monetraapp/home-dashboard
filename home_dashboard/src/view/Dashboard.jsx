@@ -26,6 +26,7 @@ import { PAGES, PAGE_HERO } from '../model/pages.js';
 import { useRegistries } from '../ha/registries.js';
 import { ZonePage } from './ZonePage.jsx';
 import { DevicesPage } from './DevicesPage.jsx';
+import { ProgramareAC } from './AcSchedule.jsx';
 import { useDeviceHealth } from '../ha/deviceHealth.js';
 import { useSystemHealth } from '../ha/systemHealth.js';
 import { healthTotals } from '../ha/health.js';
@@ -1371,7 +1372,10 @@ function Block({ b, grow }) {
       <>
         {b.items.map((acc) => (
           <div key={acc.id} style={s(acc.wrapStyle)}>
-            <div style={s(acc.headStyle)} onClick={acc.onExpand}>
+            {/* `data-acc` (v1.7.0): identificator stabil pentru unelte. Fara el,
+                o sonda trebuie sa gaseasca acordeonul dupa textul vizibil — exact
+                metoda care s-a rupt tacut la schimbarea navigatiei (lectia 12). */}
+            <div style={s(acc.headStyle)} data-acc={acc.id} aria-expanded={acc.open} onClick={acc.onExpand}>
               <div style={s(acc.headLeftStyle)}>
                 <div style={s(acc.iconWrapStyle)}>{acc.iconEl}</div>
                 <div style={{ minWidth: 0, flex: '1 1 auto' }}>
@@ -1430,6 +1434,7 @@ function Block({ b, grow }) {
                     </div>
                   </div>
                 ))}
+                {acc.hasSchedule ? <ProgramareAC /> : null}
               </div>
             ) : null}
           </div>
