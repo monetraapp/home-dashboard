@@ -23,10 +23,19 @@ import {
   normalizeTimerValue, bumpTimerValue, lgTimerBlockedReason, lgTimerService,
   formatTimerReceipt, lgErrorCode, lgTimerErrorMessage
 } from '../src/ha/lgTimers.js';
+import {
+  HEALTH, FRESHNESS, median, expectedInterval, gapsFromStamps, classifyDevice,
+  healthTotals, fmtAge, sortDevices, SLOW_FACTOR, STALE_FACTOR
+} from '../src/ha/health.js';
 import { NAV } from '../src/model/devices.js';
 import { PAGE_HERO } from '../src/model/pages.js';
 import { UNSET, isLgTimerUnset, isLgTimerSlot } from '../src/ha/unset.js';
 import { bumpNumber, firstNumberFromUnset, snapNumber } from '../src/ha/numberStep.js';
+import {
+  buildDevices, sursaComunicare, oprireAsteptata, intrareOk, intrareIgnorata,
+  textFreshness, textStare, claseleePrezente, stampsDinIstoric, ISTORIC_MAX
+} from '../src/ha/deviceHealth.js';
+import { parseSize, fmtBytes, dbGrowth, citesteSystemHealth } from '../src/ha/systemHealth.js';
 
 let pass = 0, fail = 0;
 function eq(name, got, want) {
@@ -730,6 +739,107 @@ eq('antetele au si titlu si subtitlu',
 eq('subtitlurile din PAGE_HERO sunt unice',
    Object.keys(PAGE_HERO).length, new Set(Object.keys(PAGE_HERO).map((k) => PAGE_HERO[k][1])).size);
 
+// ---- sanatatea dispozitivelor (v1.6.0) --------------------------------------
+// Principiul verificat pe instanta reala: varsta starii NU dovedeste tacere.
+// `last_reported` nu ajunge prin fluxul live (lib 9.6.0 mapeaza doar lc/lu) si
+// oricum era identic cu `last_updated` pe cinci entitati masurate. Deci
+// disponibilitatea e semnalul primar, iar varsta se judeca DOAR fata de un
+// interval derivat din comportamentul observat.
+console.log('sanatate dispozitive:');
+const T0 = 1000000000000;
+const MIN = 60000;
+const ent = (id, state, ageMin) => ({ entity_id: id, state, lastUpdatedMs: T0 - ageMin * MIN });
+
+eq('mediana impara', median([5, 1, 3]), 3);
+eq('mediana para', median([1, 3, 5, 7]), 4);
+eq('mediana pe lista goala -> null', median([]), null);
+eq('mediana ignora valorile nenumerice', median([1, NaN, 3, null]), 2);
+
+eq('intervale din momente', gapsFromStamps([0, 1000, 3000]), [1000, 2000]);
+eq('momentele nesortate se ordoneaza', gapsFromStamps([3000, 0, 1000]), [1000, 2000]);
+eq('un singur moment nu da niciun interval', gapsFromStamps([500]), []);
+
+eq('sub minimul de esantioane nu se declara interval', expectedInterval([1000, 1000]), null);
+eq('trei esantioane sunt de ajuns', expectedInterval([1000, 1000, 1000]), 1000);
+// mediana, nu media: o pauza unica (repornire HA) nu trebuie sa ridice pragul
+eq('o pauza unica nu ridica intervalul asteptat',
+   expectedInterval([300000, 300000, 300000, 9000000]), 300000);
+eq('media ar fi fost mult mai mare decat mediana',
+   expectedInterval([300000, 300000, 300000, 9000000]) < (300000 * 3 + 9000000) / 4, true);
+
+// --- clasificare -----------------------------------------------------------
+// REGULA: verdictele de varsta se dau DOAR cand exista sursa reala de ultima
+// comunicare (lastCommMs). Fara ea, freshness = necunoscut si dispozitivul NU
+// poate fi STALE/SLOW din varsta starii.
+const cls = (ents, opts) => classifyDevice(ents, T0, opts).health;
+const REAL = (ageMin) => ({ lastCommMs: T0 - ageMin * MIN, expectedMs: 5 * MIN });
+
+eq('integrare cazuta bate orice altceva',
+   cls([ent('sensor.a', '21', 1)], { integrationOk: false, ...REAL(1) }), HEALTH.INTEGRATION_ERROR);
+eq('dispozitiv fara entitati -> necunoscut', cls([], {}), HEALTH.UNKNOWN);
+eq('toate entitatile indisponibile -> offline',
+   cls([ent('a', 'unavailable', 1), ent('b', 'unavailable', 1)], REAL(1)), HEALTH.OFFLINE);
+eq('acelasi caz, dar oprirea e asteptata -> offline_expected',
+   cls([ent('a', 'unavailable', 1)], { ...REAL(1), offlineExpected: true }), HEALTH.OFFLINE_EXPECTED);
+eq('doar o parte indisponibile -> intarziat, nu offline',
+   cls([ent('a', 'unavailable', 1), ent('b', '21', 1)], REAL(1)), HEALTH.SLOW);
+
+// praguri, fata de intervalul real (5 min, cadenta masurata a push-ului Grott)
+eq('in ritm normal -> sanatos', cls([ent('a', '21', 1)], REAL(4)), HEALTH.HEALTHY);
+eq('peste pragul SLOW -> intarziat', cls([ent('a', '21', 1)], REAL(20)), HEALTH.SLOW);
+eq('peste pragul STALE -> invechit', cls([ent('a', '21', 1)], REAL(60)), HEALTH.STALE);
+eq('exact pe prag NU declanseaza (strict mai mare)',
+   cls([ent('a', '21', 1)], REAL(5 * SLOW_FACTOR)), HEALTH.HEALTHY);
+
+// CAPCANA CENTRALA, in forma ceruta: fara sursa reala nu exista verdict de varsta
+const faraSursa = classifyDevice([ent('switch.x', 'on', 1440)], T0, {});
+eq('fara sursa reala: freshness necunoscut', faraSursa.freshness, FRESHNESS.UNKNOWN);
+eq('fara sursa reala: NU e invechit, desi starea e de o zi', faraSursa.health, HEALTH.HEALTHY);
+eq('fara sursa reala: varsta comunicarii e null', faraSursa.ageMs, null);
+eq('fara sursa reala: varsta STARII se raporteaza separat, informativ',
+   faraSursa.stateAgeMs, 1440 * MIN);
+eq('motivul spune explicit ca lipseste sursa',
+   /fără sursă/.test(faraSursa.reason), true);
+// nici macar cu expectedMs dat nu inventam verdict daca lipseste lastCommMs
+eq('expectedMs fara lastCommMs nu produce STALE',
+   cls([ent('a', 'on', 5000)], { expectedMs: 5 * MIN }), HEALTH.HEALTHY);
+
+// cu sursa reala dar fara interval cunoscut -> necunoscut, nu invechit
+// Fara linie de baza NU coboram verdictul: a avea sursa reala nu trebuie sa
+// faca un dispozitiv sa arate mai rau decat unul care nu raporteaza nimic.
+const faraBaza = classifyDevice([ent('a', 'on', 1)], T0, { lastCommMs: T0 - 600 * MIN });
+eq('sursa reala fara interval -> sanatos, nu necunoscut', faraBaza.health, HEALTH.HEALTHY);
+eq('dar motivul spune ca lipseste linia de baza',
+   /interval normal/.test(faraBaza.reason), true);
+eq('si freshness ramane real', faraBaza.freshness, FRESHNESS.REAL);
+
+// disponibilitatea ramane semnal primar chiar si cu sursa reala proaspata
+eq('offline bate freshness-ul bun',
+   cls([ent('a', 'unavailable', 1)], REAL(0)), HEALTH.OFFLINE);
+
+const cuSursa = classifyDevice([ent('a', '21', 1)], T0, REAL(2));
+eq('cu sursa reala: freshness real', cuSursa.freshness, FRESHNESS.REAL);
+eq('cu sursa reala: varsta comunicarii e cea a sursei, nu a starii',
+   [cuSursa.ageMs, cuSursa.stateAgeMs], [2 * MIN, 1 * MIN]);
+
+// --- totaluri si prezentare ---
+const devs = [
+  { name: 'A', health: HEALTH.HEALTHY, ageMs: 1000 },
+  { name: 'B', health: HEALTH.OFFLINE, ageMs: null },
+  { name: 'C', health: HEALTH.HEALTHY, ageMs: 5000 },
+  { name: 'D', health: HEALTH.STALE, ageMs: 90000 }
+];
+eq('totalurile numara pe clase',
+   [healthTotals(devs).total, healthTotals(devs)[HEALTH.HEALTHY], healthTotals(devs)[HEALTH.OFFLINE]], [4, 2, 1]);
+eq('sortarea pune problemele primele, apoi cele mai vechi in cadrul clasei',
+   sortDevices(devs).map((d) => d.name), ['B', 'D', 'C', 'A']);
+
+eq('varsta in secunde', fmtAge(45000), '45 s');
+eq('varsta in minute', fmtAge(20 * MIN), '20 min');
+eq('varsta in ore cu virgula', fmtAge(2.5 * 3600000), '2,5 h');
+eq('varsta in zile peste 48h', fmtAge(72 * 3600000), '3 zile');
+eq('varsta invalida -> liniuta', fmtAge(null), '—');
+
 console.log('lg timer unset:');
 eq('UNSET label', UNSET, 'Nesetat');
 eq('lg pornire slot', isLgTimerSlot('sensor.lg_pornire_min'), true);
@@ -747,6 +857,169 @@ eq('- from 1 -> 0', bumpNumber(1, -1, lgBounds), 0);
 eq('first from unset min=5', firstNumberFromUnset({ min: 5, max: 100, step: 1 }), 5);
 eq('snap respects max', snapNumber(150, lgBounds), 100);
 eq('never NaN', Number.isFinite(bumpNumber(null, 1, lgBounds)), true);
+
+console.log('strat de date dispozitive:');
+
+// Formele sunt copiate din instanta reala (ha_get_integration, 26.08), nu inventate.
+const INTR6 = {
+  onvif: { entry_id: 'e_onvif', domain: 'onvif', title: 'Camera Poarta', state: 'setup_retry', source: 'user' },
+  dlna: { entry_id: 'e_dlna', domain: 'dlna_dmr', title: 'Bedroom TV', state: 'not_loaded', source: 'ignore' },
+  mqtt: { entry_id: 'e_mqtt', domain: 'mqtt', title: 'Mosquitto', state: 'loaded', source: 'user' },
+  samsung: { entry_id: 'e_sam', domain: 'samsungtv', title: 'Samsung', state: 'loaded', source: 'zeroconf' }
+};
+eq('setup_retry e defect', intrareOk(INTR6.onvif), false);
+eq('not_loaded + source ignore NU e defect', intrareOk(INTR6.dlna), true);
+eq('intrarea ignorata e recunoscuta ca atare', intrareIgnorata(INTR6.dlna), true);
+eq('loaded e ok', intrareOk(INTR6.mqtt), true);
+eq('intrare lipsa nu acuza', intrareOk(undefined), true);
+
+const iso = (ms) => new Date(ms).toISOString();
+const st6 = (state, ageMin) => ({ state, last_updated: iso(T0 - ageMin * MIN), attributes: {} });
+const TS = { device_class: 'timestamp' };
+const tsEnt = (ageMin) => ({ state: iso(T0 - ageMin * MIN), last_updated: iso(T0 - ageMin * MIN), attributes: TS });
+
+const states6 = {
+  'sensor.knn2e3s00w_grott_last_data_push': tsEnt(2),
+  'sensor.knn2e3s00w_putere': st6('12748.6', 2),
+  'camera.poarta': st6('unavailable', 300),
+  'media_player.tv_dormitor': st6('unavailable', 120),
+  'switch.priza_birou': st6('on', 1440),
+  'sensor.camera_speed_dome_last_reboot': tsEnt(900)
+};
+
+// sursa de comunicare: doar tiparul real, si doar cu device_class timestamp
+eq('push-ul Grott e sursa reala',
+   sursaComunicare(['sensor.knn2e3s00w_putere', 'sensor.knn2e3s00w_grott_last_data_push'], states6).entity_id,
+   'sensor.knn2e3s00w_grott_last_data_push');
+eq('last_reboot NU e sursa de comunicare',
+   sursaComunicare(['sensor.camera_speed_dome_last_reboot'], states6), null);
+eq('un senzor obisnuit nu devine sursa',
+   sursaComunicare(['sensor.knn2e3s00w_putere'], states6), null);
+eq('televizorul are voie sa fie oprit', oprireAsteptata(['media_player.tv_dormitor']), true);
+eq('priza nu are voie sa fie oprita', oprireAsteptata(['switch.priza_birou']), false);
+
+const reg6 = {
+  areas: [{ area_id: 'a1', name: 'Birou' }],
+  devices: [
+    { id: 'd_grott', name: 'Invertor Growatt', area_id: 'a1', config_entries: ['e_mqtt'], manufacturer: 'Growatt' },
+    { id: 'd_cam', name: 'Camera Poarta', area_id: null, config_entries: ['e_onvif'] },
+    { id: 'd_tv', name: 'TV Dormitor', area_id: null, config_entries: ['e_sam'] },
+    { id: 'd_priza', name: 'Priza Birou', area_id: 'a1', config_entries: ['e_mqtt'] },
+    { id: 'd_fantoma', name: 'Bedroom TV (dlna)', area_id: null, config_entries: ['e_dlna'] }
+  ],
+  entities: [
+    { entity_id: 'sensor.knn2e3s00w_grott_last_data_push', device_id: 'd_grott' },
+    { entity_id: 'sensor.knn2e3s00w_putere', device_id: 'd_grott' },
+    { entity_id: 'camera.poarta', device_id: 'd_cam' },
+    { entity_id: 'media_player.tv_dormitor', device_id: 'd_tv' },
+    { entity_id: 'switch.priza_birou', device_id: 'd_priza' }
+  ]
+};
+const entriesById = { e_onvif: INTR6.onvif, e_dlna: INTR6.dlna, e_mqtt: INTR6.mqtt, e_sam: INTR6.samsung };
+// istoric de pachete la 5 minute — cadenta masurata a Grott
+const istoric6 = { d_grott: [5, 4, 3, 2, 1, 0].map((i) => T0 - 5 * MIN * i - 2 * MIN) };
+const dev6 = buildDevices(reg6, states6, entriesById, T0, istoric6);
+const byId6 = {};
+for (const d of dev6) byId6[d.id] = d;
+
+eq('dispozitivul ramas de la o descoperire ignorata nu apare', !!byId6.d_fantoma, false);
+eq('restul apar', dev6.length, 4);
+eq('camera cu integrarea in setup_retry -> integrare cazuta', byId6.d_cam.health, HEALTH.INTEGRATION_ERROR);
+eq('televizorul stins -> oprit asteptat, nu offline', byId6.d_tv.health, HEALTH.OFFLINE_EXPECTED);
+eq('priza neatinsa de o zi ramane sanatoasa', byId6.d_priza.health, HEALTH.HEALTHY);
+eq('priza: freshness necunoscut', byId6.d_priza.freshness, FRESHNESS.UNKNOWN);
+eq('Grott: freshness real', byId6.d_grott.freshness, FRESHNESS.REAL);
+eq('Grott: sursa e numita explicit', byId6.d_grott.sursaFreshness, 'sensor.knn2e3s00w_grott_last_data_push');
+eq('Grott: varsta = 2 min, din pachet', byId6.d_grott.ageMs, 2 * MIN);
+eq('Grott la 2 min pe cadenta de 5 min -> sanatos', byId6.d_grott.health, HEALTH.HEALTHY);
+eq('zona vine din registru', byId6.d_grott.zona, 'Birou');
+eq('integrarea e numita', byId6.d_priza.integrare, 'mqtt');
+
+// acelasi Grott, dar tacut de o ora peste cadenta de 5 min
+const statesTacut = Object.assign({}, states6, { 'sensor.knn2e3s00w_grott_last_data_push': tsEnt(60) });
+eq('Grott tacut 60 min pe cadenta de 5 min -> invechit',
+   buildDevices(reg6, statesTacut, entriesById, T0, istoric6).find((d) => d.id === 'd_grott').health, HEALTH.STALE);
+eq('sursa reala fara istoric -> sanatos, si sigur nu invechit',
+   buildDevices(reg6, statesTacut, entriesById, T0, {}).find((d) => d.id === 'd_grott').health, HEALTH.HEALTHY);
+
+console.log('observabilitate stocare:');
+
+eq('marimi zecimale', parseSize('28.0 GB'), 28e9);
+eq('marimi binare (MiB != MB)', parseSize('59.17 MiB'), 59.17 * 1024 * 1024);
+eq('virgula zecimala acceptata', parseSize('1,5 GB'), 1.5e9);
+eq('text neinterpretabil -> null', parseSize('necunoscut'), null);
+eq('non-string -> null', parseSize(null), null);
+eq('format octeti', fmtBytes(7.4e9), '7,4 GB');
+eq('format sub prag', fmtBytes(512), '512 B');
+eq('format invalid', fmtBytes(NaN), '—');
+
+// crestere: fereastra reala de pe instanta (18.08 -> 26.08, 59,17 MiB)
+const ZI = 86400000;
+const cr = dbGrowth(62046699, T0 - 8 * ZI, T0);
+eq('fereastra in zile', cr.zile, 8);
+eq('ritmul e marimea impartita la fereastra', Math.round(cr.perZi), Math.round(62046699 / 8));
+eq('fereastra prea scurta -> fara ritm', dbGrowth(1e6, T0 - 3600000, T0), null);
+eq('fara marime -> fara ritm', dbGrowth(null, T0 - 8 * ZI, T0), null);
+
+// payload copiat din raspunsul real system_health/info (trunchiat)
+const payload = {
+  hassio: { info: { host_os: 'Home Assistant OS 18.2', supervisor_version: 'supervisor-2026.07.5',
+    disk_total: '28.0 GB', disk_used: '7.4 GB', disk_life_time: '0 %', healthy: true, supported: true,
+    installed_addons: 'Mosquitto broker (7.1.0), Home Dashboard (1.6.0)' } },
+  homeassistant: { info: { version: 'core-2026.8.3' } },
+  recorder: { info: { estimated_db_size: '59.17 MiB', database_engine: 'sqlite',
+    oldest_recorder_run: { value: new Date(T0 - 8 * ZI).toISOString(), type: 'date' } } }
+};
+const sh = citesteSystemHealth(payload, T0);
+eq('versiunea core', sh.versiuneCore, 'core-2026.8.3');
+eq('disc total', sh.discTotal, 28e9);
+eq('disc liber = total - folosit', sh.discLiber, 28e9 - 7.4e9);
+eq('procent disc', Math.round(sh.discPct), 26);
+eq('sistem sanatos', sh.sanatos, true);
+eq('add-on-urile se despart in lista', sh.addonuri.length, 2);
+eq('cresterea se calculeaza si aici', sh.crestere.zile, 8);
+// campurile absente NU devin zero — un camp lipsa e necunoscut, nu gol
+eq('payload gol nu inventeaza cifre',
+   [citesteSystemHealth({}, T0).discTotal, citesteSystemHealth({}, T0).sanatos], [null, null]);
+
+console.log('formulari dispozitive:');
+eq('cu sursa reala scrie ultima comunicare',
+   textFreshness({ freshness: 'real', ageMs: 120000 }), 'ultima comunicare acum 2 min');
+eq('fara sursa reala spune explicit ca lipseste',
+   textFreshness({ freshness: 'unknown', ageMs: null }), 'fără sursă de ultimă comunicare');
+eq('vechimea starii e etichetata ca stare, nu ca comunicare',
+   textStare({ stateAgeMs: 3600000 }), 'ultima schimbare de stare acum 1 h');
+eq('clasele goale nu apar ca filtru',
+   claseleePrezente([{ health: 'healthy' }, { health: 'offline' }, { health: 'healthy' }]),
+   [{ cheie: 'offline', n: 1 }, { cheie: 'healthy', n: 2 }]);
+
+console.log('seed din istoric:');
+
+// Raspunsul de istoric are forma { entity_id: [{ s, lu }] }; pentru un senzor
+// timestamp, `s` E chiar momentul pachetului, deci intervalele dintre valori
+// distincte sunt intervale reale de comunicare.
+const istRaw = [
+  { s: '2026-08-26T17:00:53+00:00', lu: 1 },
+  { s: '2026-08-26T17:00:53+00:00', lu: 2 },
+  { s: '2026-08-26T17:05:53+00:00', lu: 3 },
+  { s: '2026-08-26T17:10:52+00:00', lu: 4 },
+  { s: 'unknown', lu: 5 },
+  { s: '2026-08-26T17:15:52+00:00', lu: 6 }
+];
+const stamps = stampsDinIstoric(istRaw);
+eq('valorile repetate nu produc intervale false', stamps.length, 4);
+eq('valorile necitibile sunt sarite',
+   stamps.map((t) => new Date(t).toISOString().slice(11, 19)),
+   ['17:00:53', '17:05:53', '17:10:52', '17:15:52']);
+eq('intervalele rezultate sunt cele reale de 5 minute',
+   gapsFromStamps(stamps).map((g) => Math.round(g / 1000)), [300, 299, 300]);
+eq('mediana lor da cadenta masurata pe instanta',
+   Math.round(expectedInterval(gapsFromStamps(stamps)) / 1000), 300);
+eq('sir gol -> fara momente', stampsDinIstoric([]), []);
+eq('sir lipsa -> fara momente', stampsDinIstoric(null), []);
+eq('inelul ramane marginit',
+   stampsDinIstoric(Array.from({ length: 100 }, (_, i) => ({ s: new Date(T0 + i * 300000).toISOString() }))).length,
+   ISTORIC_MAX);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

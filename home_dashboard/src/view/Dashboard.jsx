@@ -25,6 +25,10 @@ import {
 import { PAGES, PAGE_HERO } from '../model/pages.js';
 import { useRegistries } from '../ha/registries.js';
 import { ZonePage } from './ZonePage.jsx';
+import { DevicesPage } from './DevicesPage.jsx';
+import { useDeviceHealth } from '../ha/deviceHealth.js';
+import { useSystemHealth } from '../ha/systemHealth.js';
+import { healthTotals } from '../ha/health.js';
 import { buildPageCard, buildDeviceCard, buildSidebarDevice, buildModal } from './build.js';
 
 const AC_UNIT_IDS = ['ac-vortex', 'ac-etaj', 'ac-vivax'];
@@ -96,9 +100,17 @@ export default function Dashboard({ onOpenMapping }) {
   // (v1.5.0) „Zone" nu are definiţie în PAGES: se construieşte din registrele
   // HA la execuţie, deci trece pe lângă tot lanţul pageDef/carduri/dispozitive.
   const isZone = page === 'zone';
-  const pageDef = isAcasa || isZone ? null : PAGES[page];
+  // (v1.6.0) „Dispozitive" urmeaza acelasi tipar ca „Zone": fara definitie in
+  // PAGES, construita din registre + intrarile de configurare la executie.
+  const isDisp = page === 'dispozitive';
+  const pageDef = isAcasa || isZone || isDisp ? null : PAGES[page];
   const [zoneSel, setZoneSel] = useState(null);
+  const [dispSel, setDispSel] = useState(null);
+  const [dispFiltru, setDispFiltru] = useState(null);
   const { etaje: zoneEtaje, loading: zoneLoading, error: zoneError } = useRegistries(isZone);
+  const { devices: dispLista, loading: dispLoading, error: dispError, now: dispNow } = useDeviceHealth(isDisp);
+  const { sys, browser: dispBrowser, cota: dispCota, error: sysError } = useSystemHealth(isDisp);
+  const dispTotals = isDisp && dispLista ? healthTotals(dispLista) : null;
 
   // ------------------------------------------------------------- istoric
   const histSlots = useMemo(() => collectHistorySlots(pageDef), [pageDef]);
@@ -190,8 +202,8 @@ export default function Dashboard({ onOpenMapping }) {
   const poolAt = poolCursor !== null && poolPoints && poolPoints[poolCursor] ? poolPoints[poolCursor] : null;
 
   // -------------------------------------------------------------- pageStat
-  const stat = useMemo(() => pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energyUnit), [
-    E, page, trackedCards, houseAvg, monthPct, energyValue, energyUnit
+  const stat = useMemo(() => pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energyUnit, dispTotals), [
+    E, page, trackedCards, houseAvg, monthPct, energyValue, energyUnit, dispTotals
   ]);
 
   const currentPage = pageDef
@@ -211,6 +223,13 @@ export default function Dashboard({ onOpenMapping }) {
     : null;
 
   const heroPair = PAGE_HERO[page] || PAGE_HERO.acasa;
+  const dispChips = isDisp
+    ? [
+        ['heartPulse', dispTotals ? dispTotals.total + ' dispozitive' : '—'],
+        ['server', sys && Number.isFinite(sys.discPct) ? Math.round(sys.discPct) + '% disc' : '—'],
+        [ha.connected ? 'shield' : 'alertTri', ha.connected ? 'Conectat' : 'Deconectat']
+      ]
+    : null;
   const zoneChips = isZone
     ? [
         ['layoutGrid', zoneEtaje ? zoneEtaje.reduce((n, f) => n + f.zone.length, 0) + ' zone' : '—'],
@@ -224,7 +243,7 @@ export default function Dashboard({ onOpenMapping }) {
         ['bolt', energyValue === VERIFY ? 'Energie VERIFY' : energyValue + ' ' + energyUnit],
         [ha.connected ? 'shield' : 'alertTri', ha.connected ? 'Conectat' : 'Deconectat']
       ]
-    : zoneChips || pageDef.chips.map((c) => [c.icon, c.text !== undefined ? c.text : (c.prefix || '') + E.fmt(c.slot, c.opts)])
+    : zoneChips || dispChips || pageDef.chips.map((c) => [c.icon, c.text !== undefined ? c.text : (c.prefix || '') + E.fmt(c.slot, c.opts)])
   ).map((c) => ({
     iconEl: ic(c[0], { size: 13 }),
     label: c[1],
@@ -232,9 +251,9 @@ export default function Dashboard({ onOpenMapping }) {
     iconStyle: 'display:flex; color:' + TXT2 + ';'
   }));
 
-  const pageDeviceIds = isAcasa || isZone ? (isAcasa ? tracked : []) : PAGE_DEVICES[page] || [];
-  const hasSidebarDevices = !isAcasa && !isZone && pageDeviceIds.length > 0 && pageDeviceIds.length <= 4;
-  const hasDeviceCards = isAcasa || (!isZone && pageDeviceIds.length > 4);
+  const pageDeviceIds = isAcasa || isZone || isDisp ? (isAcasa ? tracked : []) : PAGE_DEVICES[page] || [];
+  const hasSidebarDevices = !isAcasa && !isZone && !isDisp && pageDeviceIds.length > 0 && pageDeviceIds.length <= 4;
+  const hasDeviceCards = isAcasa || (!isZone && !isDisp && pageDeviceIds.length > 4);
 
   const sidebarDevices = hasSidebarDevices
     ? pageDeviceIds.map((id) => CARD_BY_ID[id]).filter(Boolean).map((d) => buildSidebarDevice(E, ui, d))
@@ -662,7 +681,7 @@ export default function Dashboard({ onOpenMapping }) {
                 </div>
 
               </>
-            ) : isZone ? (
+            ) : isZone || isDisp ? (
               // (v1.5.0) Acelaşi card de context ca pe celelalte pagini: fără
               // el coloana stângă rămânea goală pe toată înălţimea, exact
               // spaţiul mort pe care detectorul cardGap îl vânează în carduri.
@@ -789,6 +808,27 @@ export default function Dashboard({ onOpenMapping }) {
               </div>
             ) : null}
 
+            {isDisp ? (
+              <div style={s(tableSectionStyle)}>
+                <DevicesPage
+                  devices={dispLista}
+                  loading={dispLoading}
+                  error={dispError || sysError}
+                  states={ha.states || {}}
+                  mob={mob}
+                  sys={sys}
+                  browser={dispBrowser}
+                  cota={dispCota}
+                  wsStats={ha.wsStats}
+                  now={dispNow}
+                  sel={dispSel}
+                  setSel={setDispSel}
+                  filtru={dispFiltru}
+                  setFiltru={setDispFiltru}
+                />
+              </div>
+            ) : null}
+
             {isZone ? (
               <div style={s(tableSectionStyle)}>
                 <ZonePage
@@ -803,7 +843,7 @@ export default function Dashboard({ onOpenMapping }) {
               </div>
             ) : null}
 
-            {!isAcasa && !isZone ? (
+            {!isAcasa && !isZone && !isDisp ? (
               <div style={s(tableSectionStyle)}>
                 {/* stretch (v1.3.5): cardurile din acelaşi rând sunt egale;
                     surplusul se distribuie în interiorul fiecărui card. */}
@@ -848,7 +888,7 @@ const closeBtnStyle =
   'width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#a1968b; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);';
 
 // ------------------------------------------------------------ stat lateral
-function pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energyUnit) {
+function pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energyUnit, dispTotals) {
   const seg = (total, active) => segmentRing(118, Math.max(1, total), active);
   if (page === 'climat') {
     const pct = houseAvg === null ? 0 : Math.max(0, Math.min(100, ((houseAvg - 15) / 20) * 100));
@@ -893,6 +933,16 @@ function pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energy
       value: energyValue,
       unit: energyUnit,
       ringEl: ribbonRing(118, monthPct)
+    };
+  }
+  if (page === 'dispozitive') {
+    const t = dispTotals || { total: 0, healthy: 0 };
+    return {
+      title: 'Dispozitive',
+      sub: 'sanatoase acum',
+      value: String(t.healthy || 0),
+      unit: 'din ' + (t.total || 0),
+      ringEl: seg(Math.max(1, t.total || 1), t.healthy || 0)
     };
   }
   const upd = ['upd.ha_core', 'upd.ha_os', 'upd.supervisor', 'upd.matter', 'upd.hacs'];
@@ -1322,14 +1372,14 @@ function Block({ b, grow }) {
         {b.items.map((acc) => (
           <div key={acc.id} style={s(acc.wrapStyle)}>
             <div style={s(acc.headStyle)} onClick={acc.onExpand}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+              <div style={s(acc.headLeftStyle)}>
                 <div style={s(acc.iconWrapStyle)}>{acc.iconEl}</div>
-                <div style={{ minWidth: 0 }}>
+                <div style={{ minWidth: 0, flex: '1 1 auto' }}>
                   <div style={s(acc.nameStyle)}>{acc.name}</div>
                   <div style={s(acc.metaStyle)}>{acc.meta}</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+              <div style={s(acc.headRightStyle)}>
                 <div className="hdTapY" style={s(acc.togglePillStyle)} onClick={acc.onPower}>
                   <div style={s(acc.toggleKnobStyle)}>{acc.toggleIconEl}</div>
                 </div>

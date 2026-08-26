@@ -286,5 +286,10 @@ export const NAV = [
   { key: 'retea', label: 'Reţea', icon: 'wifi' },
   { key: 'media', label: 'Media', icon: 'tv' },
   { key: 'mentenanta', label: 'Mentenanţă', icon: 'wrench' },
-  { key: 'zone', label: 'Zone', icon: 'layoutGrid' }
+  { key: 'zone', label: 'Zone', icon: 'layoutGrid' },
+  // (v1.6.0) Al zecelea tab. `heartPulse`: in modul "eticheta doar pe tabul
+  // activ" silueta trebuie sa spuna axa paginii, iar axa aici e STAREA, nu
+  // obiectul. Un `server` sau un `cpu` ar fi sugerat infrastructura, care e
+  // deja pe Retea si Mentenanta.
+  { key: 'dispozitive', label: 'Dispozitive', icon: 'heartPulse' }
 ];

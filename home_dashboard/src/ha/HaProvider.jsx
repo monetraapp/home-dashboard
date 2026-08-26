@@ -23,6 +23,10 @@ export function HaProvider({ children }) {
   const [retryTick, setRetryTick] = useState(0);
   const connRef = useRef(null);
   const seededRef = useRef(false);
+  // Observabilitate WebSocket: fara contor, "conexiunea e sanatoasa" ar fi o
+  // afirmatie fara martor. Numaram caderile si retinem momentul ultimei
+  // conectari reusite; ambele se vad pe pagina Dispozitive.
+  const [wsStats, setWsStats] = useState({ caderi: 0, reconectari: 0, de_la: null });
   const callErrTimer = useRef(null);
 
   // v1.1.9: lastCallError se curăţa DOAR la o comandă ulterioară reuşită sau
@@ -203,16 +207,21 @@ export function HaProvider({ children }) {
         }
         connRef.current = conn;
         setStatus('connected');
+        setWsStats((w) => ({ ...w, de_la: Date.now() }));
 
         conn.addEventListener('ready', () => {
           if (!disposed) {
             setStatus('connected');
+            setWsStats((w) => ({ caderi: w.caderi, reconectari: w.reconectari + 1, de_la: Date.now() }));
             // reconectare reuşită — o eroare de comandă din timpul căderii e stală
             setLastCallError(null);
           }
         });
         conn.addEventListener('disconnected', () => {
-          if (!disposed) setStatus('disconnected');
+          if (!disposed) {
+            setStatus('disconnected');
+            setWsStats((w) => ({ ...w, caderi: w.caderi + 1 }));
+          }
         });
         conn.addEventListener('reconnect-error', () => {
           if (!disposed) {
@@ -362,6 +371,7 @@ export function HaProvider({ children }) {
       retry,
       status,
       connected: status === 'connected',
+      wsStats,
       error,
       states,
       lastTargets,
@@ -380,7 +390,7 @@ export function HaProvider({ children }) {
       clearCallError: () => setLastCallError(null)
     }),
     [
-      config, setConfig, resetConfig, retry, status, error, states, lastTargets, lastSentTimers,
+      config, setConfig, resetConfig, retry, status, error, states, wsStats, lastTargets, lastSentTimers,
       rememberSentTimer, entityMap, setEntityMap, callService, callServiceWithResponse,
       sendMessagePromise, subscribeMessage, pending, markPending, lastCallError
     ]

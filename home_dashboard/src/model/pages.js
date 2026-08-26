@@ -789,5 +789,6 @@ export const PAGE_HERO = {
   // (v1.5.0) Subtitlul spune explicit că infrastructura lipseşte din pagină.
   // Fără propoziţia asta, absenţa gateway-ului şi a switch-urilor arată ca o
   // scăpare; cu ea, e o decizie vizibilă în interfaţă.
-  zone: ['Zone', 'Pe încăperi — infrastructura rămâne pe Reţea şi Mentenanţă']
+  zone: ['Zone', 'Pe încăperi — infrastructura rămâne pe Reţea şi Mentenanţă'],
+  dispozitive: ['Dispozitive', 'Stare şi comunicare — doar diagnostic, fără comenzi']
 };

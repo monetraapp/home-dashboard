@@ -1,5 +1,65 @@
 # Changelog
 
+## 1.6.0
+
+Pagina a zecea, **Dispozitive**: starea celor 85 de dispozitive din registre,
+plus un panou de observabilitate pentru stocare şi memorie. Read-only —
+niciun buton reporneşte ceva.
+
+**Regula care dă forma paginii.** Un interval dedus din schimbări de stare nu
+e un interval de comunicare. Freshness se calculează exclusiv dintr-o sursă
+reală — last-seen, timestamp de pachet, heartbeat. Inventarul, măsurat nu
+presupus: **două** dispozitive din 85 au aşa ceva, cele două senzoare
+`grott_last_data_push`. Zero entităţi de tip uptime, last_seen sau heartbeat în
+rest; singurul alt `device_class: timestamp` relevant e
+`camera_speed_dome_last_reboot`, care e un moment de repornire, nu o bătaie de
+inimă. Celelalte 83 afişează explicit **„fără sursă de ultimă comunicare"** şi
+nu pot fi declarate învechite din vechimea stării: un întrerupător neatins de o
+zi are starea veche şi funcţionează perfect. Vechimea stării se arată, dar
+etichetată ca atare şi fără drept de vot în clasificare. Semnalul primar rămâne
+disponibilitatea.
+
+**Cadenţa reală a celor două surse e de 5 minute**, citită din istoricul
+valorilor (17:00:53 → 17:05:53 → … → 17:40:49). Nu din diferenţa până la „acum":
+aceea dă doar timpul scurs de la ultimul pachet şi m-a dus o dată la concluzia
+greşită că push-ul ar fi la un minut.
+
+**Distincţia care evită cinci alarme false.** `state: "not_loaded"` nu înseamnă
+defect: toate cele şase intrări `not_loaded` de aici au `source: "ignore"` —
+descoperiri respinse deliberat. Raportate ca „integrare căzută" ar fi produs
+şase alarme permanente. `setup_retry`, în schimb, chiar e defect, iar pagina
+arată corect **cele cinci intrări ONVIF** aflate acolo.
+
+**Linia de bază vine din istoric, nu din răbdare.** Fără sămânţă, intervalul
+normal s-ar fi adunat doar cât stă pagina deschisă, deci o tăcere n-ar fi fost
+detectabilă decât după un sfert de oră de privit ecranul. O singură cerere de
+istoric pe fereastră de două ore rezolvă asta la încărcare. Şi, cât timp linia
+de bază lipseşte, dispozitivul rămâne **sănătos**, nu „necunoscut" — altfel a
+avea o sursă reală l-ar fi făcut să arate mai rău decât unul care nu raportează
+nimic.
+
+**Observabilitate**, din `system_health/info`: disc 7,4 GB din 28 GB (26%),
+uzură 0%, bază de date 62,2 MB pe motor sqlite. Ritmul de creştere se arată ca
+medie pe fereastra păstrată, cu rezerva scrisă lângă cifră: recorder-ul purjează
+la un orizont fix, deci dimensiunea **se plafonează**. O proiecţie „disc plin în
+N zile" ar fi fost o alarmă inventată. Aplicaţia îşi ştie acum versiunea
+(injectată la build din `config.yaml`), iar conexiunea îşi numără căderile.
+
+**Memorie, măsurată în două tururi.** 80 de navigări: turul 1 +1,5 MB, turul 2
++0,2 MB. Un cache care se umple, nu o scurgere — un singur tur n-ar fi putut
+deosebi cele două. localStorage rămâne la 3 chei şi ~1 KB; inelul de momente de
+comunicare e mărginit la 24 per dispozitiv prin construcţie.
+
+**Un defect vechi, prins de matricea nouă.** Antetul de acordeon de pe Climat
+tăia „AC Mansarda Vortex Air Conditioner" — un `friendly_name` venit din HA, nu
+o etichetă pe care s-o scurtăm noi. Măsurat cu sondă, nu estimat: la 320px
+coloana numelui rămâne **61px** şi textul cere şase rânduri; la 414px încape.
+Soluţia e lăţimea, nu clamp-ul — sub 400px numele trece pe rând propriu şi
+comenzile coboară sub el. La 414px nimic nu s-a schimbat.
+
+Audit responsive: **130 din 130 combinaţii măsurate, 0 probleme** (10 pagini ×
+11 lăţimi + 2 ramuri touch). Teste: 323 logică + 44 stil.
+
 ## 1.5.6
 
 Etichetele nu se mai taie pe ecrane înguste — şi, mai important, **auditul le

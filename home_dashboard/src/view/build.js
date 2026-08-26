@@ -290,6 +290,23 @@ function labelWrap(ui) {
 function ultraNarrow(ui) {
   return bpOf(ui).vw <= 360;
 }
+/**
+ * Antetul de acordeon are nevoie de doua randuri sub aceasta latime.
+ *
+ * MASURAT, nu estimat (sonda Playwright pe Climat, 26.08): coloana numelui,
+ * strivita intre iconita de 36px si grupul pilula+chevron, ramane
+ *   320px -> 61px latime, textul cere 105px inaltime (6 randuri de 17,5px)
+ *   375px -> 116px, cere 53px (3 randuri), afiseaza 2
+ *   390px -> 131px, cere 53px, afiseaza 2
+ *   414px -> 155px, cere 35px, INCAPE
+ * La 61px niciun numar rezonabil de randuri nu ajunge: „AC Mansarda Vortex Air
+ * Conditioner" e un friendly_name venit din HA, nu o eticheta pe care sa o
+ * scurtam noi. Solutia e latimea, nu clamp-ul — numele trece pe rand propriu,
+ * iar comenzile coboara sub el. Pragul e 400px fiindca 414 s-a masurat curat.
+ */
+function antetPeDouaRanduri(ui) {
+  return bpOf(ui).vw <= 400;
+}
 function toggleItemLabelStyle(active, ui) {
   const base = labelFor(active);
   if (!ultraNarrow(ui)) return base + labelWrap(ui);
@@ -711,7 +728,12 @@ export function buildAccordionItem(E, ui, u) {
     meta,
     open,
     wrapStyle: 'margin-bottom:10px; border-radius:16px; overflow:hidden; background:rgba(255,255,255,0.028); border:1px solid ' + (open ? 'rgba(240,138,44,0.24)' : 'rgba(255,255,255,0.065)') + ';',
-    headStyle: 'display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 14px; cursor:pointer;',
+    headStyle: 'display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 14px; cursor:pointer;' +
+      (antetPeDouaRanduri(ui) ? ' flex-wrap:wrap;' : ''),
+    headLeftStyle: 'display:flex; align-items:center; gap:12px; min-width:0;' +
+      (antetPeDouaRanduri(ui) ? ' flex:1 1 100%;' : ''),
+    headRightStyle: 'display:flex; align-items:center; gap:12px; flex-shrink:0;' +
+      (antetPeDouaRanduri(ui) ? ' margin-left:auto;' : ''),
     iconWrapStyle: 'width:36px; height:36px; flex-shrink:0; border-radius:12px; display:flex; align-items:center; justify-content:center; color:' + (on ? '#2a1608' : TXT2) + '; background:' + (on ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(255,255,255,0.055)') + '; border:1px solid ' + (on ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)') + ';',
     iconEl: ic(def ? def.icon : 'home', { size: 17 }),
     nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + clamp2(ui),
