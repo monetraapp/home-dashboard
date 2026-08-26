@@ -10,7 +10,10 @@ dist
 # nu ajung în imagine: testele şi metadatele add-on-ului sunt citite de
 # Supervisor direct din repo, nu din container
 test
-config.yaml
+# config.yaml NU se mai exclude: `vite.config.js` citeşte din el versiunea şi o
+# injectează în aplicaţie, iar exclusul îl făcea invizibil pentru COPY — Docker
+# raporta „not found" deşi fişierul e chiar acolo. În imaginea finală tot nu
+# ajunge: din etapa de build se copiază doar `/build/dist`.
 build.yaml
 translations
 *.md
