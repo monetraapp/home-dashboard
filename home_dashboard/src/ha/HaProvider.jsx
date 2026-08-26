@@ -409,6 +409,47 @@ export function HaProvider({ children }) {
     return conn.subscribeMessage(cb, msg);
   }, []);
 
+  // ----------------------------------------------- coalescare pe valori continue
+  //
+  // MASURAT pe AC Mansarda Vortex (aux_cloud), 26.08: cinci apasari rapide pe
+  // „+" trimit CINCI comenzi `set_temperature` (la 1, 139, 264, 398, 528 ms).
+  // Cloud-ul AUX le serializeaza intern — durata fiecarui apel urca de la ~712 ms
+  // izolat la 2.400–3.875 ms in rafala, iar valoarea finala se aseaza abia dupa
+  // ~3,9 s. Aparatul isi schimba tinta de cinci ori pentru o singura intentie.
+  //
+  // Fereastra e trailing, 350 ms: tastarea rapida masurata e la ~130 ms intre
+  // apasari, deci rafala se strange intr-o comanda, iar o apasare singura pleaca
+  // dupa 350 ms — sub pragul de perceptie pentru o valoare-tinta, mai ales ca
+  // numarul afisat e chiar selectia utilizatorului si se vede imediat.
+  //
+  // NU se aplica la ON/OFF: acolo intentia e discreta, nu continua.
+  const debounceRef = useRef({});
+  const callServiceRef = useRef(null);
+  callServiceRef.current = callService;
+
+  const callServiceDebounced = useCallback((key, delayMs, domain, service, data, target) => {
+    const slot = debounceRef.current[key];
+    if (slot) clearTimeout(slot.t);
+    const trimite = () => {
+      delete debounceRef.current[key];
+      const fn = callServiceRef.current;
+      if (fn) fn(domain, service, data, target);
+    };
+    debounceRef.current[key] = { t: setTimeout(trimite, delayMs), trimite };
+    return true;
+  }, []);
+
+  // La demontare, ce e in asteptare se TRIMITE, nu se arunca: altfel ultima
+  // apasare inainte de inchiderea paginii s-ar pierde tacut.
+  useEffect(
+    () => () => {
+      const toate = Object.values(debounceRef.current);
+      debounceRef.current = {};
+      for (const x of toate) { clearTimeout(x.t); try { x.trimite(); } catch (e) { /* la inchidere */ } }
+    },
+    []
+  );
+
   const value = useMemo(
     () => ({
       config,
@@ -426,6 +467,7 @@ export function HaProvider({ children }) {
       entityMap,
       setEntityMap,
       callService,
+      callServiceDebounced,
       callServiceWithResponse,
       sendMessagePromise,
       subscribeMessage,
@@ -438,7 +480,7 @@ export function HaProvider({ children }) {
     [
       config, setConfig, resetConfig, retry, status, error, states, wsStats, lastTargets, lastSentTimers,
       rememberSentTimer, entityMap, setEntityMap, callService, callServiceWithResponse,
-      sendMessagePromise, subscribeMessage, pending, markPending, lastCallError
+      sendMessagePromise, subscribeMessage, pending, markPending, lastCallError, callServiceDebounced
     ]
   );
 

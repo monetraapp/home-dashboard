@@ -1406,9 +1406,12 @@ function Block({ b, grow }) {
                             <div style={s(sp.hintStyle)}>{sp.hint}</div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
-                            <div style={s(sp.btnStyle)} onClick={sp.onMinus}>{ic('minus', { size: 15, sw: 2 })}</div>
+                            {/* `data-sp` (v1.7.2): identificator stabil pentru unelte, ca
+                                si `data-acc`/`data-page`. Fara el, o sonda trebuie sa
+                                gaseasca butonul dupa forma glifei. */}
+                            <div style={s(sp.btnStyle)} data-sp="minus" onClick={sp.onMinus}>{ic('minus', { size: 15, sw: 2 })}</div>
                             <div style={s(sp.valStyle)}>{sp.val}</div>
-                            <div style={s(sp.btnStyle)} onClick={sp.onPlus}>{ic('plus', { size: 15, sw: 2 })}</div>
+                            <div style={s(sp.btnStyle)} data-sp="plus" onClick={sp.onPlus}>{ic('plus', { size: 15, sw: 2 })}</div>
                           </div>
                         </div>
                       ))}

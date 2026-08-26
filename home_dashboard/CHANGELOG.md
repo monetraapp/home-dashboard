@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.7.2
+
+**Coalescare pe valorile continue** — temperatură ţintă, volum, number. Nu şi pe
+ON/OFF: acolo intenţia e discretă, nu continuă.
+
+**Măsurat înainte**, pe AC Mansardă Vortex (aux_cloud), aparat pornit de cineva
+din casă: cinci apăsări rapide pe „+" trimit **cinci** comenzi `set_temperature`
+(la 1, 139, 264, 398, 528 ms). Cloud-ul AUX le serializează intern — durata unui
+apel urcă de la ~712 ms izolat la **2.400–3.875 ms** în rafală, iar valoarea
+finală se aşază după **~3,9 s**. Aparatul îşi schimbă ţinta de cinci ori pentru
+o singură intenţie.
+
+**Măsurat după:** cinci apăsări → **o comandă**, trimisă la 914 ms, confirmată la
+1.222 ms. O apăsare singură pleacă la 355 ms şi se confirmă la 659 ms — nimic
+pierdut.
+
+| | comenzi către aparat | valoare finală aşezată |
+|:--|--:|--:|
+| înainte | **5** | ~3,9 s |
+| după | **1** | ~1,2 s |
+
+Fereastra e trailing, **350 ms**: tastarea rapidă măsurată e la ~130 ms între
+apăsări, deci rafala se strânge într-o comandă, iar o apăsare singură rămâne sub
+pragul de percepţie — cu atât mai mult cu cât numărul afişat e chiar selecţia
+utilizatorului, nu o stare pretinsă a aparatului.
+
+Ce e în aşteptare la închiderea paginii **se trimite**, nu se aruncă: altfel
+ultima apăsare s-ar fi pierdut tăcut.
+
+**`data-sp` pe butoanele +/−**, ca `data-acc` şi `data-page`. Fără identificatori
+stabili, o sondă trebuie să caute butonul după forma glifei.
+
+Teste: 365 logică + 44 stil. Audit responsive: 130/130, 0 probleme.
+
 ## 1.7.1
 
 **Interfaţa nu mai pretinde o stare pe care dispozitivul n-a confirmat-o.**

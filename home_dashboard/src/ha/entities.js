@@ -13,6 +13,12 @@ export const VERIFY = 'VERIFY';
 export const NA = '—';
 export { UNSET };
 
+/**
+ * Fereastra de coalescare pentru valorile CONTINUE (temperatura tinta, volum,
+ * number). Vezi motivarea masurata din HaProvider. NU se aplica la ON/OFF.
+ */
+const COALESCARE_MS = 350;
+
 const ON_STATES = ['on', 'open', 'home', 'playing', 'heat', 'cool', 'auto', 'dry', 'fan_only', 'heat_cool', 'active', 'true', 'connected'];
 const UNAVAILABLE = ['unavailable', 'unknown', 'none', null, undefined, ''];
 
@@ -77,7 +83,7 @@ const FALLBACK = {};
 export function useEntities() {
   const ha = useHa();
   const {
-    states, entityMap, callService, callServiceWithResponse, markPending, pending,
+    states, entityMap, callService, callServiceDebounced, callServiceWithResponse, markPending, pending,
     lastTargets, lastSentTimers, rememberSentTimer, setLastCallError
   } = ha;
 
@@ -302,7 +308,10 @@ export function useEntities() {
       const lo = climateMin(slotKey), hi = climateMax(slotKey);
       const v = Math.max(lo, Math.min(hi, value));
       markPending('target:' + id, v);
-      return callService('climate', 'set_temperature', { temperature: v }, { entity_id: id });
+      // Valoarea afisata e selectia utilizatorului, nu o stare pretinsa a
+      // aparatului — se vede imediat, iar comanda pleaca dupa ce degetul se
+      // opreste. O rafala de cinci apasari devine o singura comanda.
+      return callServiceDebounced('temp:' + id, COALESCARE_MS, 'climate', 'set_temperature', { temperature: v }, { entity_id: id });
     }
 
     async function bumpClimate(slotKey, deltaSteps) {
@@ -401,7 +410,7 @@ export function useEntities() {
       const b = numberBounds(slotKey, 0, 100, 1);
       const v = Math.max(b.min, Math.min(b.max, value));
       markPending('value:' + id, v);
-      return callService(domain, 'set_value', { value: v }, { entity_id: id });
+      return callServiceDebounced('num:' + id, COALESCARE_MS, domain, 'set_value', { value: v }, { entity_id: id });
     }
 
     /**
@@ -452,7 +461,7 @@ export function useEntities() {
       if (!id) return false;
       const v = Math.max(0, Math.min(100, Math.round(pct)));
       markPending('vol:' + id, v);
-      return callService('media_player', 'volume_set', { volume_level: v / 100 }, { entity_id: id });
+      return callServiceDebounced('vol:' + id, COALESCARE_MS, 'media_player', 'volume_set', { volume_level: v / 100 }, { entity_id: id });
     }
 
     function isMuted(slotKey) {
@@ -502,5 +511,5 @@ export function useEntities() {
       volume, setVolume, isMuted, setMute, selectSource, mediaCommand, sourceList, currentSource,
       friendlyName, matchOption
     };
-  }, [ha, states, entityMap, callService, callServiceWithResponse, markPending, pending, lastTargets, lastSentTimers, rememberSentTimer, setLastCallError]);
+  }, [ha, states, entityMap, callService, callServiceDebounced, callServiceWithResponse, markPending, pending, lastTargets, lastSentTimers, rememberSentTimer, setLastCallError]);
 }
