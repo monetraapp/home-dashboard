@@ -37,6 +37,10 @@ import {
 } from '../src/ha/deviceHealth.js';
 import { parseSize, fmtBytes, dbGrowth, citesteSystemHealth } from '../src/ha/systemHealth.js';
 import {
+  normalizeaza, wsUrl, configValida, alege, meritaRevenire, textConexiune,
+  TIMEOUT_LOCAL, TIMEOUT_REMOTE, INTERVAL_REVENIRE
+} from '../src/ha/endpoint.js';
+import {
   CMD, creeaza, evalueaza, marcheazaAcceptat, marcheazaEsec, eInZbor, eTerminala,
   cheieComanda, fereastra, textAsteptare, textAccesibil, textExpirat
 } from '../src/ha/commandState.js';
@@ -1265,6 +1269,107 @@ eq('climate: tinta poate fi un mod, nu doar on',
 eq('text accesibil pornire', textAccesibil(marcheazaAcceptat(nouC('switch.x', 'on', 'A'))), 'Pornire în curs');
 eq('text accesibil oprire', textAccesibil(marcheazaAcceptat(nouC('switch.x', 'off', 'A'))), 'Oprire în curs');
 eq('fara comanda, fara text', textAccesibil(null), null);
+
+console.log('alegerea caii catre HA:');
+
+eq('normalizare: taie slash-ul final', normalizeaza('http://192.168.0.100/'), 'http://192.168.0.100');
+eq('normalizare: taie spatiile', normalizeaza('  http://a.b  '), 'http://a.b');
+eq('normalizare: non-string -> gol', normalizeaza(null), '');
+eq('ws din http', wsUrl('http://192.168.0.100'), 'ws://192.168.0.100/api/websocket');
+eq('wss din https', wsUrl('https://x.ui.nabu.casa'), 'wss://x.ui.nabu.casa/api/websocket');
+eq('ws dintr-un url gol', wsUrl(''), '');
+
+eq('config fara token e invalida', configValida({ urlLocal: 'http://a' }), false);
+eq('config fara nicio adresa e invalida', configValida({ token: 't' }), false);
+eq('doar local e valida', configValida({ urlLocal: 'http://a', token: 't' }), true);
+eq('doar remote e valida', configValida({ urlRemote: 'https://b', token: 't' }), true);
+
+const CFG = { urlLocal: 'http://192.168.0.100', urlRemote: 'https://x.nabu.casa', token: 'tok' };
+// sonda injectata: raspunde dupa o lista de adrese acceptate, cu durate simulate
+const sonda = (accepta, durate) => {
+  const d = durate || {};
+  let ceas = 0;
+  const fn = async (url) => { ceas += d[url] || 1; return accepta.indexOf(url) >= 0; };
+  fn.ceas = () => ceas;
+  return fn;
+};
+
+// 1. acasa: local raspunde -> se alege local, remote NU se mai incearca
+{
+  const p = sonda([CFG.urlLocal]);
+  const r = await alege(CFG, p, { acum: p.ceas });
+  eq('1. acasa -> local', r.ales, 'local');
+  eq('1. url-ul ales', r.url, CFG.urlLocal);
+  eq('1. tunelul nici nu e incercat', r.incercari.length, 1);
+}
+
+// 2. plecat: local nu raspunde -> fallback la remote
+{
+  const p = sonda([CFG.urlRemote]);
+  const r = await alege(CFG, p, { acum: p.ceas });
+  eq('2. plecat -> remote', r.ales, 'remote');
+  eq('2. s-a incercat intai local', r.incercari[0].tip, 'local');
+  eq('2. si local a esuat', r.incercari[0].ok, false);
+  eq('2. doua incercari in total', r.incercari.length, 2);
+}
+
+// 3. niciuna nu raspunde -> nicio cale, NU inventam una
+{
+  const p = sonda([]);
+  const r = await alege(CFG, p, { acum: p.ceas });
+  eq('3. nicio cale', r.ales, null);
+  eq('3. si niciun url', r.url, null);
+  eq('3. ambele au fost incercate', r.incercari.map((x) => x.tip), ['local', 'remote']);
+}
+
+// 4. duratele se masoara per cale
+{
+  const p = sonda([CFG.urlRemote], { [CFG.urlLocal]: 1200, [CFG.urlRemote]: 380 });
+  const r = await alege(CFG, p, { acum: p.ceas });
+  eq('4. durata caii locale (esuata)', r.incercari[0].ms, 1200);
+  eq('4. durata tunelului', r.incercari[1].ms, 380);
+}
+
+// 5. configuratie doar cu remote: nu incercam o adresa locala inexistenta
+{
+  const p = sonda(['https://x.nabu.casa']);
+  const r = await alege({ urlRemote: 'https://x.nabu.casa', token: 't' }, p, { acum: p.ceas });
+  eq('5. doar remote configurat', r.incercari.map((x) => x.tip), ['remote']);
+  eq('5. si se alege', r.ales, 'remote');
+}
+
+// 6. `doar` restrange politica (folosit la revenirea in LAN)
+{
+  const p = sonda([CFG.urlLocal]);
+  const r = await alege(CFG, p, { acum: p.ceas, doar: 'local' });
+  eq('6. verificare doar pe local', r.incercari.map((x) => x.tip), ['local']);
+}
+
+// 7. config invalida -> nicio incercare, fara exceptii
+{
+  const p = sonda([]);
+  const r = await alege({ token: 't' }, p, { acum: p.ceas });
+  eq('7. config invalida nu sondeaza nimic', r.incercari.length, 0);
+  eq('7. si nu alege nimic', r.ales, null);
+}
+
+// 8. revenirea in LAN: doar de pe tunel SI doar cu dovada
+eq('8. de pe tunel, cu local confirmat -> revenim', meritaRevenire('remote', true), true);
+eq('8. de pe tunel, fara dovada -> NU', meritaRevenire('remote', false), false);
+eq('8. deja local -> nimic de facut', meritaRevenire('local', true), false);
+eq('8. fara cale activa -> NU', meritaRevenire(null, true), false);
+// `undefined` inseamna „inca nu stim", nu „da"
+eq('8. rezultat necunoscut nu declanseaza comutare', meritaRevenire('remote', undefined), false);
+
+// 9. etichetele din diagnostic
+eq('9. eticheta local', textConexiune('local'), 'LOCAL');
+eq('9. eticheta remote', textConexiune('remote'), 'NABU CASA');
+eq('9. fara cale -> null', textConexiune(null), null);
+
+// 10. ferestrele: locala mult mai scurta decat cea de tunel
+eq('10. LAN-ul primeste rabdare scurta', TIMEOUT_LOCAL <= 1500, true);
+eq('10. tunelul primeste mai mult', TIMEOUT_REMOTE > TIMEOUT_LOCAL, true);
+eq('10. cautarea LAN-ului e RARA', INTERVAL_REVENIRE >= 60000, true);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

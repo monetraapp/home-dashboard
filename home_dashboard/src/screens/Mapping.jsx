@@ -16,7 +16,7 @@ function friendly(states, id) {
 }
 
 export default function Mapping({ onClose }) {
-  const { states, entityMap, setEntityMap, resetConfig, config } = useHa();
+  const { states, entityMap, setEntityMap, resetConfig, config, cale} = useHa();
   const [filter, setFilter] = useState('');
   const [showAllDomains, setShowAllDomains] = useState(false);
   const [onlyUnmapped, setOnlyUnmapped] = useState(false);
@@ -103,7 +103,7 @@ export default function Mapping({ onClose }) {
             <div style={s('font-family:' + SANS + '; font-size:12px; font-weight:300; color:' + TXT3 + '; margin-top:6px; max-width:620px; line-height:1.6;')}>
               Fiecare rând este un loc din dashboard. Alege entitatea reală din Home Assistant.
               Sloturile nemapate rămân vizibile în interfaţă, marcate <span style={{ color: ORANGE, fontWeight: 500 }}>VERIFY</span>.
-              {' '}Mapate: <strong style={{ color: TXT2 }}>{mappedCount}</strong> din {SLOTS.length}. Conectat la {config ? config.url : '—'}.
+              {' '}Mapate: <strong style={{ color: TXT2 }}>{mappedCount}</strong> din {SLOTS.length}. Conectat la {cale ? cale.url : '—'}.
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

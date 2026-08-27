@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.8.0
+
+**Aplicaţia îşi alege singură drumul spre Home Assistant.** Aceeaşi pagină e
+deschisă de pe tableta din bucătărie şi de pe telefon, de pe date mobile. Acasă,
+drumul bun e adresa din LAN — fără ocol prin cloud. În afară, singurul drum e
+tunelul Nabu Casa. Până acum, trecerea dintr-o parte în alta însemna schimbat un
+URL cu mâna. Acum nu mai înseamnă nimic: se întâmplă singură.
+
+**Proba nu e „am semnal", ci „HA răspunde".** `navigator.onLine` spune doar că
+există o interfaţă de reţea activă; pe un Wi-Fi străin ar minţi cu convingere.
+Sonda deschide un WebSocket şi duce autentificarea până la `auth_ok`, apoi
+închide imediat conexiunea. LAN-ul primeşte **1,2 s** de răbdare — de o sută de
+ori peste normalul măsurat de 10 ms — iar tunelul, care are de făcut TLS plus
+ocolul prin cloud, primeşte 8 s.
+
+**Măsurat cap-coadă, pe cele patru situaţii reale.** În LAN se alege *LOCAL*. Cu
+LAN-ul inaccesibil, sonda locală eşuează în **218 ms** şi tunelul e conectat la
+**606 ms**. Dacă LAN-ul cade în timpul sesiunii, comutarea pe tunel durează
+**2,76 s**, din care 2,5 s sunt fereastra de graţie deliberată — restul, 257 ms,
+e munca propriu-zisă. Când LAN-ul revine, ne întoarcem pe el în **2,7 s**.
+
+**Întoarcerea acasă nu se caută cu insistenţă.** O sondă la două minute, plus
+verificare la revenirea reţelei şi la reafişarea paginii — momentele în care
+chiar se schimbă ceva. Un ping continuu pe date mobile ar fi exact ce nu vrem.
+Şi nu comutăm pe speranţă: doar dacă adresa locală chiar a răspuns.
+
+**Reconectare curată, verificată la 50 de comutări consecutive.** Toate 50 au
+reuşit. Fiecare conexiune reală poartă **cel mult 5 abonamente** (entităţile plus
+cele patru registre) şi **niciuna nu are un abonament duplicat**. La final rămâne
+**un singur socket viu**, iar memoria stă pe loc: 6,9 → 7,1 MB. Zero erori de
+consolă.
+
+**Ecranul de conectare apare doar când chiar nu există drum.** Iar în
+diagnosticul din *Dispozitive* se vede, read-only, calea realmente conectată:
+`LOCAL` sau `NABU CASA`. Nu se afişează o cale „probabilă" — dacă nu răspunde
+niciuna, nu inventăm una.
+
+**Adresa Nabu Casa nu intră în repozitoriu.** E date ale instanţei şi trăieşte
+doar în configuraţia locală a browserului, lângă token. Token-ul nu e duplicat:
+aceeaşi credenţială serveşte ambele drumuri.
+
 ## 1.7.3
 
 **Răspuns imediat la apăsare, fără să pretindem un rezultat.** Până acum

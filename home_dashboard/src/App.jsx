@@ -19,9 +19,9 @@ export default function App() {
             SANS + '; font-size:13px; color:' + TXT2 + ';'
         )}
       >
-        <div>Se conectează la {config.url}…</div>
+        <div>Se conectează la Home Assistant…</div>
         <div style={s('font-size:11px; font-weight:300; color:' + TXT3 + '; max-width:420px; text-align:center; line-height:1.6;')}>
-          Dacă rămâne aici mai mult de câteva secunde, adresa e greşită sau HA nu e accesibil din reţeaua curentă.
+          Se încearcă întâi adresa locală, apoi cea de la distanţă. Dacă rămâne aici, niciuna nu răspunde.
         </div>
         <div
           style={s(

@@ -10,6 +10,9 @@ import {
 import { loadConfig, saveConfig, clearConfig, loadMap, saveMap } from './store.js';
 import { seedSuggestions } from './slots.js';
 import {
+  alege, probeaza, meritaRevenire, textConexiune, TIMEOUT_LOCAL, INTERVAL_REVENIRE, GRATIE_CADERE
+} from './endpoint.js';
+import {
   CMD, creeaza, evalueaza, marcheazaAcceptat, marcheazaEsec, eInZbor, eTerminala,
   cheieComanda, textExpirat
 } from './commandState.js';
@@ -153,8 +156,8 @@ export function HaProvider({ children }) {
   const [pending, setPending] = useState({});
   const pendingTimers = useRef({});
 
-  const setConfig = useCallback((url, token) => {
-    saveConfig(url, token);
+  const setConfig = useCallback((url, token, urlRemote) => {
+    saveConfig(url, token, urlRemote);
     setConfigState(loadConfig());
     setError(null);
     setStatus('connecting');
@@ -188,22 +191,98 @@ export function HaProvider({ children }) {
     setEntityMapState(next);
   }, []);
 
+  // ------------------------------------------------- alegerea căii către HA
+  //
+  // Aplicaţia nu mai are „un URL". Are două căi şi o politică: întâi LAN-ul, cu
+  // răbdare scurtă, apoi tunelul. Utilizatorul nu schimbă nimic cu mâna.
+  //
+  // Proba nu e `navigator.onLine` — acela spune doar că există o interfaţă de
+  // reţea. Proba e handshake-ul real de autentificare pe WebSocket: dacă vine
+  // `auth_ok`, calea e bună. Sonda se închide imediat, nu lasă conexiuni în urmă.
+  const [cale, setCale] = useState(null);          // { tip, url } | null
+  const [caleMasuri, setCaleMasuri] = useState([]); // duratele ultimei alegeri
+  const caleRef = useRef(null);
+  const alegeInCurs = useRef(false);
+  useEffect(() => { caleRef.current = cale; }, [cale]);
+
+  /**
+   * Rulează politica şi comută dacă rezultatul diferă de calea curentă.
+   * `motiv` ajunge în diagnostic; nu inventăm o cale „probabilă" — dacă niciuna
+   * nu răspunde, rămânem fără cale şi ecranul de conectare îşi face treaba.
+   */
+  const alegeCale = useCallback(async (opts) => {
+    if (!config || alegeInCurs.current) return null;
+    alegeInCurs.current = true;
+    try {
+      const r = await alege(config, probeaza, opts);
+      setCaleMasuri(r.incercari);
+      const curent = caleRef.current;
+      if (r.ales) {
+        if (!curent || curent.url !== r.url) setCale({ tip: r.ales, url: r.url });
+      } else if (curent) {
+        setCale(null);
+      }
+      return r;
+    } finally {
+      alegeInCurs.current = false;
+    }
+  }, [config]);
+
+  // La pornire şi la orice schimbare de configuraţie.
+  useEffect(() => {
+    if (!config) { setCale(null); return; }
+    alegeCale();
+  }, [config, alegeCale]);
+
+  // Revenirea în LAN: rar, şi în momentele în care chiar se schimbă ceva.
+  // NU e un ping continuu — pe date mobile ar fi exact ce nu vrem.
+  useEffect(() => {
+    if (!config || !cale || cale.tip !== 'remote') return undefined;
+    if (!config.urlLocal) return undefined;
+    let viu = true;
+    const incearca = async () => {
+      if (!viu) return;
+      const ok = await probeaza(config.urlLocal, config.token, TIMEOUT_LOCAL);
+      if (viu && meritaRevenire(caleRef.current && caleRef.current.tip, ok)) {
+        setCale({ tip: 'local', url: config.urlLocal });
+      }
+    };
+    const t = setInterval(incearca, INTERVAL_REVENIRE);
+    const laRetea = () => incearca();
+    const laVizibil = () => { if (document.visibilityState === 'visible') incearca(); };
+    window.addEventListener('online', laRetea);
+    document.addEventListener('visibilitychange', laVizibil);
+    return () => {
+      viu = false;
+      clearInterval(t);
+      window.removeEventListener('online', laRetea);
+      document.removeEventListener('visibilitychange', laVizibil);
+    };
+  }, [config, cale]);
+
   // ---------------------------------------------------------------- conexiune
   useEffect(() => {
     if (!config) {
       setStatus('unconfigured');
       return undefined;
     }
+    // Fără cale confirmată nu deschidem nimic: n-are rost să încercăm o adresă
+    // despre care tocmai am aflat că nu răspunde.
+    if (!cale) {
+      setStatus('connecting');
+      return undefined;
+    }
     let disposed = false;
     let unsubEntities = null;
     let conn = null;
+    let cronFailover = null;
 
     setStatus('connecting');
     setError(null);
 
     (async () => {
       try {
-        const auth = createLongLivedTokenAuth(config.url, config.token);
+        const auth = createLongLivedTokenAuth(cale.url, config.token);
         conn = await createConnection({ auth });
         if (disposed) {
           conn.close();
@@ -222,10 +301,18 @@ export function HaProvider({ children }) {
           }
         });
         conn.addEventListener('disconnected', () => {
-          if (!disposed) {
-            setStatus('disconnected');
-            setWsStats((w) => ({ ...w, caderi: w.caderi + 1 }));
-          }
+          if (disposed) return;
+          setStatus('disconnected');
+          setWsStats((w) => ({ ...w, caderi: w.caderi + 1 }));
+          // FAILOVER. Biblioteca reîncearcă singură ACEEAŞI adresă, ceea ce e
+          // exact ce trebuie pentru o pâlpâire de reţea. Dar dacă am plecat de
+          // acasă, LAN-ul nu mai revine niciodată, iar reîncercarea ar putea
+          // dura la nesfârşit. După o scurtă graţie, rulăm din nou politica: dacă
+          // celaltă cale răspunde, comutăm — fără reîncărcare manuală.
+          clearTimeout(cronFailover);
+          cronFailover = setTimeout(() => {
+            if (!disposed) alegeCale();
+          }, GRATIE_CADERE);
         });
         conn.addEventListener('reconnect-error', () => {
           if (!disposed) {
@@ -245,7 +332,7 @@ export function HaProvider({ children }) {
           setError('Token invalid sau expirat. Generează un Long-Lived Access Token nou în HA → Profil → Securitate.');
         } else if (err === ERR_CANNOT_CONNECT) {
           setStatus('error');
-          setError('Nu mă pot conecta la ' + config.url + '. Verifică adresa, portul şi că eşti în aceeaşi reţea.');
+          setError('Nu mă pot conecta la ' + cale.url + '. Verifică adresa, portul şi că eşti în aceeaşi reţea.');
         } else {
           setStatus('error');
           setError('Eroare de conexiune: ' + (err && err.message ? err.message : String(err)));
@@ -255,6 +342,7 @@ export function HaProvider({ children }) {
 
     return () => {
       disposed = true;
+      clearTimeout(cronFailover);
       if (unsubEntities) unsubEntities();
       if (conn) {
         try {
@@ -265,7 +353,7 @@ export function HaProvider({ children }) {
       }
       connRef.current = null;
     };
-  }, [config, retryTick]);
+  }, [config, cale, retryTick, alegeCale]);
 
   // Auto-completează sugestiile date de utilizator, o singură dată per sesiune,
   // și doar pentru entităţile care chiar există.
@@ -547,6 +635,9 @@ export function HaProvider({ children }) {
       markPending,
       porneste,
       comandaPentru,
+      cale,
+      caleMasuri,
+      textConexiune: textConexiune(cale && cale.tip),
       lastCallError,
       setLastCallError,
       clearCallError: () => setLastCallError(null)
@@ -555,7 +646,7 @@ export function HaProvider({ children }) {
       config, setConfig, resetConfig, retry, status, error, states, wsStats, lastTargets, lastSentTimers,
       rememberSentTimer, entityMap, setEntityMap, callService, callServiceWithResponse,
       sendMessagePromise, subscribeMessage, pending, markPending, lastCallError, callServiceDebounced,
-      porneste, comandaPentru
+      porneste, comandaPentru, cale, caleMasuri
     ]
   );
 

@@ -64,15 +64,32 @@ function write(key, value) {
   }
 }
 
-/** { url, token } sau null dacă nu e configurat încă. */
+/**
+ * { urlLocal, urlRemote, token } sau null dacă nu e configurat încă.
+ *
+ * (v1.8.0) Configuraţia are acum două căi. Cele salvate de versiunile
+ * anterioare au un singur `url`; acela devine calea LOCALĂ, fiindcă asta era
+ * întotdeauna — adresa din LAN. Migrarea e tăcută şi nu cere nimic
+ * utilizatorului.
+ *
+ * Token-ul rămâne unul singur, în acelaşi loc. Nu se duplică per cale: e
+ * acelaşi Home Assistant, indiferent pe unde ajungem la el.
+ */
 export function loadConfig() {
   const c = read(KEY_CFG, null);
-  if (!c || !c.url || !c.token) return null;
-  return c;
+  if (!c || !c.token) return null;
+  const urlLocal = String(c.urlLocal || c.url || '').trim().replace(/\/+$/, '');
+  const urlRemote = String(c.urlRemote || '').trim().replace(/\/+$/, '');
+  if (!urlLocal && !urlRemote) return null;
+  return { urlLocal, urlRemote, token: c.token };
 }
 
-export function saveConfig(url, token) {
-  write(KEY_CFG, { url: String(url).trim().replace(/\/+$/, ''), token: String(token).trim() });
+export function saveConfig(urlLocal, token, urlRemote) {
+  write(KEY_CFG, {
+    urlLocal: String(urlLocal || '').trim().replace(/\/+$/, ''),
+    urlRemote: String(urlRemote || '').trim().replace(/\/+$/, ''),
+    token: String(token).trim()
+  });
 }
 
 export function clearConfig() {

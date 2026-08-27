@@ -824,6 +824,7 @@ export default function Dashboard({ onOpenMapping }) {
                   browser={dispBrowser}
                   cota={dispCota}
                   wsStats={ha.wsStats}
+                  textConexiune={ha.textConexiune}
                   now={dispNow}
                   sel={dispSel}
                   setSel={setDispSel}

@@ -17,7 +17,10 @@ const hint = 'font-family:' + SANS + '; font-size:11px; font-weight:300; line-he
 
 export default function Setup() {
   const { setConfig, status, error, config } = useHa();
-  const [url, setUrl] = useState(config ? config.url : 'http://192.168.0.');
+  const [url, setUrl] = useState(config ? config.urlLocal : 'http://192.168.0.');
+  // (v1.8.0) A doua cale, pentru când nu suntem acasă. Rămâne opţională: cine
+  // nu are acces la distanţă lasă câmpul gol şi nimic nu se schimbă.
+  const [urlRemote, setUrlRemote] = useState(config ? config.urlRemote || '' : '');
   const [token, setToken] = useState('');
   const [localErr, setLocalErr] = useState(null);
 
@@ -32,8 +35,13 @@ export default function Setup() {
       setLocalErr('Token-ul pare prea scurt. Copiază Long-Lived Access Token complet din HA.');
       return;
     }
+    const r = urlRemote.trim();
+    if (r && !/^https?:\/\/.+/i.test(r)) {
+      setLocalErr('Adresa de la distanţă trebuie să înceapă cu http:// sau https://.');
+      return;
+    }
     setLocalErr(null);
-    setConfig(u, token);
+    setConfig(u, token, r);
   }
 
   const shown = localErr || error;
@@ -71,7 +79,23 @@ export default function Setup() {
           autoComplete="off"
           spellCheck={false}
         />
-        <div style={s(hint)}>Adresa locală, cu port. Fără slash la final.</div>
+        <div style={s(hint)}>Adresa din reţeaua de acasă, cu port. Fără slash la final.</div>
+
+        <label style={s(label)} htmlFor="ha-url-remote">Adresa de la distanţă (opţional)</label>
+        <input
+          id="ha-url-remote"
+          style={s(input)}
+          value={urlRemote}
+          onChange={(e) => setUrlRemote(e.target.value)}
+          placeholder="https://…nabu.casa"
+          autoComplete="off"
+          spellCheck={false}
+        />
+        <div style={s(hint)}>
+          Folosită automat când adresa locală nu răspunde — de exemplu de pe date
+          mobile. Aplicaţia încearcă întâi acasă şi comută singură; nu ai de
+          schimbat nimic cu mâna.
+        </div>
 
         <label style={s(label)} htmlFor="ha-token">Long-Lived Access Token</label>
         <textarea

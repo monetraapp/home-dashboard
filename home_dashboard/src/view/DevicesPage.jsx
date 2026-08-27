@@ -80,7 +80,7 @@ function CardPanou({ titlu, icon, children }) {
   );
 }
 
-function Panou({ sys, browser, cota, wsStats, now }) {
+function Panou({ sys, browser, cota, wsStats, now, textConexiune }) {
   const pctDisc = sys && Number.isFinite(sys.discPct) ? Math.round(sys.discPct) : null;
   const cr = sys && sys.crestere;
   return (
@@ -156,6 +156,14 @@ function Panou({ sys, browser, cota, wsStats, now }) {
       </CardPanou>
 
       <CardPanou titlu="Conexiune" icon="wifi">
+        {/* (v1.8.0) Calea REALĂ, nu cea configurată: dacă scrie LOCAL, prin LAN
+            trece traficul chiar acum. Nu se afişează nimic până nu există o
+            conexiune stabilită. */}
+        <Camp
+          eticheta="Cale activă"
+          valoare={textConexiune || '—'}
+          nota={textConexiune ? (textConexiune === 'LOCAL' ? 'reţeaua de acasă' : 'tunel securizat') : 'nicio cale confirmată'}
+        />
         <Camp
           eticheta="Conectat de la"
           valoare={wsStats && wsStats.de_la ? fmtAge(now - wsStats.de_la) : '—'}
@@ -286,7 +294,7 @@ function CardDispozitiv({ d, onOpen }) {
 }
 
 // --------------------------------------------------------------------- pagina
-export function DevicesPage({ devices, loading, error, states, mob, sys, browser, cota, wsStats, now, sel, setSel, filtru, setFiltru }) {
+export function DevicesPage({ devices, loading, error, states, mob, sys, browser, cota, wsStats, now, textConexiune, sel, setSel, filtru, setFiltru }) {
   const [q, setQ] = useState('');
 
   const lista = useMemo(() => {
@@ -304,7 +312,7 @@ export function DevicesPage({ devices, loading, error, states, mob, sys, browser
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Panou sys={sys} browser={browser} cota={cota} wsStats={wsStats} now={now} />
+      <Panou sys={sys} browser={browser} cota={cota} wsStats={wsStats} now={now} textConexiune={textConexiune} />
 
       {error ? (
         <div style={s(glassCard() + ' padding:18px; font-family:' + SANS + '; font-size:13px; color:' + TXT2 + ';')}>
