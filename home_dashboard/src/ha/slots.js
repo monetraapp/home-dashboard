@@ -13,6 +13,7 @@ export const GROUPS = [
   { key: 'retea', label: 'Reţea (Omada)' },
   { key: 'energie', label: 'Energie' },
   { key: 'mentenanta', label: 'Mentenanţă' },
+  { key: 'poarta', label: 'Poartă' },
   { key: 'general', label: 'General' }
 ];
 
@@ -444,6 +445,31 @@ export const SLOTS = [
   slot('energie.stat_ctr_f1', 'Statistici · contor faza 1 putere', 'energie', ['sensor']),
   slot('energie.stat_ctr_f2', 'Statistici · contor faza 2 putere', 'energie', ['sensor']),
   slot('energie.stat_ctr_f3', 'Statistici · contor faza 3 putere', 'energie', ['sensor']),
+  // ---------------------------------------------------------------- POARTĂ
+  // Poarta NU are senzor de poziţie. Niciun slot de aici nu spune „deschisă"
+  // sau „închisă", fiindcă nimic din instalaţie nu poate şti asta. Ce ştim e
+  // strict: am trimis un impuls, releul l-a executat, când.
+  slot('poarta.comanda', 'Poartă Intrare · script de deschidere', 'poarta', ['script'], {
+    suggest: 'script.deschide_poarta',
+    note: 'Comanda semantică. Trimite UN impuls START către Linomatik; Shelly se stinge singur după 1 s.'
+  }),
+  slot('poarta.releu', 'Poartă Intrare · releu Shelly', 'poarta', ['switch'], {
+    suggest: 'switch.curte_fata_poarta_intrare',
+    note: 'Folosit pentru disponibilitate şi pentru confirmarea REALĂ a impulsului. Nu se comută direct din interfaţă.'
+  }),
+  slot('poarta.service', 'Poartă · Service Mode', 'poarta', ['input_boolean'], {
+    suggest: 'input_boolean.service_mode_poarta',
+    note: 'Cât e pornit: fără geofence, fără notificări de sosire, fără auto-open. Butonul manual rămâne funcţional.'
+  }),
+  slot('poarta.ultima', 'Poartă · ultima comandă', 'poarta', ['input_datetime'], {
+    suggest: 'input_datetime.poarta_intrare_ultima_comanda',
+    note: 'Se scrie DOAR după un impuls chiar trimis — încercările blocate de cooldown nu îl ating.'
+  }),
+  slot('poarta.cooldown', 'Poartă · cooldown comandă', 'poarta', ['timer'], {
+    suggest: 'timer.poarta_intrare_cooldown_comanda',
+    note: 'Cât e activ, un al doilea impuls e blocat: intrarea START e secvenţială, iar al doilea impuls ar însemna STOP.'
+  }),
+
   // -------------------------------------------------------------- GENERAL
   slot('weather.main', 'Vreme', 'general', ['weather'], {
     note: 'VERIFY — nu mi-ai dat entity_id pentru weather.'

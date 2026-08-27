@@ -17,7 +17,11 @@ import {
   CarFront, CalendarDays,
   // (v1.5.0) navigaţie: în modul „etichetă doar pe tabul activ" silueta e
   // singurul indiciu, deci fiecare tab primeşte un obiect concret.
-  AirVent, Cctv, LayoutGrid
+  AirVent, Cctv, LayoutGrid,
+  // (v1.9.0) poarta: un gard, nu o usa. `DoorOpen`/`DoorClosed` ar fi sugerat o
+  // POZITIE, iar poarta nu are senzor de pozitie — silueta nu are voie sa
+  // afirme ceva ce instalatia nu stie.
+  Fence
 } from 'lucide-react';
 
 // nume istoric -> componenta Lucide (maparea semantică, nu aproximativă)
@@ -29,7 +33,7 @@ const LUCIDE = {
   calendarDays: CalendarDays,
   playCircle: PlayCircle, sliders: SlidersHorizontal, close: X, tv: Tv,
   monitor: Monitor, server: Server, sparkle: Sparkles, refresh: RefreshCw,
-  lock: Lock, shield: Shield, shieldDot: ShieldCheck, ban: Ban,
+  lock: Lock, shield: Shield, shieldDot: ShieldCheck, ban: Ban, gate: Fence,
   updown: ArrowUpDown, leftright: ArrowLeftRight, move: Move, waves: Waves,
   beaker: FlaskConical, bolt: Zap, plug: Plug, camera: Camera, bell: Bell,
   cart: ShoppingCart, chat: MessageCircle, check: Check,

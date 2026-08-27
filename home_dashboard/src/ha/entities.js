@@ -265,6 +265,58 @@ export function useEntities() {
       return ha.porneste({ entityId: id, actiune: 'power', tinta, exec });
     }
 
+    // ---------------------------------------------------------------- poartă
+    //
+    // Poarta e singurul control din aplicaţie care NU are stare. Nu există
+    // senzor de poziţie, deci interfaţa nu are voie să spună „deschisă",
+    // „închisă" sau „se deschide". Tot ce putem afirma cinstit e: am trimis un
+    // impuls, iar releul l-a executat.
+    //
+    // CE CONFIRMĂ COMANDA. Ţinta e releul Shelly trecut pe `on` — un fapt
+    // publicat de HA, nu o presupunere despre poartă. Releul se stinge singur
+    // după 1 s (Auto Off hardware), dar comanda e deja confirmată în acel punct.
+
+    /** Trimite un impuls prin scriptul semantic. `sursa` ajunge în logbook. */
+    async function deschidePoarta(sursa) {
+      const idScript = idOf('poarta.comanda');
+      const idReleu = idOf('poarta.releu');
+      if (!idScript || !idReleu) return false;
+      const exec = () => callService(
+        'script', 'turn_on',
+        { variables: { sursa: sursa || 'dashboard' } },
+        { entity_id: idScript }
+      );
+      return ha.porneste({ entityId: idReleu, actiune: 'impuls', tinta: 'on', exec });
+    }
+
+    /** Comanda de impuls în zbor, sau null. */
+    function comandaPoarta() {
+      const id = idOf('poarta.releu');
+      return id ? ha.comandaPentru(id, 'impuls') : null;
+    }
+
+    /**
+     * Fereastra de cooldown, citită din timerul HA — nu dintr-un cronometru
+     * local. Un cronometru din browser ar fi arătat altceva pe fiecare
+     * dispozitiv şi s-ar fi pierdut la reîmprospătare.
+     */
+    function poartaCooldown(acum) {
+      const st = ent('poarta.cooldown');
+      if (!st || st.state !== 'active') return { activ: false, ramas: 0 };
+      const t = st.attributes && st.attributes.finishes_at;
+      if (!t) return { activ: true, ramas: 0 };
+      const ms = new Date(t).getTime() - (acum === undefined ? Date.now() : acum);
+      return { activ: true, ramas: Math.max(0, Math.ceil(ms / 1000)) };
+    }
+
+    /** Ultima comandă chiar trimisă, ca Date, sau null dacă nu a fost niciuna. */
+    function poartaUltimaComanda() {
+      const st = ent('poarta.ultima');
+      if (!st || !st.state || st.state === 'unknown' || st.state === 'unavailable') return null;
+      const d = new Date(String(st.state).replace(' ', 'T'));
+      return isNaN(d.getTime()) ? null : d;
+    }
+
     // -------------------------------------------------------------- climate
     function climateTarget(slotKey) {
       const st = ent(slotKey);
@@ -522,6 +574,7 @@ export function useEntities() {
     return {
       ha, states, entityMap,
       idOf, ent, mapped, available, attr, rawState, num, fmt, isVerify, isOn, isPending, comandaCurenta, toggle,
+      deschidePoarta, comandaPoarta, poartaCooldown, poartaUltimaComanda,
       climateTarget, climateTargetStale, supportsFeature, tempDecimals,
       climateCurrent, climateStep, climateMin, climateMax,
       setClimateTarget, bumpClimate, setHvacMode, setFanMode, setSwingMode, setPresetMode,

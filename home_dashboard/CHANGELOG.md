@@ -1,5 +1,53 @@
 # Changelog
 
+## 1.9.0
+
+**Poarta de la intrare, fără să pretindem că ştim unde e.** Poarta nu are senzor
+de poziţie. Nimic din instalaţie nu poate spune dacă e deschisă, închisă sau în
+mişcare — aşa că interfaţa nu spune. Cardul arată **„Control disponibil"**, iar
+după apăsare **„Comandă trimisă"**. Verificat în browser: zero apariţii ale
+cuvintelor de poziţie în toată pagina.
+
+**Un impuls, nu un comutator.** Shelly-ul e tehnic un `switch`, dar semantic e o
+apăsare de o secundă pe intrarea START a controllerului Linomatik. Comanda trece
+printr-un script HA, `Deschide poarta`, nu prin comutatorul brut — iar releul se
+stinge singur după 1 s (Auto Off hardware). Măsurat pe releu: **impuls de
+1003 ms**. Linomatik rămâne responsabil de motor, fotocelule, limitatoare şi
+auto-close; nimic din ele nu a fost atins.
+
+**Al doilea impuls ar însemna STOP.** Intrarea START e secvenţială: o a doua
+apăsare nu deschide mai tare, ci opreşte poarta la jumătatea cursei. De aceea
+scriptul are un cooldown de **45 s**, pornit *înainte* de impuls, iar butonul se
+dezactivează cu numărătoare inversă. Testat: a doua comandă, trimisă imediat, nu
+a produs niciun impuls, iar marcajul ultimei comenzi a rămas neatins — încercările
+blocate nu se scriu ca reuşite.
+
+**Aşteptare vizibilă, fără stare inventată.** Comanda intră în registrul generic
+din v1.7.3 cu un tip nou, `impuls`, cu fereastră proprie de 8 s. Confirmarea vine
+din releul Shelly publicat pe `on` — un fapt din HA, nu o presupunere despre
+poartă. Eşantionat la 15 ms: **„Se trimite…" apare la +50 ms şi ţine 161 ms**,
+cu `aria-busy` şi etichetă accesibilă, apoi confirmarea.
+
+**Comandă de la distanţă, prin acelaşi buton.** Testat prin Nabu Casa: calea
+activă *NABU CASA*, click → apel pe fir în **31,2 ms**, releu mişcat, card trecut
+pe „Comandă trimisă". Shelly rămâne comandat **local** de Home Assistant; cloud-ul
+Shelly nu e dependenţă, iar reţeaua n-a fost atinsă.
+
+**Service Mode.** Cât e pornit: fără geofence, fără notificări de sosire, fără
+auto-open — dar butonul manual rămâne funcţional. O notificare rămasă în coadă şi
+apăsată în Service Mode e **refuzată explicit**, cu mesaj: nimeni nu mişcă poarta
+peste cineva care lucrează la ea.
+
+**Apropiere de casă, cu confirmare umană.** Zonă nouă `Apropiere Casă` (250 m) pe
+coordonatele Home, neatinse. La intrarea în zonă dinspre exterior pleacă o
+notificare cu **DESCHIDE / NU**, care expiră în 5 minute. V1 **nu** deschide
+automat din GPS. Gating de 15 minute, ca oscilaţia GPS pe marginea zonei să nu
+producă notificări repetate.
+
+**Diagnostic real.** Poarta apare în *Dispozitive* ca „Sănătos · fără sursă de
+ultimă comunicare" — starea integrării, nu un timestamp inventat. Semnalul Wi-Fi
+şi uptime-ul Shelly au fost activate: **-67 dBm** la momentul verificării.
+
 ## 1.8.0
 
 **Aplicaţia îşi alege singură drumul spre Home Assistant.** Aceeaşi pagină e

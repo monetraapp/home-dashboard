@@ -9,15 +9,26 @@ import { textAsteptare, textAccesibil } from '../ha/commandState.js';
  * aici; fiecare suprafaţă doar o randează. Fără asta ar fi fost patru
  * implementări care se despart în timp.
  */
+const SPINNER = 'display:inline-block; width:10px; height:10px; margin-right:5px; vertical-align:-1px; flex-shrink:0;' +
+  ' border:2px solid rgba(240,138,44,0.25); border-top-color:#F08A2C; border-radius:50%;';
+
+const marcaj = (cmd) => ({
+  inZbor: !!cmd,
+  textCmd: textAsteptare(cmd),
+  textAccesibil: textAccesibil(cmd),
+  spinnerStyle: SPINNER
+});
+
 export function marcajComanda(E, slot) {
-  const cmd = slot && E.comandaCurenta ? E.comandaCurenta(slot) : null;
-  return {
-    inZbor: !!cmd,
-    textCmd: textAsteptare(cmd),
-    textAccesibil: textAccesibil(cmd),
-    spinnerStyle: 'display:inline-block; width:10px; height:10px; margin-right:5px; vertical-align:-1px; flex-shrink:0;' +
-      ' border:2px solid rgba(240,138,44,0.25); border-top-color:' + ORANGE + '; border-radius:50%;'
-  };
+  return marcaj(slot && E.comandaCurenta ? E.comandaCurenta(slot) : null);
+}
+
+/**
+ * Acelaşi marcaj, pentru comanda de impuls a porţii. Separat fiindcă poarta nu
+ * are slot comutabil: comanda se ţine pe releu, cu acţiunea `impuls`.
+ */
+export function marcajImpuls(E) {
+  return marcaj(E && E.comandaPoarta ? E.comandaPoarta() : null);
 }
 import {
   SANS, DOTO, ORANGE, ORANGE_HI, TXT, TXT2, TXT3, CARD_BG, CARD_BORDER,

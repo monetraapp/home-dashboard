@@ -385,6 +385,15 @@ export const SUGGESTED_MAP = {
   'energie.stat_ctr_f2': 'sensor.contor_faza_2_putere',
   'energie.stat_ctr_f3': 'sensor.contor_faza_3_putere',
   // -------------------------------------------------------------- GENERAL
+  // ---- poartă (v1.9.0) ------------------------------------------------------
+  // Toate cinci sunt entităţi reale, verificate în instanţă. Niciuna nu descrie
+  // poziţia porţii: nu există senzor de poziţie de mapat.
+  'poarta.comanda': 'script.deschide_poarta',
+  'poarta.releu': 'switch.curte_fata_poarta_intrare',
+  'poarta.service': 'input_boolean.service_mode_poarta',
+  'poarta.ultima': 'input_datetime.poarta_intrare_ultima_comanda',
+  'poarta.cooldown': 'timer.poarta_intrare_cooldown_comanda',
+
   'weather.main': 'weather.forecast_home',
   'sensor.baterie_telefon': 'sensor.s26_ultra_battery_level',
   'sensor.lista_cumparaturi': 'todo.shopping_list'

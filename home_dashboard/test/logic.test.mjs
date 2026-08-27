@@ -309,7 +309,9 @@ eq('sloturile ramase au toate un motiv explicit',
 // dezinstalarea add-on-urilor (curatenia din 23.08.2026).
 // 291 -> 319: cele 28 de sloturi de programare la ora exacta (v1.7.0), toate
 // cu mapare implicita, deci invariantul „zero nemapate" ramane intact.
-eq('total: 319 mapate din 319 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [319, 319]);
+// 319 -> 324: cele 5 sloturi ale portii (v1.9.0). Niciunul nu descrie pozitia
+// portii — nu exista senzor de pozitie de mapat.
+eq('total: 324 mapate din 324 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [324, 324]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------
@@ -1370,6 +1372,63 @@ eq('9. fara cale -> null', textConexiune(null), null);
 eq('10. LAN-ul primeste rabdare scurta', TIMEOUT_LOCAL <= 1500, true);
 eq('10. tunelul primeste mai mult', TIMEOUT_REMOTE > TIMEOUT_LOCAL, true);
 eq('10. cautarea LAN-ului e RARA', INTERVAL_REVENIRE >= 60000, true);
+
+
+console.log('poarta — comanda de tip impuls:');
+
+const RELEU = 'switch.curte_fata_poarta_intrare';
+
+// 1. fereastra: impulsul isi are propria valoare, indiferent de domeniu
+eq('1. impulsul are fereastra lui', fereastra(RELEU, 'on', 'impuls'), 8000);
+eq('1. mult mai scurta decat pornirea unui televizor', fereastra(RELEU, 'on', 'impuls') < fereastra('media_player.x', 'on'), true);
+eq('1. fara actiune, switch-ul ramane pe implicit', fereastra(RELEU, 'on'), 15000);
+
+// 2. intrarea de registru primeste fereastra de impuls
+{
+  const c = creeaza({ entityId: RELEU, actiune: 'impuls', tinta: 'on', lastUpdated: 'T0', acum: 0 });
+  eq('2. fereastra preluata din actiune', c.fereastra, 8000);
+  eq('2. textul nu vorbeste despre pornire', textAsteptare(c), 'Se trimite…');
+  eq('2. eticheta accesibila', textAccesibil(c), 'Comandă în curs de trimitere');
+  eq('2. textul de neconfirmare', textExpirat(c), 'Comanda nu a fost confirmată');
+}
+
+// 3. confirmarea vine din releu, nu dintr-o presupunere despre poarta
+{
+  let c = creeaza({ entityId: RELEU, actiune: 'impuls', tinta: 'on', lastUpdated: 'T0', acum: 0 });
+  c = marcheazaAcceptat(c);
+  // releul inca pe off: nimic confirmat
+  c = evalueaza(c, { state: 'off', last_updated: 'T1' }, 100);
+  eq('3. releu pe off -> inca asteptam', c.status, CMD.ASTEPT);
+  // releul a publicat NOU si e pe on -> impuls confirmat
+  c = evalueaza(c, { state: 'on', last_updated: 'T2' }, 200);
+  eq('3. releu pe on, publicare noua -> confirmat', c.status, CMD.CONFIRMAT);
+}
+
+// 4. un `on` VECHI nu confirma nimic — releul putea fi deja pornit
+{
+  let c = creeaza({ entityId: RELEU, actiune: 'impuls', tinta: 'on', lastUpdated: 'T9', acum: 0 });
+  c = evalueaza(c, { state: 'on', last_updated: 'T9' }, 50);
+  eq('4. aceeasi publicare nu confirma', c.status, CMD.TRIMIS);
+}
+
+// 5. dupa fereastra, expira — interfata nu ramane agatata
+{
+  let c = creeaza({ entityId: RELEU, actiune: 'impuls', tinta: 'on', lastUpdated: 'T0', acum: 0 });
+  c = evalueaza(c, { state: 'off', last_updated: 'T1' }, 8001);
+  eq('5. expira dupa 8 s', c.status, CMD.EXPIRAT);
+}
+
+// 6. impulsul si pornirea sunt comenzi DIFERITE pe aceeasi entitate
+eq('6. chei separate', cheieComanda(RELEU, 'impuls') !== cheieComanda(RELEU, 'power'), true);
+
+// 7. niciun text al portii nu pretinde o pozitie
+{
+  const c = creeaza({ entityId: RELEU, actiune: 'impuls', tinta: 'on', lastUpdated: null, acum: 0 });
+  const toate = [textAsteptare(c), textAccesibil(c), textExpirat(c)].join(' ').toLowerCase();
+  eq('7. fara „deschis"', toate.indexOf('deschis') < 0, true);
+  eq('7. fara „inchis"', toate.indexOf('închis') < 0 && toate.indexOf('inchis') < 0, true);
+}
+
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);

@@ -45,11 +45,21 @@ export const eTerminala = (st) => TERMINALE.indexOf(st) >= 0;
 export const FERESTRE = {
   'media_player:on': 45000,
   'media_player:off': 40000,
+  // (v1.9.0) IMPULS — poarta. Nu are senzor de poziţie, deci nu aşteptăm
+  // niciodată „poarta e deschisă": aşteptăm exact atât cât să vedem releul
+  // Shelly închizându-se. Măsurat local: 59 ms de la apel la acceptare, releu
+  // pornit în aceeaşi secundă. 8 s e cu trei ordine de mărime peste normal şi
+  // tot scurt cât să nu lase indicatorul agăţat dacă releul chiar nu răspunde.
+  impuls: 8000,
   implicit: 15000
 };
 
-/** Fereastra pentru o comandă, după domeniu şi direcţie. */
-export function fereastra(entityId, tinta) {
+/**
+ * Fereastra pentru o comandă. `actiune` are prioritate faţă de domeniu: un
+ * impuls e o categorie de comandă, nu o direcţie de pornire/oprire.
+ */
+export function fereastra(entityId, tinta, actiune) {
+  if (actiune === 'impuls') return FERESTRE.impuls;
   const dom = String(entityId || '').split('.')[0];
   const cheie = dom + ':' + (tinta === 'off' ? 'off' : 'on');
   return FERESTRE[cheie] !== undefined ? FERESTRE[cheie] : FERESTRE.implicit;
@@ -71,7 +81,7 @@ export function creeaza({ entityId, actiune, tinta, lastUpdated, acum }) {
     tinta,
     lastUpdated: lastUpdated === undefined ? null : lastUpdated,
     pornitLa: acum,
-    fereastra: fereastra(entityId, tinta),
+    fereastra: fereastra(entityId, tinta, actiune),
     status: CMD.TRIMIS,
     eroare: null
   };
@@ -119,18 +129,23 @@ export const eInZbor = (cmd) => !!cmd && !eTerminala(cmd.status);
 /** Textul de sub control cât timp aşteptăm. */
 export function textAsteptare(cmd) {
   if (!eInZbor(cmd)) return null;
+  // Poarta nu se „porneşte": i se trimite un impuls. Textul spune ce facem
+  // noi, nu ce presupunem despre poartă.
+  if (cmd.actiune === 'impuls') return 'Se trimite…';
   return cmd.tinta === 'off' ? 'Oprire…' : 'Pornire…';
 }
 
 /** Eticheta pentru cititoarele de ecran. */
 export function textAccesibil(cmd) {
   if (!eInZbor(cmd)) return null;
+  if (cmd.actiune === 'impuls') return 'Comandă în curs de trimitere';
   return cmd.tinta === 'off' ? 'Oprire în curs' : 'Pornire în curs';
 }
 
 /** Mesajul de neconfirmare, în cuvintele cerute. */
 export function textExpirat(cmd) {
   if (!cmd) return null;
+  if (cmd.actiune === 'impuls') return 'Comanda nu a fost confirmată';
   return cmd.tinta === 'off' ? 'Oprirea nu a fost confirmată' : 'Pornirea nu a fost confirmată';
 }
 

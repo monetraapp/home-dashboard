@@ -30,7 +30,7 @@ import { ProgramareAC } from './AcSchedule.jsx';
 import { useDeviceHealth } from '../ha/deviceHealth.js';
 import { useSystemHealth } from '../ha/systemHealth.js';
 import { healthTotals } from '../ha/health.js';
-import { buildPageCard, buildDeviceCard, buildSidebarDevice, buildModal } from './build.js';
+import { buildPageCard, buildDeviceCard, buildSidebarDevice, buildModal, marcajImpuls } from './build.js';
 
 const AC_UNIT_IDS = ['ac-vortex', 'ac-etaj', 'ac-vivax'];
 
@@ -172,6 +172,29 @@ export default function Dashboard({ onOpenMapping }) {
 
   const trackedCards = tracked.map((id) => CARD_BY_ID[id]).filter(Boolean);
   const onCount = trackedCards.filter((d) => E.mapped(d.slot) && E.isOn(d.slot)).length;
+  // ------------------------------------------------------------ poartă
+  // (v1.9.0) Poarta e singurul control fără stare de citit: nu există senzor de
+  // poziţie. Tot ce urmează descrie COMANDA, niciodată poziţia porţii.
+  const poartaMapata = E.mapped('poarta.comanda') && E.mapped('poarta.releu');
+  const poartaB = poartaMapata ? marcajImpuls(E) : null;
+  const poartaCd = poartaMapata ? E.poartaCooldown(now.getTime()) : { activ: false, ramas: 0 };
+  const poartaOnline = poartaMapata && E.available('poarta.releu');
+  const poartaUltima = poartaMapata ? E.poartaUltimaComanda() : null;
+  const poartaService = poartaMapata && E.isOn('poarta.service');
+  const poartaInZbor = !!(poartaB && poartaB.inZbor);
+  // Blocăm butonul cât timp cooldown-ul rulează: intrarea START a Linomatik e
+  // secvenţială, iar al doilea impuls ar însemna STOP, nu „deschide mai tare".
+  const poartaBlocat = !poartaOnline || poartaCd.activ || poartaInZbor;
+  const poartaStare = !poartaMapata
+    ? 'VERIFY · sloturile porţii nu sunt mapate'
+    : !poartaOnline
+      ? 'Releu indisponibil — comanda nu poate pleca'
+      : poartaInZbor
+        ? ''
+        : poartaCd.activ
+          ? 'Comandă trimisă · se poate retrimite în ' + poartaCd.ramas + ' s'
+          : 'Control disponibil';
+
 
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const monthPct = Math.round(((now.getDate() - 1 + now.getHours() / 24) / daysInMonth) * 100);
@@ -677,6 +700,72 @@ export default function Dashboard({ onOpenMapping }) {
                       <div style={s(dialCenterStyle)}>
                         <div style={s(dialNumStyle)}>{trackedCards.length}</div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* (v1.9.0) Poartă Intrare. Fără senzor de poziţie, deci cardul
+                    nu spune niciodată „deschisă", „închisă" sau „se deschide".
+                    Spune doar ce ştim cu adevărat: dacă se poate comanda, dacă
+                    am trimis, şi când a plecat ultimul impuls. */}
+                <div style={s(glassCard())} data-card="poarta-intrare">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <span style={s('display:flex; color:' + ORANGE + ';')}>{ic('gate', { size: 17, sw: 1.9 })}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={s(cardTitleStyle)}>Poartă Intrare</div>
+                      <div style={s(cardSubStyle)}>Linomatik · Shelly</div>
+                    </div>
+                  </div>
+
+                  <div
+                    className="hdTapY"
+                    role="button"
+                    tabIndex={poartaBlocat ? -1 : 0}
+                    aria-disabled={poartaBlocat ? 'true' : 'false'}
+                    aria-busy={poartaInZbor ? 'true' : 'false'}
+                    data-poarta="deschide"
+                    onClick={() => { if (!poartaBlocat) E.deschidePoarta('dashboard'); }}
+                    onKeyDown={(ev) => {
+                      if (poartaBlocat) return;
+                      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); E.deschidePoarta('dashboard'); }
+                    }}
+                    style={s(
+                      'margin-top:14px; min-height:46px; display:flex; align-items:center; justify-content:center; gap:2px;'
+                      + ' border-radius:13px; font-family:' + SANS + '; font-size:12.5px; font-weight:600; letter-spacing:0.06em;'
+                      + (poartaBlocat
+                        ? ' background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); color:' + TXT3 + '; cursor:default;'
+                        : ' background:linear-gradient(180deg,' + ORANGE_HI + ',' + ORANGE + '); border:1px solid rgba(0,0,0,0.18);'
+                          + ' color:#2a1a08; cursor:pointer; box-shadow:0 3px 12px rgba(240,138,44,0.22);')
+                    )}
+                  >
+                    {poartaInZbor ? <InZbor b={poartaB} /> : <span>DESCHIDE POARTA</span>}
+                  </div>
+
+                  <div style={s('font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + TXT3 + '; margin-top:9px; min-height:15px;')}>
+                    {poartaStare}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 2 }}>
+                    <span style={s('font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + TXT3 + ';')}>
+                      {poartaUltima
+                        ? 'Ultima comandă: ' + pad(poartaUltima.getHours()) + ':' + pad(poartaUltima.getMinutes())
+                          + (poartaUltima.toDateString() === now.toDateString() ? '' : ' · ' + poartaUltima.getDate() + ' ' + MONTHS[poartaUltima.getMonth()])
+                        : 'Nicio comandă înregistrată'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12 }}>
+                    <span style={s('font-family:' + SANS + '; font-size:12px; color:#c4b7a7;')}>Service Mode</span>
+                    <div
+                      className="hdTapY"
+                      role="switch"
+                      aria-checked={poartaService ? 'true' : 'false'}
+                      aria-label="Service Mode poartă"
+                      style={s(togglePill(poartaService))}
+                      onClick={() => poartaMapata && E.toggle('poarta.service')}
+                    >
+                      <div style={s(toggleKnob(poartaService))}>{ic('power', { size: 12.5, color: poartaService ? '#C4600F' : '#cfc4b8', sw: 2.2 })}</div>
+                      <span style={s(toggleText(poartaService))}>{poartaService ? 'on' : 'off'}</span>
                     </div>
                   </div>
                 </div>
