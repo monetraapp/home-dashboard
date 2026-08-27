@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.0.1
+
+**Butonul Power spune acum, singur, că lucrează.** Cât timp comanda e pe drum,
+în interiorul butonului se roteşte un inel portocaliu în jurul iconiţei Power.
+Nimic altceva nu se schimbă: fundalul rămâne cel al stării REALE, iar inelul nu
+promite un rezultat — spune doar „am trimis, aştept".
+
+**De ce înăuntrul butonului, nu în jurul lui.** Pastila e portocalie când
+controlul e pornit, deci un inel portocaliu desenat pe ea ar fi dispărut exact
+în jumătate din cazuri. Knob-ul, în schimb, e gri închis când e oprit şi aproape
+alb când e pornit — portocaliul are contrast pe amândouă. În plus nimic nu iese
+din cutia butonului: măsurat, pastila rămâne 69×36, knob-ul 26×26, poziţiile în
+card identice. **Zero deplasare de layout.** Zona de atingere rămâne 56 px.
+
+**Durata animaţiei e durata comenzii, nu un cronometru al ei.** Inelul citeşte
+acelaşi `inZbor` din registrul de comenzi introdus în v1.7.3 — nu s-a adăugat
+niciun al doilea mecanism, niciun timer per buton, nicio buclă JS. Verificat cu
+confirmarea suprimată la nivel de transport: inelul e acolo la 1,5 s, tot acolo
+la 7,5 s, şi dispare când comanda expiră, lăsând loc mesajului de eroare
+existent.
+
+**Tehnică.** Un singur pseudo-element `::after`, conic-gradient tăiat în inel cu
+`mask` acolo unde există, arc din borduri unde nu — deci nu există browser în
+care indicatorul lipseşte. Se animă exclusiv `transform` şi `opacity`,
+compozitate pe GPU. La `prefers-reduced-motion` rotaţia dispare, dar inelul
+rămâne complet şi vizibil: el poartă informaţia, nu mişcarea.
+
+**Acoperă butoanele Power discrete**, în toate cele şase locuri unde apar: card
+de dispozitiv, bară laterală, antet de acordeon, modal, comutatorul de AC de pe
+Acasă şi Service Mode. Valorile continue — temperatură, volum, number, moduri —
+rămân neatinse, aşa cum trebuie: acolo nu există „pornire", ci o valoare care se
+schimbă.
+
+Măsurat pe 50 de interacţiuni: niciun inel rămas agăţat, heap 6,3 → 6,4 MB, zero
+erori de consolă, încadrare corectă la şapte lăţimi de la 320 la 1440 px.
+
 ## 2.0.0
 
 **Poarta te poate aștepta deschisă, dar numai dacă i-ai spus tu.** Notificarea de

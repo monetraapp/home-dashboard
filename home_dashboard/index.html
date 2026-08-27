@@ -23,6 +23,45 @@
     @keyframes hdSpin { to { transform: rotate(360deg); } }
     .hdSpinner { animation: hdSpin 0.85s linear infinite; }
     @media (prefers-reduced-motion: reduce) { .hdSpinner { animation: none; } }
+    /* (v2.0.1) Inelul de comandă în curs, desenat ÎN INTERIORUL butonului Power.
+       De ce înăuntru şi nu în jurul lui: pastila e portocalie când controlul e
+       pornit, deci un inel portocaliu pe ea ar fi dispărut. Knob-ul, în schimb,
+       e gri închis când e oprit şi aproape alb când e pornit — portocaliul are
+       contrast pe amândouă. În plus nimic nu iese din cutia butonului: fără
+       decupare de către carduri, fără deplasare de layout, touch target-ul
+       rămâne exact cât era.
+       Animăm DOAR transform şi opacity, deci compozitare pe GPU, fără reflow.
+       Inelul NU spune ce stare va urma — spune doar „comanda e pe drum". */
+    @keyframes hdPowOrbit { to { transform: rotate(360deg); } }
+    @keyframes hdPowBreath { 0%, 100% { opacity: 0.62; } 50% { opacity: 1; } }
+    .hdPow { position: relative; }
+    .hdPow::after {
+      content: ''; position: absolute; inset: 1.5px; border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: #F08A2C; border-right-color: rgba(240,138,44,0.42);
+      animation: hdPowOrbit 0.9s linear infinite, hdPowBreath 1.8s ease-in-out infinite;
+      will-change: transform, opacity; pointer-events: none;
+    }
+    /* Unde există `mask`, arcul din borduri devine o mătură continuă: acelaşi
+       cost de randare, tranziţie mai fină. Fără `mask` rămâne arcul, care e
+       suportat peste tot — deci nu există browser în care inelul lipseşte. */
+    @supports ((-webkit-mask: radial-gradient(#000, #000)) or (mask: radial-gradient(#000, #000))) {
+      .hdPow::after {
+        border: 0;
+        background: conic-gradient(from 0deg, rgba(240,138,44,0) 0deg, rgba(240,138,44,0) 130deg,
+          rgba(240,138,44,0.30) 215deg, #F08A2C 320deg, #FFA340 352deg, rgba(240,138,44,0) 360deg);
+        -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+                mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+      }
+    }
+    /* Fără mişcare: inelul rămâne, complet şi static. El poartă informaţia. */
+    @media (prefers-reduced-motion: reduce) {
+      .hdPow::after {
+        animation: none; background: none;
+        border: 2px solid rgba(240,138,44,0.9);
+        -webkit-mask: none; mask: none;
+      }
+    }
     @keyframes ringPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
     @keyframes dashFlow { to { stroke-dashoffset: -28; } }
     @keyframes arcRun { from { stroke-dashoffset: 14; } to { stroke-dashoffset: -100; } }

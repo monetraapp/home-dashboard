@@ -30,7 +30,7 @@ import { ProgramareAC } from './AcSchedule.jsx';
 import { useDeviceHealth } from '../ha/deviceHealth.js';
 import { useSystemHealth } from '../ha/systemHealth.js';
 import { healthTotals } from '../ha/health.js';
-import { buildPageCard, buildDeviceCard, buildSidebarDevice, buildModal, marcajImpuls } from './build.js';
+import { buildPageCard, buildDeviceCard, buildSidebarDevice, buildModal, marcajComanda, marcajImpuls } from './build.js';
 
 const AC_UNIT_IDS = ['ac-vortex', 'ac-etaj', 'ac-vivax'];
 
@@ -146,6 +146,9 @@ export default function Dashboard({ onOpenMapping }) {
   const acUnits = AC_UNIT_IDS.map((id) => CARD_BY_ID[id]).filter(Boolean);
   const acUnit = acUnits[acIndex % acUnits.length];
   const acOn = acUnit ? E.mapped(acUnit.slot) && E.isOn(acUnit.slot) : false;
+  // (v2.0.1) Acelaşi marcaj ca la restul butoanelor Power: inelul vine din
+  // registrul de comenzi, nu dintr-un cronometru propriu al acestui card.
+  const acMarcaj = acUnit ? marcajComanda(E, acUnit.slot) : null;
   const acTarget = acUnit ? E.climateTarget(acUnit.slot) : null;
   const acStale = acUnit ? E.climateTargetStale(acUnit.slot) : false;
   const acDecimals = acUnit ? E.tempDecimals(Math.max(1, E.climateStep(acUnit.slot))) : 0;
@@ -182,6 +185,7 @@ export default function Dashboard({ onOpenMapping }) {
   const poartaUltima = poartaMapata ? E.poartaUltimaComanda() : null;
   const poartaService = poartaMapata && E.isOn('poarta.service');
   const poartaIntent = poartaMapata ? E.poartaIntentie(now.getTime()) : null;
+  const smMarcaj = poartaMapata ? marcajComanda(E, 'poarta.service') : null;
   const poartaInZbor = !!(poartaB && poartaB.inZbor);
   // Blocăm butonul cât timp cooldown-ul rulează: intrarea START a Linomatik e
   // secvenţială, iar al doilea impuls ar însemna STOP, nu „deschide mai tare".
@@ -670,10 +674,11 @@ export default function Dashboard({ onOpenMapping }) {
                       </span>
                       <div
                         className="hdTapY"
+                        aria-busy={acMarcaj && acMarcaj.inZbor ? 'true' : undefined}
                         style={s(togglePill(acOn))}
                         onClick={() => acUnit && E.mapped(acUnit.slot) && E.toggle(acUnit.slot)}
                       >
-                        <div style={s(toggleKnob(acOn))}>{ic('power', { size: 12.5, color: acOn ? '#C4600F' : '#cfc4b8', sw: 2.2 })}</div>
+                        <div className={acMarcaj && acMarcaj.inZbor ? 'hdPow' : undefined} style={s(toggleKnob(acOn))}>{ic('power', { size: 12.5, color: acOn ? '#C4600F' : '#cfc4b8', sw: 2.2 })}</div>
                         <span style={s(toggleText(acOn))}>{acOn ? 'on' : 'off'}</span>
                       </div>
                     </div>
@@ -780,7 +785,7 @@ export default function Dashboard({ onOpenMapping }) {
                       style={s(togglePill(poartaService))}
                       onClick={() => poartaMapata && E.toggle('poarta.service')}
                     >
-                      <div style={s(toggleKnob(poartaService))}>{ic('power', { size: 12.5, color: poartaService ? '#C4600F' : '#cfc4b8', sw: 2.2 })}</div>
+                      <div className={smMarcaj && smMarcaj.inZbor ? 'hdPow' : undefined} style={s(toggleKnob(poartaService))}>{ic('power', { size: 12.5, color: poartaService ? '#C4600F' : '#cfc4b8', sw: 2.2 })}</div>
                       <span style={s(toggleText(poartaService))}>{poartaService ? 'on' : 'off'}</span>
                     </div>
                   </div>
@@ -832,12 +837,12 @@ export default function Dashboard({ onOpenMapping }) {
                             <div style={s(sd.nameStyle)}>{sd.label}</div>
                             <div style={s(sd.metaStyle)}>{sd.model}</div>
                             <div style={s(sd.ambientStyle)} aria-busy={sd.inZbor || undefined}>
-                              <InZbor b={sd} />
+                              <InZbor b={sd} faraCerc />
                               {sd.inZbor ? null : sd.ambient}
                             </div>
                           </div>
                           <div className="hdTapY" data-power={sd.id} style={s(sd.togglePillStyle)} onClick={sd.onToggle}>
-                            <div style={s(sd.toggleKnobStyle)}>{sd.toggleIconEl}</div>
+                            <div className={sd.inZbor ? 'hdPow' : undefined} style={s(sd.toggleKnobStyle)}>{sd.toggleIconEl}</div>
                           </div>
                         </div>
                       ))}
@@ -1139,12 +1144,12 @@ function DeviceCard({ c }) {
           </div>
         </div>
         <div className="hdTapY" data-power={c.id} style={s(c.togglePillStyle)} onClick={c.onToggle} title={c.toggleTitle}>
-          <div style={s(c.toggleKnobStyle)}>{c.toggleIconEl}</div>
+          <div className={c.inZbor ? 'hdPow' : undefined} style={s(c.toggleKnobStyle)}>{c.toggleIconEl}</div>
         </div>
       </div>
 
       <div style={s(c.ambientStyle)} aria-busy={c.inZbor || undefined}>
-        <InZbor b={c} />
+        <InZbor b={c} faraCerc />
         {c.inZbor ? null : c.ambient}
       </div>
 
@@ -1277,11 +1282,13 @@ function PageCard({ card }) {
  * confirmarea reală. Inelul singur n-ar spune nimic unui cititor de ecran, de
  * aceea îl însoţeşte un text ascuns vizual.
  */
-function InZbor({ b, doarInel }) {
+function InZbor({ b, doarInel, faraCerc }) {
   if (!b || !b.inZbor) return null;
   return (
     <>
-      <span className="hdSpinner" style={s(b.spinnerStyle)} aria-hidden="true" />
+      {/* (v2.0.1) `faraCerc`: acolo unde inelul e deja pe butonul Power, cercul
+          mic de lângă text ar fi al doilea indicator pentru acelaşi lucru. */}
+      {faraCerc ? null : <span className="hdSpinner" style={s(b.spinnerStyle)} aria-hidden="true" />}
       {doarInel ? null : <span>{b.textCmd}</span>}
       <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
         {b.textAccesibil}
@@ -1518,14 +1525,14 @@ function Block({ b, grow }) {
                 <div style={{ minWidth: 0, flex: '1 1 auto' }}>
                   <div style={s(acc.nameStyle)}>{acc.name}</div>
                   <div style={s(acc.metaStyle)}>
-                    <InZbor b={acc} />
+                    <InZbor b={acc} faraCerc />
                     {acc.inZbor ? null : acc.meta}
                   </div>
                 </div>
               </div>
               <div style={s(acc.headRightStyle)}>
                 <div className="hdTapY" data-power={acc.id} style={s(acc.togglePillStyle)} onClick={acc.onPower}>
-                  <div style={s(acc.toggleKnobStyle)}>{acc.toggleIconEl}</div>
+                  <div className={acc.inZbor ? 'hdPow' : undefined} style={s(acc.toggleKnobStyle)}>{acc.toggleIconEl}</div>
                 </div>
                 <div style={s(acc.chevStyle)}>
                   {acc.chevLabel}
@@ -1747,14 +1754,14 @@ function Modal({ m, onClose }) {
             <div style={{ minWidth: 0 }}>
               <div id="hd-device-modal-title" style={s(m.titleStyle)}>{m.title}</div>
               <div style={s(m.subStyle)} aria-busy={m.inZbor || undefined}>
-                <InZbor b={m} />
+                <InZbor b={m} faraCerc />
                 {m.inZbor ? null : m.model + ' • ' + m.status}
               </div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <div className="hdTapY" data-power={m.id} style={s(m.togglePillStyle)} onClick={m.onToggle}>
-              <div style={s(m.toggleKnobStyle)}>{m.toggleIconEl}</div>
+              <div className={m.inZbor ? 'hdPow' : undefined} style={s(m.toggleKnobStyle)}>{m.toggleIconEl}</div>
               <span style={s(m.toggleTextStyle)}>{m.toggleText}</span>
             </div>
             <div
