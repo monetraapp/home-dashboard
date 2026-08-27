@@ -1,5 +1,67 @@
 # Changelog
 
+## 1.7.3
+
+**Răspuns imediat la apăsare, fără să pretindem un rezultat.** Până acum
+apăsarea unui control lent nu avea niciun ecou: v1.7.1 oprise minciuna
+optimistă, dar nu pusese nimic în loc. Acum apare un inel care se roteşte şi
+textul **„Pornire…" / „Oprire…"** — iar starea afişată rămâne, tot timpul, cea
+reală din Home Assistant.
+
+**Un registru generic, nu un artificiu per card.** Cheia e `entity_id|acţiune`,
+stările sunt `TRIMIS → ASTEPT → CONFIRMAT | ESUAT | EXPIRAT`, iar intrarea se
+şterge când ajunge într-o stare terminală. Verificat pe 50 de comenzi reale:
+**zero spinnere şi zero `aria-busy` rămase** la final.
+
+**Confirmarea e reală, nu un cronometru.** Se cere şi publicare NOUĂ pentru
+entitate (`last_updated` diferă faţă de momentul trimiterii), şi potrivire cu
+ţinta. Fără prima condiţie, o stare veche care se întâmplă să fie deja ţinta ar
+confirma o comandă care n-a produs nimic. Comparăm **şiruri**, nu ceasuri.
+Pentru climate ţinta e chiar modul trimis (`cool`), nu „on" — altfel nu s-ar fi
+confirmat niciodată.
+
+**Ferestre pe familie, din auditul de latenţă**, nu un prag universal:
+televizor pornire **45 s**, televizor oprire **40 s** (măsurat 32,8 s la
+Hisense — nu „mult mai scurt", cât arată datele), restul **15 s**. Dacă HA
+confirmă la 2 s, indicatorul dispare la 2 s.
+
+**Măsurat pe dispozitive reale:**
+
+| Caz | rezultat |
+|:--|:--|
+| TV Foişor (se trezeşte) | indicator la 262 ms → dispare la **6.321 ms**, la confirmarea reală |
+| TV Bucătărie (nu se trezeşte) | indicator ţinut **45.232 ms**, apoi starea reală „Standby" şi mesajul „Pornirea nu a fost confirmată" |
+| Climate Vivax | dispare la **802 ms** |
+| Comutator cloud AUX | indicator la **3,5 ms**, dispare la **18,6 ms** |
+
+**Latenţa indicatorului: 3,5 ms** (cerinţa era sub 100 ms), iar trimiterea
+comenzii rămâne neatinsă — T0→T1 = 0,1 ms, exact ca înainte.
+
+**Dublu clic:** cinci apăsări în fereastra de aşteptare produc **o singură
+comandă**. Alte funcţii ale aceluiaşi aparat rămân disponibile — se blochează
+perechea entitate+acţiune, nu aparatul. Fără retry automat.
+
+**Eşecul se închide pe loc**, fără să aştepte fereastra: eroarea reală e deja
+cunoscută. Iar mesajul de neconfirmare nu mai primeşte prefixul „Comanda nu a
+ajuns la HA" — la expirare comanda **a** ajuns la HA; doar aparatul n-a
+confirmat.
+
+**Accesibilitate:** `aria-busy` pe control, text ascuns vizual „Pornire în curs"
+/ „Oprire în curs" — inelul singur nu spune nimic unui cititor de ecran. La
+`prefers-reduced-motion` rotaţia se opreşte, dar inelul **rămâne vizibil**: el
+poartă informaţia, nu mişcarea.
+
+**Stări tranzitorii:** confirmăm la prima publicare care egalează ţinta, fără
+fereastră de stabilitate. Motivul e scris în cod: o astfel de fereastră ar fi
+întârziat exact cazul bun, iar interfaţa oricum nu minte — dacă televizorul
+revine la `off`, se vede `off`.
+
+Corectat şi un contrast sub prag: pilula „Offline" de pe Dispozitive avea
+4,43:1 la 12px, prinsă de audit în clipa în care un dispozitiv chiar a ajuns
+offline. Acum ~4,95:1.
+
+Teste: 406 logică + 44 stil. Audit responsive: 130/130, 0 probleme.
+
 ## 1.7.2
 
 **Coalescare pe valorile continue** — temperatură ţintă, volum, number. Nu şi pe

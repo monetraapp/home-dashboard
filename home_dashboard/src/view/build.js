@@ -1,6 +1,24 @@
 // Construieşte obiectele de "vals" pentru markup — echivalentul lui renderVals()
 // din designul original, dar alimentat cu date live din Home Assistant.
 import { ic } from '../design/icons.js';
+import { textAsteptare, textAccesibil } from '../ha/commandState.js';
+
+/**
+ * Marcajul de comandă în zbor, într-un singur loc pentru TOATE suprafeţele
+ * (dală de secţiune, antet de acordeon, card de dispozitiv, modal). Logica stă
+ * aici; fiecare suprafaţă doar o randează. Fără asta ar fi fost patru
+ * implementări care se despart în timp.
+ */
+export function marcajComanda(E, slot) {
+  const cmd = slot && E.comandaCurenta ? E.comandaCurenta(slot) : null;
+  return {
+    inZbor: !!cmd,
+    textCmd: textAsteptare(cmd),
+    textAccesibil: textAccesibil(cmd),
+    spinnerStyle: 'display:inline-block; width:10px; height:10px; margin-right:5px; vertical-align:-1px; flex-shrink:0;' +
+      ' border:2px solid rgba(240,138,44,0.25); border-top-color:' + ORANGE + '; border-radius:50%;'
+  };
+}
 import {
   SANS, DOTO, ORANGE, ORANGE_HI, TXT, TXT2, TXT3, CARD_BG, CARD_BORDER,
   glassCard, tileStyleFor, iconWrapFor, labelFor, valueFor, togglePill, toggleKnob, toggleText,
@@ -101,14 +119,18 @@ export function buildItem(E, ui, d, keyCtx) {
   const mapped = slot ? E.mapped(slot) : true;
   const avail = slot ? E.available(slot) : true;
   const active = !!(d.toggleable && slot && E.isOn(slot));
-  // (v1.7.1) Comanda trimisa si neconfirmata inca. NU schimba starea afisata —
-  // doar marcheaza ca a plecat ceva. Un televizor porneste in zeci de secunde;
-  // fara acest semn dala ar parea moarta, iar cu vechea metoda (pending citit
-  // ca stare) ar fi mintit ca e deja pornit.
-  const inZbor = !!(d.toggleable && slot && E.isPending && E.isPending(slot));
+  // (v1.7.3) Comanda discretă în zbor. NU schimbă starea afişată — dala rămâne
+  // pe starea reală din HA — dar arată un inel care se roteşte şi textul
+  // „Pornire…" / „Oprire…" în locul valorii, ca apăsarea să aibă răspuns imediat
+  // fără să pretindem un rezultat.
+  const marcaj = d.toggleable ? marcajComanda(E, slot) : { inZbor: false, textCmd: null };
+  const inZbor = marcaj.inZbor;
+  const textCmd = marcaj.textCmd;
 
   let value;
-  if (d.text !== undefined) {
+  if (textCmd) {
+    value = textCmd;
+  } else if (d.text !== undefined) {
     value = d.text;
   } else if (!slot) {
     value = '';
@@ -152,6 +174,14 @@ export function buildItem(E, ui, d, keyCtx) {
     iconWrapStyle: iconWrapFor(active),
     labelStyle: d.toggleable ? toggleItemLabelStyle(active, ui) : labelFor(active) + labelWrap(ui),
     valueStyle: d.toggleable ? toggleItemValueStyle(active) : verifyValueStyle(active, value),
+    inZbor,
+    // Identificator stabil pentru unelte, ca `data-page` / `data-acc` / `data-sp`.
+    // Fara el, o sonda trebuie sa urce prin parinti dupa eticheta vizibila — iar
+    // asta a nimerit o data pilula de putere a acordeonului si a pornit un
+    // aparat pe care nu-l viza.
+    dataTile: slot || d.label || null,
+    textAccesibil: marcaj.textAccesibil,
+    spinnerStyle: marcaj.spinnerStyle,
     wrapStyle: 'position:relative; display:flex; min-width:0;',
     tipText: tip,
     showTip: ui.hoverKey === key,
@@ -715,6 +745,7 @@ export function buildAccordionItem(E, ui, u) {
   const mapped = def ? E.mapped(def.slot) : false;
   const avail = def ? E.available(def.slot) : false;
   const on = mapped && E.isOn(def.slot);
+  const marcaj = def ? marcajComanda(E, def.slot) : { inZbor: false };
   const stop = (e) => { if (e && e.stopPropagation) e.stopPropagation(); };
 
   // meta live, în locul string-urilor fixe din mockup
@@ -731,6 +762,7 @@ export function buildAccordionItem(E, ui, u) {
     id: u.card,
     name: def ? E.friendlyName(def.slot, def.label) : u.card,
     meta,
+    ...marcaj,
     open,
     wrapStyle: 'margin-bottom:10px; border-radius:16px; overflow:hidden; background:rgba(255,255,255,0.028); border:1px solid ' + (open ? 'rgba(240,138,44,0.24)' : 'rgba(255,255,255,0.065)') + ';',
     headStyle: 'display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 14px; cursor:pointer;' +
@@ -807,12 +839,19 @@ function buildActionTile(E, ui, def, item, cardId, context) {
   const key = 'acc:' + cardId + ':' + item.label;
   // v1.1.0: valorile tehnice (fan_mode: turbo etc.) nu se mai afiseaza sub
   // eticheta; explicatia umana traieste in tooltip (dictionarul descriptions).
-  const value = res.supported ? '' : VERIFY;
+  // Dalele de acţiune sunt, în bună parte, comutatoare lente de cloud (Economie
+  // LG, Eco/Afişaj/Health AUX). Primesc acelaşi marcaj ca restul controalelor
+  // discrete — altfel ar fi singura suprafaţă fără răspuns la apăsare.
+  const slotAct = item.action && item.action.k === 'slot' ? item.action.slot : null;
+  const marcajAct = slotAct ? marcajComanda(E, slotAct) : { inZbor: false, textCmd: null, textAccesibil: null, spinnerStyle: '' };
+  const value = marcajAct.textCmd ? marcajAct.textCmd : (res.supported ? '' : VERIFY);
   return {
     iconEl: ic(item.icon, { size: 16, color: on ? '#2a1608' : TXT2 }),
     label: item.label,
     value,
-    tileStyle: tileStyleFor(on, res.supported) + (res.supported ? '' : ' opacity:0.55;'),
+    ...marcajAct,
+    dataTile: slotAct || item.label,
+    tileStyle: tileStyleFor(on, res.supported) + (res.supported ? '' : ' opacity:0.55;') + (marcajAct.inZbor ? ' outline:1px solid rgba(240,138,44,0.45); outline-offset:-1px;' : ''),
     iconWrapStyle: iconWrapFor(on),
     labelStyle: labelFor(on) + labelWrap(ui),
     valueStyle: verifyValueStyle(on, value),
@@ -1037,6 +1076,7 @@ export function buildDeviceCard(E, ui, def) {
     label: def.label,
     model: def.model,
     ambient: ambientText(E, def),
+    ...marcajComanda(E, def.slot),
     // Carduri fără cadran (ex. pompa de filtrare, strict on/off): în locul
     // dial-ului se afişează un bloc de stare cu aceeaşi înălţime (132px),
     // ca layout-ul cardului să rămână identic cu al vecinilor.
@@ -1158,6 +1198,7 @@ export function buildSidebarDevice(E, ui, def) {
     label: def.label,
     model: def.model,
     ambient: ambientText(E, def),
+    ...marcajComanda(E, def.slot),
     cardStyle: 'display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:18px; cursor:pointer; background:' + CARD_BG + '; border:1px solid ' + (a ? 'rgba(240,138,44,0.22)' : CARD_BORDER) + ';',
     dialWrapStyle: 'position:relative; width:74px; height:74px; flex-shrink:0; display:flex; align-items:center; justify-content:center;',
     dialTicksEl: dialTicks(frac, a, 74),
@@ -1221,6 +1262,8 @@ export function buildModal(E, ui) {
     };
 
   return {
+    id: def.id,
+    ...marcajComanda(E, def.slot),
     title: E.friendlyName(def.slot, def.label),
     model: def.model,
     status,

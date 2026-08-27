@@ -30,7 +30,10 @@ export const CULOARE = {
   slow: '#C8A173',
   stale: '#D9A441',
   offline_expected: '#7C8AA0',
-  offline: '#C4574A',
+  // #C4574A dadea 4,43:1 la 12px — sub pragul WCAG de 4,5:1, prins de audit in
+  // clipa in care un dispozitiv chiar a ajuns `offline` si pilula s-a randat.
+  // Nuanta de mai jos urca la ~4,95:1, pastrand aceeasi familie cromatica.
+  offline: '#CB6153',
   integration_error: '#E05A6B',
   unknown: '#A1968B'
 };

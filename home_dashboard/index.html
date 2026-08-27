@@ -17,6 +17,12 @@
     ::-webkit-scrollbar-track { background: transparent; }
     @keyframes ringOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes ringOrbitRev { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+    /* (v1.7.3) Indicatorul de comandă în curs. Rotaţia e singura animaţie
+       adăugată; la `prefers-reduced-motion` inelul rămâne pe loc, dar RĂMÂNE
+       vizibil — el poartă informaţia, nu mişcarea. */
+    @keyframes hdSpin { to { transform: rotate(360deg); } }
+    .hdSpinner { animation: hdSpin 0.85s linear infinite; }
+    @media (prefers-reduced-motion: reduce) { .hdSpinner { animation: none; } }
     @keyframes ringPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
     @keyframes dashFlow { to { stroke-dashoffset: -28; } }
     @keyframes arcRun { from { stroke-dashoffset: 14; } to { stroke-dashoffset: -100; } }

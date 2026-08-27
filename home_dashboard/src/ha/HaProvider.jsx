@@ -9,6 +9,10 @@ import {
 } from 'home-assistant-js-websocket';
 import { loadConfig, saveConfig, clearConfig, loadMap, saveMap } from './store.js';
 import { seedSuggestions } from './slots.js';
+import {
+  CMD, creeaza, evalueaza, marcheazaAcceptat, marcheazaEsec, eInZbor, eTerminala,
+  cheieComanda, textExpirat
+} from './commandState.js';
 import { HaContext } from './context.js';
 
 const PENDING_MS = 4000;
@@ -274,41 +278,20 @@ export function HaProvider({ children }) {
     if (added > 0) setEntityMap(map);
   }, [status, states, entityMap, setEntityMap]);
 
-  // ------------------------------------------------- marcaj de comandă în zbor
-  // `lastUpdatedLaTrimitere` reţine ce ştia HA despre entitate în momentul
-  // comenzii. Când valoarea se schimbă, HA are un adevăr proaspăt şi marcajul
-  // nu mai are ce căuta — se stinge, indiferent dacă rezultatul e cel cerut.
-  // Comparăm ŞIRURI, nu ceasuri: o diferenţă de ceas între PC şi HA ar fi făcut
-  // o comparaţie temporală să greşească tăcut.
-  const lastUpdatedLaTrimitere = useRef({});
-
-  // Oglindă a stărilor pentru `markPending`, care e un useCallback cu deps [].
-  // Citirea directă a lui `states` de acolo ar fi fost o închidere învechită:
-  // ar fi văzut mereu starea de la primul render.
-  const statesRef = useRef({});
-  useEffect(() => { statesRef.current = states; }, [states]);
-
+  // ------------------------------ ecou local pentru valorile continue
+  // Pentru temperatură ţintă, volum şi number, valoarea afişată e SELECŢIA
+  // UTILIZATORULUI, nu o stare pretinsă a aparatului: fără ecou, butoanele +/−
+  // ar fi inutilizabile şi apăsările succesive n-ar mai putea acumula.
+  // Pornit/oprit NU mai trece pe aici — are registrul de comenzi de mai jos.
   const markPending = useCallback((key, value) => {
     setPending((p) => {
       const n = Object.assign({}, p);
-      if (value === undefined) {
-        delete n[key];
-      } else {
-        n[key] = value;
-      }
+      if (value === undefined) delete n[key];
+      else n[key] = value;
       return n;
     });
     if (pendingTimers.current[key]) clearTimeout(pendingTimers.current[key]);
-    if (value === undefined) {
-      delete pendingTimers.current[key];
-      delete lastUpdatedLaTrimitere.current[key];
-      return;
-    }
-    if (key.indexOf('onoff:') === 0) {
-      const id = key.slice(6);
-      const st = statesRef.current && statesRef.current[id];
-      lastUpdatedLaTrimitere.current[key] = st ? st.last_updated : null;
-    }
+    if (value === undefined) { delete pendingTimers.current[key]; return; }
     pendingTimers.current[key] = setTimeout(() => {
       setPending((p) => {
         const n = Object.assign({}, p);
@@ -316,7 +299,6 @@ export function HaProvider({ children }) {
         return n;
       });
       delete pendingTimers.current[key];
-      delete lastUpdatedLaTrimitere.current[key];
     }, PENDING_MS);
   }, []);
 
@@ -328,31 +310,121 @@ export function HaProvider({ children }) {
     []
   );
 
-  // Reconciliere: din clipa în care HA publică o stare nouă pentru entitate,
-  // marcajul de comandă în zbor se stinge. Fără asta, controlul rămânea marcat
-  // „în lucru" până la expirarea cronometrului, chiar şi după ce rezultatul
-  // sosise — un al doilea fel de a arăta altceva decât realitatea.
-  useEffect(() => {
-    const chei = Object.keys(pending).filter((k) => k.indexOf('onoff:') === 0);
-    if (!chei.length) return;
-    const deStins = chei.filter((k) => {
-      const st = states[k.slice(6)];
-      if (!st) return false;
-      const laTrimitere = lastUpdatedLaTrimitere.current[k];
-      return laTrimitere !== undefined && st.last_updated !== laTrimitere;
-    });
-    if (!deStins.length) return;
-    for (const k of deStins) {
-      clearTimeout(pendingTimers.current[k]);
-      delete pendingTimers.current[k];
-      delete lastUpdatedLaTrimitere.current[k];
+  // ------------------------------------------------------- registru de comenzi
+  //
+  // Un singur strat generic pentru TOATE comenzile discrete (pornire/oprire),
+  // indiferent de card sau de familie. Cheia e `entity_id|acţiune`, iar intrarea
+  // se şterge când ajunge într-o stare terminală — registrul nu creşte.
+  //
+  // Starea reală a aparatului rămâne cea din HA. Registrul spune doar atât:
+  // „am trimis o comandă şi încă nu ştiu dacă a ajuns".
+  const [comenzi, setComenzi] = useState({});
+  const comenziRef = useRef({});
+  const comenziTimers = useRef({});
+
+  // Oglindă a stărilor: `porneste` e un useCallback cu deps [], iar citirea
+  // directă a lui `states` de acolo ar fi o închidere învechită — ar vedea mereu
+  // starea de la primul render.
+  const statesRef = useRef({});
+  useEffect(() => { statesRef.current = states; }, [states]);
+
+  const scrieComanda = useCallback((cheie, cmd) => {
+    if (cmd === null) {
+      delete comenziRef.current[cheie];
+    } else {
+      comenziRef.current[cheie] = cmd;
     }
-    setPending((p) => {
-      const n = Object.assign({}, p);
-      for (const k of deStins) delete n[k];
-      return n;
+    setComenzi(Object.assign({}, comenziRef.current));
+  }, []);
+
+  const inchideComanda = useCallback((cheie, cmd) => {
+    if (comenziTimers.current[cheie]) {
+      clearTimeout(comenziTimers.current[cheie]);
+      delete comenziTimers.current[cheie];
+    }
+    scrieComanda(cheie, null);
+    if (cmd && cmd.status === CMD.EXPIRAT) setLastCallError(textExpirat(cmd));
+  }, [scrieComanda]);
+
+  /**
+   * Porneşte o comandă discretă. `exec` face apelul real şi întoarce true/false.
+   * Întoarce false dacă exact aceeaşi comandă e deja în zbor — aşa nu plecă
+   * cinci comenzi identice dintr-o apăsare nervoasă. Alte funcţii ale aceluiaşi
+   * aparat rămân disponibile: blocăm perechea entitate+acţiune, nu aparatul.
+   */
+  const porneste = useCallback(({ entityId, actiune, tinta, exec }) => {
+    const cheie = cheieComanda(entityId, actiune);
+    if (eInZbor(comenziRef.current[cheie])) return false;
+
+    const st = statesRef.current && statesRef.current[entityId];
+    const cmd = creeaza({
+      entityId, actiune, tinta,
+      lastUpdated: st ? st.last_updated : null,
+      acum: Date.now()
     });
-  }, [states, pending]);
+    scrieComanda(cheie, cmd);
+
+    comenziTimers.current[cheie] = setTimeout(() => {
+      const c = comenziRef.current[cheie];
+      if (!eInZbor(c)) return;
+      inchideComanda(cheie, { ...c, status: CMD.EXPIRAT });
+    }, cmd.fereastra);
+
+    Promise.resolve()
+      .then(exec)
+      .then((ok) => {
+        const c = comenziRef.current[cheie];
+        if (!eInZbor(c)) return;
+        if (ok === false) {
+          // Eroarea reală e deja pusă pe bandă de `callService`. Închidem PE LOC,
+          // fără să aşteptăm fereastra: eşecul e deja cunoscut.
+          inchideComanda(cheie, marcheazaEsec(c, 'apel respins'));
+        } else {
+          scrieComanda(cheie, marcheazaAcceptat(c));
+        }
+      })
+      .catch(() => {
+        const c = comenziRef.current[cheie];
+        if (eInZbor(c)) inchideComanda(cheie, marcheazaEsec(c, 'excepţie la apel'));
+      });
+    return true;
+  }, [scrieComanda, inchideComanda]);
+
+  // Confirmarea: la fiecare stare nouă publicată de HA, reevaluăm comenzile în
+  // zbor. `evalueaza` cere şi publicare nouă, şi potrivire cu ţinta — o stare
+  // veche care se întâmplă să fie deja ţinta NU confirmă nimic.
+  useEffect(() => {
+    const chei = Object.keys(comenziRef.current);
+    if (!chei.length) return;
+    const acum = Date.now();
+    for (const cheie of chei) {
+      const c = comenziRef.current[cheie];
+      if (!eInZbor(c)) continue;
+      const nou = evalueaza(c, states[c.entityId], acum);
+      if (nou.status !== c.status) {
+        if (eTerminala(nou.status)) inchideComanda(cheie, nou);
+        else scrieComanda(cheie, nou);
+      }
+    }
+  }, [states, inchideComanda, scrieComanda]);
+
+  useEffect(
+    () => () => {
+      Object.values(comenziTimers.current).forEach(clearTimeout);
+      comenziTimers.current = {};
+      comenziRef.current = {};
+    },
+    []
+  );
+
+  /** Comanda în zbor pentru o entitate, sau null. */
+  const comandaPentru = useCallback(
+    (entityId, actiune) => {
+      const c = comenzi[cheieComanda(entityId, actiune || 'power')];
+      return eInZbor(c) ? c : null;
+    },
+    [comenzi]
+  );
 
   // --------------------------------------------------------------- servicii
   const callService = useCallback(
@@ -473,6 +545,8 @@ export function HaProvider({ children }) {
       subscribeMessage,
       pending,
       markPending,
+      porneste,
+      comandaPentru,
       lastCallError,
       setLastCallError,
       clearCallError: () => setLastCallError(null)
@@ -480,7 +554,8 @@ export function HaProvider({ children }) {
     [
       config, setConfig, resetConfig, retry, status, error, states, wsStats, lastTargets, lastSentTimers,
       rememberSentTimer, entityMap, setEntityMap, callService, callServiceWithResponse,
-      sendMessagePromise, subscribeMessage, pending, markPending, lastCallError, callServiceDebounced
+      sendMessagePromise, subscribeMessage, pending, markPending, lastCallError, callServiceDebounced,
+      porneste, comandaPentru
     ]
   );
 

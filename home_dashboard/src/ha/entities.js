@@ -210,13 +210,25 @@ export function useEntities() {
       return ON_STATES.indexOf(String(st.state).toLowerCase()) >= 0;
     }
 
-    /** Există o comandă trimisă pentru acest slot şi neconfirmată încă? */
-    function isPending(slotKey) {
+    /**
+     * Comanda discretă în zbor pentru acest slot, sau null.
+     * Descrie EXCLUSIV soarta comenzii; starea aparatului rămâne cea din HA.
+     */
+    function comandaCurenta(slotKey) {
       const id = idOf(slotKey);
-      return !!id && pending['onoff:' + id] !== undefined;
+      return id ? ha.comandaPentru(id, 'power') : null;
     }
 
-    /** Pornire/oprire generică pentru switch, light, automation, media_player, climate. */
+    /** Compatibilitate: „e ceva în zbor pe acest control?" */
+    function isPending(slotKey) {
+      return !!comandaCurenta(slotKey);
+    }
+
+    /**
+     * Pornire/oprire generică pentru switch, light, automation, media_player,
+     * climate. Trece prin registrul de comenzi: o singură comandă de acelaşi fel
+     * per entitate, confirmare din starea reală, fereastră pe familie.
+     */
     async function toggle(slotKey) {
       const id = idOf(slotKey);
       if (!id) return false;
@@ -224,27 +236,33 @@ export function useEntities() {
       if (!st) return false;
       const domain = id.split('.')[0];
       const currentlyOn = isOn(slotKey);
-      const pKey = 'onoff:' + id;
-      markPending(pKey, !currentlyOn);
-
-      // Un apel eşuat trebuie să stingă marcajul PE LOC. Înainte, marcajul
-      // expira doar pe cronometrul de 4 s, deci o comandă respinsă în 543 ms
-      // lăsa controlul „în lucru" încă trei secunde şi jumătate.
-      const trimite = async (d, sv, data) => {
-        const ok = await callService(d, sv, data || {}, { entity_id: id });
-        if (!ok) markPending(pKey, undefined);
-        return ok;
-      };
+      // Ţinta e starea pe care o aşteptăm de la HA. Pentru climate, pornirea
+      // ajunge într-un mod (cool/heat/auto…), nu în „on" — de aceea ţinta se
+      // calculează din modul chiar trimis, altfel n-am confirma niciodată.
+      let tinta = currentlyOn ? 'off' : 'on';
+      let exec;
 
       if (domain === 'climate') {
-        if (currentlyOn) return trimite('climate', 'turn_off');
-        const modes = (st.attributes && st.attributes.hvac_modes) || [];
-        const preferred = matchOption(modes, ['cool', 'heat_cool', 'auto', 'heat']);
-        if (preferred) return trimite('climate', 'set_hvac_mode', { hvac_mode: preferred });
-        return trimite('climate', 'turn_on');
+        if (currentlyOn) {
+          exec = () => callService('climate', 'turn_off', {}, { entity_id: id });
+        } else {
+          const modes = (st.attributes && st.attributes.hvac_modes) || [];
+          const preferred = matchOption(modes, ['cool', 'heat_cool', 'auto', 'heat']);
+          if (preferred) {
+            tinta = preferred;
+            exec = () => callService('climate', 'set_hvac_mode', { hvac_mode: preferred }, { entity_id: id });
+          } else {
+            exec = () => callService('climate', 'turn_on', {}, { entity_id: id });
+          }
+        }
+      } else if (domain === 'button') {
+        // Un buton nu are stare de confirmat: se apasă şi gata, fără registru.
+        return callService('button', 'press', {}, { entity_id: id });
+      } else {
+        exec = () => callService('homeassistant', currentlyOn ? 'turn_off' : 'turn_on', {}, { entity_id: id });
       }
-      if (domain === 'button') return trimite('button', 'press');
-      return trimite('homeassistant', currentlyOn ? 'turn_off' : 'turn_on');
+
+      return ha.porneste({ entityId: id, actiune: 'power', tinta, exec });
     }
 
     // -------------------------------------------------------------- climate
@@ -503,7 +521,7 @@ export function useEntities() {
 
     return {
       ha, states, entityMap,
-      idOf, ent, mapped, available, attr, rawState, num, fmt, isVerify, isOn, isPending, toggle,
+      idOf, ent, mapped, available, attr, rawState, num, fmt, isVerify, isOn, isPending, comandaCurenta, toggle,
       climateTarget, climateTargetStale, supportsFeature, tempDecimals,
       climateCurrent, climateStep, climateMin, climateMax,
       setClimateTarget, bumpClimate, setHvacMode, setFanMode, setSwingMode, setPresetMode,

@@ -726,9 +726,12 @@ export default function Dashboard({ onOpenMapping }) {
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={s(sd.nameStyle)}>{sd.label}</div>
                             <div style={s(sd.metaStyle)}>{sd.model}</div>
-                            <div style={s(sd.ambientStyle)}>{sd.ambient}</div>
+                            <div style={s(sd.ambientStyle)} aria-busy={sd.inZbor || undefined}>
+                              <InZbor b={sd} />
+                              {sd.inZbor ? null : sd.ambient}
+                            </div>
                           </div>
-                          <div className="hdTapY" style={s(sd.togglePillStyle)} onClick={sd.onToggle}>
+                          <div className="hdTapY" data-power={sd.id} style={s(sd.togglePillStyle)} onClick={sd.onToggle}>
                             <div style={s(sd.toggleKnobStyle)}>{sd.toggleIconEl}</div>
                           </div>
                         </div>
@@ -961,7 +964,12 @@ function OfflineBanner() {
     ? connecting
       ? 'Se reconectează la Home Assistant…'
       : 'Deconectat de la Home Assistant — valorile afişate sunt ultimele primite.' + (error ? ' ' + error : '')
-    : 'Comanda nu a ajuns la HA: ' + lastCallError;
+    // (v1.7.3) O neconfirmare NU e acelaşi lucru cu o comandă care n-a plecat:
+    // la expirare comanda a ajuns la HA şi a fost acceptată, doar aparatul n-a
+    // confirmat. Prefixul de transport ar fi minţit despre ce a eşuat.
+    : /nu a fost confirmat/.test(String(lastCallError))
+      ? lastCallError
+      : 'Comanda nu a ajuns la HA: ' + lastCallError;
   const color = connecting ? '#f0c79b' : '#e8a08a';
   const btn =
     'padding:13px 16px; border-radius:100px; cursor:pointer; display:inline-flex; align-items:center; font-family:' + SANS +
@@ -1024,12 +1032,15 @@ function DeviceCard({ c }) {
             <div style={s(c.modelStyle)}>{c.model}</div>
           </div>
         </div>
-        <div className="hdTapY" style={s(c.togglePillStyle)} onClick={c.onToggle} title={c.toggleTitle}>
+        <div className="hdTapY" data-power={c.id} style={s(c.togglePillStyle)} onClick={c.onToggle} title={c.toggleTitle}>
           <div style={s(c.toggleKnobStyle)}>{c.toggleIconEl}</div>
         </div>
       </div>
 
-      <div style={s(c.ambientStyle)}>{c.ambient}</div>
+      <div style={s(c.ambientStyle)} aria-busy={c.inZbor || undefined}>
+        <InZbor b={c} />
+        {c.inZbor ? null : c.ambient}
+      </div>
 
       {c.hasDial ? (
         /* − şi + flanchează cadranul direct: simetrice stânga/dreapta, la
@@ -1150,6 +1161,26 @@ function PageCard({ card }) {
         <Block key={i} b={b} grow={growable(b)} />
       ))}
     </div>
+  );
+}
+
+/**
+ * Marcajul de comandă în zbor. O singură implementare pentru toate suprafeţele:
+ * dală de secţiune, antet de acordeon, card de dispozitiv, modal.
+ * NU schimbă starea afişată — doar spune că o comandă a plecat şi se aşteaptă
+ * confirmarea reală. Inelul singur n-ar spune nimic unui cititor de ecran, de
+ * aceea îl însoţeşte un text ascuns vizual.
+ */
+function InZbor({ b, doarInel }) {
+  if (!b || !b.inZbor) return null;
+  return (
+    <>
+      <span className="hdSpinner" style={s(b.spinnerStyle)} aria-hidden="true" />
+      {doarInel ? null : <span>{b.textCmd}</span>}
+      <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
+        {b.textAccesibil}
+      </span>
+    </>
   );
 }
 
@@ -1375,16 +1406,19 @@ function Block({ b, grow }) {
             {/* `data-acc` (v1.7.0): identificator stabil pentru unelte. Fara el,
                 o sonda trebuie sa gaseasca acordeonul dupa textul vizibil — exact
                 metoda care s-a rupt tacut la schimbarea navigatiei (lectia 12). */}
-            <div style={s(acc.headStyle)} data-acc={acc.id} aria-expanded={acc.open} onClick={acc.onExpand}>
+            <div style={s(acc.headStyle)} data-acc={acc.id} aria-expanded={acc.open} aria-busy={acc.inZbor || undefined} onClick={acc.onExpand}>
               <div style={s(acc.headLeftStyle)}>
                 <div style={s(acc.iconWrapStyle)}>{acc.iconEl}</div>
                 <div style={{ minWidth: 0, flex: '1 1 auto' }}>
                   <div style={s(acc.nameStyle)}>{acc.name}</div>
-                  <div style={s(acc.metaStyle)}>{acc.meta}</div>
+                  <div style={s(acc.metaStyle)}>
+                    <InZbor b={acc} />
+                    {acc.inZbor ? null : acc.meta}
+                  </div>
                 </div>
               </div>
               <div style={s(acc.headRightStyle)}>
-                <div className="hdTapY" style={s(acc.togglePillStyle)} onClick={acc.onPower}>
+                <div className="hdTapY" data-power={acc.id} style={s(acc.togglePillStyle)} onClick={acc.onPower}>
                   <div style={s(acc.toggleKnobStyle)}>{acc.toggleIconEl}</div>
                 </div>
                 <div style={s(acc.chevStyle)}>
@@ -1424,11 +1458,19 @@ function Block({ b, grow }) {
                     <div style={s(sec.gridStyle)}>
                       {sec.items.map((item, ii) => (
                         <div key={ii} style={s(item.wrapStyle)} onMouseEnter={item.onEnter} onMouseLeave={item.onLeave}>
-                          <div style={s(item.tileStyle)} {...pressProps(item.onEnter, item.onLeave, item.onToggle)}>
+                          <div
+                            style={s(item.tileStyle)}
+                            data-tile={item.dataTile || undefined}
+                            aria-busy={item.inZbor || undefined}
+                            {...pressProps(item.onEnter, item.onLeave, item.onToggle)}
+                          >
                             <div style={s(item.iconWrapStyle)}>{item.iconEl}</div>
                             <div style={{ minWidth: 0 }}>
                               <div style={s(item.labelStyle)}>{item.label}</div>
-                              <div style={s(item.valueStyle)}>{item.value}</div>
+                              <div style={s(item.valueStyle)}>
+                                <InZbor b={item} doarInel />
+                                {item.value}
+                              </div>
                             </div>
                           </div>
                           {item.showTip ? <Tip text={item.tipText} /> : null}
@@ -1598,11 +1640,14 @@ function Modal({ m, onClose }) {
             <div style={s(m.iconWrapStyle)}>{m.iconEl}</div>
             <div style={{ minWidth: 0 }}>
               <div id="hd-device-modal-title" style={s(m.titleStyle)}>{m.title}</div>
-              <div style={s(m.subStyle)}>{m.model + ' • ' + m.status}</div>
+              <div style={s(m.subStyle)} aria-busy={m.inZbor || undefined}>
+                <InZbor b={m} />
+                {m.inZbor ? null : m.model + ' • ' + m.status}
+              </div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <div className="hdTapY" style={s(m.togglePillStyle)} onClick={m.onToggle}>
+            <div className="hdTapY" data-power={m.id} style={s(m.togglePillStyle)} onClick={m.onToggle}>
               <div style={s(m.toggleKnobStyle)}>{m.toggleIconEl}</div>
               <span style={s(m.toggleTextStyle)}>{m.toggleText}</span>
             </div>

@@ -37,6 +37,10 @@ import {
 } from '../src/ha/deviceHealth.js';
 import { parseSize, fmtBytes, dbGrowth, citesteSystemHealth } from '../src/ha/systemHealth.js';
 import {
+  CMD, creeaza, evalueaza, marcheazaAcceptat, marcheazaEsec, eInZbor, eTerminala,
+  cheieComanda, fereastra, textAsteptare, textAccesibil, textExpirat
+} from '../src/ha/commandState.js';
+import {
   oraScurta, textZile, textRepetare, textSetari, textUrmatoarea, textUltima, stareProgram, slotProg
 } from '../src/ha/acSchedule.js';
 
@@ -1155,6 +1159,112 @@ eq('cele 28 de sloturi de programare exista in catalog',
    SLOTS.filter((x) => x.key.indexOf('prog.') === 0).length, 28);
 eq('toate au mapare implicita',
    SLOTS.filter((x) => x.key.indexOf('prog.') === 0).every((x) => !!SUGGESTED_MAP[x.key]), true);
+
+console.log('ciclul de viata al comenzii:');
+
+const STC = (state, lu) => ({ state, last_updated: lu });
+const nouC = (ent, tinta, lu, acum) => creeaza({ entityId: ent, actiune: 'power', tinta, lastUpdated: lu, acum: acum || 0 });
+
+// 1. OFF -> click ON -> in zbor -> confirmare ON
+{
+  let c = nouC('switch.x', 'on', 'A');
+  eq('1. porneste in TRIMIS', c.status, CMD.TRIMIS);
+  c = marcheazaAcceptat(c);
+  eq('1. dupa acceptare -> ASTEPT', c.status, CMD.ASTEPT);
+  eq('1. inca in zbor', eInZbor(c), true);
+  c = evalueaza(c, STC('on', 'B'), 100);
+  eq('1. publicare noua cu tinta -> CONFIRMAT', c.status, CMD.CONFIRMAT);
+  eq('1. si e terminala', eTerminala(c.status), true);
+}
+
+// 2. ON -> click OFF -> confirmare OFF
+{
+  let c = marcheazaAcceptat(nouC('media_player.tv', 'off', 'A'));
+  eq('2. inca asteapta pe stare veche', evalueaza(c, STC('on', 'A'), 100).status, CMD.ASTEPT);
+  eq('2. confirma pe off publicat nou', evalueaza(c, STC('off', 'B'), 100).status, CMD.CONFIRMAT);
+  eq('2. textul afisat', textAsteptare(c), 'Oprire…');
+}
+
+// 3. esec de serviciu -> terminal IMEDIAT, fara sa astepte fereastra
+{
+  const c = marcheazaEsec(nouC('switch.x', 'on', 'A'), 'Command not supported in POWER OFF');
+  eq('3. esecul e terminal', eTerminala(c.status), true);
+  eq('3. nu mai e in zbor', eInZbor(c), false);
+  eq('3. pastreaza mesajul real', c.eroare, 'Command not supported in POWER OFF');
+}
+
+// 4. expirare -> terminal, cu mesajul cerut
+{
+  const c = marcheazaAcceptat(nouC('media_player.tv', 'on', 'A', 0));
+  const dupa = evalueaza(c, STC('off', 'A'), c.fereastra + 1);
+  eq('4. dupa fereastra -> EXPIRAT', dupa.status, CMD.EXPIRAT);
+  eq('4. mesajul de neconfirmare', textExpirat(dupa), 'Pornirea nu a fost confirmată');
+  eq('4. varianta de oprire', textExpirat(nouC('media_player.tv', 'off', 'A')), 'Oprirea nu a fost confirmată');
+}
+
+// 5. dublu clic cat timp e in zbor -> nicio comanda noua
+//    (regula de registru: o comanda in zbor per entitate+actiune)
+{
+  const c = marcheazaAcceptat(nouC('switch.x', 'on', 'A'));
+  eq('5. cheia e stabila', cheieComanda('switch.x', 'power'), 'switch.x|power');
+  eq('5. cat timp e in zbor, a doua apasare trebuie respinsa', eInZbor(c), true);
+}
+
+// 6. actualizare fara legatura -> NU confirma
+{
+  const c = marcheazaAcceptat(nouC('switch.x', 'on', 'A'));
+  eq('6. alta stare publicata nou, dar nu tinta', evalueaza(c, STC('off', 'B'), 50).status, CMD.ASTEPT);
+  eq('6. atribut schimbat, stare tot veche', evalueaza(c, STC('off', 'C'), 50).status, CMD.ASTEPT);
+}
+
+// 7. stare INVECHITA care se intampla sa fie deja tinta -> NU confirma
+{
+  const c = marcheazaAcceptat(nouC('switch.x', 'on', 'A'));
+  eq('7. aceeasi publicare ca la trimitere nu confirma',
+     evalueaza(c, STC('on', 'A'), 50).status, CMD.ASTEPT);
+  eq('7. dar o publicare NOUA cu aceeasi valoare confirma',
+     evalueaza(c, STC('on', 'B'), 50).status, CMD.CONFIRMAT);
+}
+
+// 8. televizor lent, 10-30 s: ramane corect in zbor tot timpul
+{
+  const c = marcheazaAcceptat(nouC('media_player.tv', 'on', 'A', 0));
+  eq('8. fereastra pentru pornire TV', c.fereastra, 45000);
+  for (const t of [1000, 6000, 11000, 20000, 33000, 44000]) {
+    eq('8. la ' + t + ' ms inca asteapta', evalueaza(c, STC('off', 'A'), t).status, CMD.ASTEPT);
+  }
+  eq('8. confirma cand apare, la 33 s', evalueaza(c, STC('on', 'B'), 33000).status, CMD.CONFIRMAT);
+}
+
+// 9. dispozitiv rapid: confirma la prima publicare, nu asteapta fereastra
+{
+  const c = marcheazaAcceptat(nouC('switch.local', 'on', 'A', 0));
+  eq('9. fereastra implicita', c.fereastra, 15000);
+  eq('9. confirmat la 20 ms', evalueaza(c, STC('on', 'B'), 20).status, CMD.CONFIRMAT);
+}
+
+// 10. stare tranzitorie on/off: confirmam la prima potrivire (decizie
+//     documentata), iar un `off` ulterior NU reia comanda
+{
+  let c = marcheazaAcceptat(nouC('media_player.tv', 'on', 'A', 0));
+  c = evalueaza(c, STC('on', 'B'), 2000);
+  eq('10. tranzitoriul confirma', c.status, CMD.CONFIRMAT);
+  eq('10. revenirea la off nu redeschide comanda', evalueaza(c, STC('off', 'C'), 5000).status, CMD.CONFIRMAT);
+  eq('10. iar interfata nu mai are ce afisa', textAsteptare(c), null);
+}
+
+// ferestrele, derivate din auditul 33 — nu praguri universale
+eq('fereastra TV pornire', fereastra('media_player.tv', 'on'), 45000);
+eq('fereastra TV oprire', fereastra('media_player.tv', 'off'), 40000);
+eq('fereastra climate', fereastra('climate.x', 'cool'), 15000);
+eq('fereastra switch', fereastra('switch.x', 'on'), 15000);
+eq('climate: tinta poate fi un mod, nu doar on',
+   evalueaza(marcheazaAcceptat(nouC('climate.lg', 'cool', 'A')), STC('cool', 'B'), 50).status, CMD.CONFIRMAT);
+
+// accesibilitate: textul exista pentru ambele directii
+eq('text accesibil pornire', textAccesibil(marcheazaAcceptat(nouC('switch.x', 'on', 'A'))), 'Pornire în curs');
+eq('text accesibil oprire', textAccesibil(marcheazaAcceptat(nouC('switch.x', 'off', 'A'))), 'Oprire în curs');
+eq('fara comanda, fara text', textAccesibil(null), null);
 
 console.log('\n' + pass + ' trecute, ' + fail + ' picate');
 process.exit(fail ? 1 : 0);
