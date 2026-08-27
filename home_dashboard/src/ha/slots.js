@@ -465,6 +465,14 @@ export const SLOTS = [
     suggest: 'input_datetime.poarta_intrare_ultima_comanda',
     note: 'Se scrie DOAR după un impuls chiar trimis — încercările blocate de cooldown nu îl ating.'
   }),
+  slot('poarta.intentie', 'Poartă · deschidere la sosire (V2)', 'poarta', ['input_boolean'], {
+    suggest: 'input_boolean.poarta_deschidere_la_sosire',
+    note: 'Confirmarea „deschide când ajung". Nu descrie poarta, ci intenţia utilizatorului.'
+  }),
+  slot('poarta.intentie_timer', 'Poartă · expirarea intenţiei', 'poarta', ['timer'], {
+    suggest: 'timer.poarta_intentie_sosire',
+    note: 'Fereastra de 30 de minute. Nu se restaurează la repornirea HA — asta e chiar plasa de fail-safe.'
+  }),
   slot('poarta.cooldown', 'Poartă · cooldown comandă', 'poarta', ['timer'], {
     suggest: 'timer.poarta_intrare_cooldown_comanda',
     note: 'Cât e activ, un al doilea impuls e blocat: intrarea START e secvenţială, iar al doilea impuls ar însemna STOP.'

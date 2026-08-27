@@ -393,6 +393,8 @@ export const SUGGESTED_MAP = {
   'poarta.service': 'input_boolean.service_mode_poarta',
   'poarta.ultima': 'input_datetime.poarta_intrare_ultima_comanda',
   'poarta.cooldown': 'timer.poarta_intrare_cooldown_comanda',
+  'poarta.intentie': 'input_boolean.poarta_deschidere_la_sosire',
+  'poarta.intentie_timer': 'timer.poarta_intentie_sosire',
 
   'weather.main': 'weather.forecast_home',
   'sensor.baterie_telefon': 'sensor.s26_ultra_battery_level',

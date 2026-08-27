@@ -317,6 +317,26 @@ export function useEntities() {
       return isNaN(d.getTime()) ? null : d;
     }
 
+    /**
+     * Intenţia „deschide la sosire" (V2), sau null dacă nu e activă.
+     * `minute` = de câte minute e confirmată, derivat din cronometrul HA — nu
+     * dintr-un ceas local, care ar fi arătat altceva pe fiecare dispozitiv.
+     * Cronometrul NU se restaurează la repornirea HA: fără el activ, intenţia
+     * nu are voie să deschidă nimic, deci absenţa lui e chiar plasa de siguranţă.
+     */
+    function poartaIntentie(acum) {
+      if (!mapped('poarta.intentie') || !isOn('poarta.intentie')) return null;
+      const st = ent('poarta.intentie_timer');
+      if (!st || st.state !== 'active') return { activa: true, expirabila: false, minute: null };
+      const t = st.attributes && st.attributes.finishes_at;
+      const dur = st.attributes && st.attributes.duration;
+      if (!t || !dur) return { activa: true, expirabila: true, minute: null };
+      const p = String(dur).split(':').map(Number);
+      const totalMs = ((p[0] || 0) * 3600 + (p[1] || 0) * 60 + (p[2] || 0)) * 1000;
+      const ramasMs = new Date(t).getTime() - (acum === undefined ? Date.now() : acum);
+      return { activa: true, expirabila: true, minute: Math.max(0, Math.floor((totalMs - ramasMs) / 60000)) };
+    }
+
     // -------------------------------------------------------------- climate
     function climateTarget(slotKey) {
       const st = ent(slotKey);
@@ -574,7 +594,7 @@ export function useEntities() {
     return {
       ha, states, entityMap,
       idOf, ent, mapped, available, attr, rawState, num, fmt, isVerify, isOn, isPending, comandaCurenta, toggle,
-      deschidePoarta, comandaPoarta, poartaCooldown, poartaUltimaComanda,
+      deschidePoarta, comandaPoarta, poartaCooldown, poartaUltimaComanda, poartaIntentie,
       climateTarget, climateTargetStale, supportsFeature, tempDecimals,
       climateCurrent, climateStep, climateMin, climateMax,
       setClimateTarget, bumpClimate, setHvacMode, setFanMode, setSwingMode, setPresetMode,

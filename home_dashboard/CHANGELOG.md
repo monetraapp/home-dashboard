@@ -1,5 +1,55 @@
 # Changelog
 
+## 2.0.0
+
+**Poarta te poate aștepta deschisă, dar numai dacă i-ai spus tu.** Notificarea de
+apropiere are acum trei răspunsuri: **DESCHIDE LA SOSIRE**, **DESCHIDE ACUM** şi
+**NU**. Prima nu mişcă nimic — memorează intenţia şi urmăreşte drumul; poarta
+porneşte abia când datele arată că chiar ajungi. Confirmarea ta rămâne
+obligatorie: nu există deschidere automată fără ea.
+
+**Nu deschide pe distanţă.** Scenariul care contează: opreşti la 100 m de casă şi
+vorbeşti un sfert de oră cu vecinul. Poarta trebuie să stea închisă. De aceea
+regula nu se uită la „cât de aproape eşti", ci la **viteza de apropiere**,
+calculată din două raportări consecutive: `(distanţa_anterioară − distanţa_curentă)
+/ timp`. Mărimea asta dă în acelaşi număr şi direcţia, şi ritmul.
+
+**Atributul `speed` nu e folosit deloc, şi asta e o decizie măsurată.** Pe
+deplasările reale telefonul a raportat `speed = 0` sau `1` în timp ce se mişca cu
+9,7–16,4 m/s. O regulă construită pe el ar fi tăcut exact în momentul sosirii.
+
+**Momentul deschiderii se adaptează la viteză.** `ETA = distanţă / viteză de
+apropiere`, iar poarta porneşte la ETA sub 20 s, cu distanţa plafonată la 300 m.
+Cu maşina asta înseamnă ~200–280 m; pe jos, câţiva zeci de metri. Rulat peste
+deplasările reale înregistrate: la sosirea de la 22:44 regula ar fi deschis la
+**200 m, cu ETA 19 s**, iar la 629 m — corect — nu ar fi deschis.
+
+**Trei filtre împotriva zgomotului.** Scăderea de distanţă trebuie să depăşească
+acurateţea GPS înmulţită cu 1,5, altfel jitterul ar trece drept apropiere.
+Acurateţea peste 50 m e refuzată. Iar viteza de apropiere e plafonată la 40 m/s:
+în datele reale au apărut „apropieri" de 560–639 m/s — fixări GPS sărite, care
+altfel ar fi deschis poarta singure.
+
+**High Accuracy nu se mai opreşte când pleacă notificarea.** Dacă alegi DESCHIDE
+LA SOSIRE, urmărirea deasă continuă exact de atunci încolo. Se opreşte la
+deschidere, la NU, la intrarea în Home, la Service Mode, dacă notificarea rămâne
+fără răspuns 6 minute, sau la expirarea intenţiei.
+
+**Intenţia expiră în 30 de minute** şi se anulează dacă te îndepărtezi clar. La
+repornirea Home Assistant, steagul se păstrează dar cronometrul nu — iar
+deschiderea cere cronometrul activ, aşa că o confirmare veche nu poate deschide
+poarta după o repornire.
+
+**Service Mode e override master.** Pornit, anulează intenţia, dezarmează sosirea
+şi opreşte urmărirea. Butonul manual rămâne funcţional.
+
+**Android Auto.** Notificarea foloseşte `car_ui: true`, cheia oficială. Pentru
+buton în maşină există `script.poarta_android_auto`, un înveliş peste scriptul
+central — acelaşi cooldown, aceeaşi urmă în logbook, doar sursa diferă.
+
+**Un singur drum către releu.** Dashboard, notificare, deschidere automată şi
+Android Auto trec toate prin `script.deschide_poarta`, cu cooldown-ul lui de 45 s.
+
 ## 1.9.0
 
 **Poarta de la intrare, fără să pretindem că ştim unde e.** Poarta nu are senzor

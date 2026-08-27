@@ -311,7 +311,9 @@ eq('sloturile ramase au toate un motiv explicit',
 // cu mapare implicita, deci invariantul „zero nemapate" ramane intact.
 // 319 -> 324: cele 5 sloturi ale portii (v1.9.0). Niciunul nu descrie pozitia
 // portii — nu exista senzor de pozitie de mapat.
-eq('total: 324 mapate din 324 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [324, 324]);
+// 324 -> 326: intentia „deschide la sosire" si expirarea ei (v2.0.0). Descriu
+// tot ce vrea UTILIZATORUL, nu unde e poarta.
+eq('total: 326 mapate din 326 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [326, 326]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------
