@@ -287,8 +287,6 @@ eq('nicio entitate nu e folosita pentru doua sloturi fara motiv',
      // pompa de caldura si Vivax apar de doua ori intentionat (card + diagnostic integrare)
      const ok = [
        'climate.pompa_caldura_piscina', 'climate.mansarda_aer_conditionat_vivax_mansarda',
-       // firmware-ul apare si pe pagina Retea, si in Mentenanta
-       'update.gateway_principal_firmware', 'update.switch_principal_firmware',
        // singurul contor de energie: alimenteaza si randul AC Etaj, si inelul
        // "total" de pe Acasa (etichetat explicit "AC Etaj")
        'sensor.etaj_aer_conditionat_lg_etaj_energy_this_month'
@@ -316,7 +314,11 @@ eq('sloturile ramase au toate un motiv explicit',
 // 326 -> 315: cele 11 sloturi CCTV (5 camere, 5 iluminari IR, stergatorul Speed
 // Dome) au iesit odata cu decizia de arhitectura: supravegherea se face exclusiv
 // din DMSS, iar Home Assistant nu mai are camerele.
-eq('total: 315 mapate din 315 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [315, 315]);
+// 315 -> 266: cele 49 de sloturi net.* au iesit odata cu pagina Retea.
+// Administrarea retelei se face in Omada Controller; integrarea TP-Link
+// Omada ramane in HA, iar Device Health continua sa vada gateway, switch-uri
+// si AP-uri din registrele live.
+eq('total: 266 mapate din 266 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [266, 266]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------

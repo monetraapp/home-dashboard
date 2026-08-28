@@ -14,8 +14,12 @@ const KEY_CFG = 'hd.ha.config';
  * diferenţele faţă de SUGGESTED_MAP — niciodată snapshot-ul complet. Aşa,
  * schimbările viitoare de default din cod se propagă automat la toţi clienţii,
  * fără ca utilizatorul să mai atingă vreodată localStorage manual.
+ *
+ * v3 (2.2.0): cele 49 de chei `net.*` au dispărut odată cu pagina Reţea.
+ * Incrementul le curăţă din localStorage-ul fiecărui client, împreună cu
+ * cele 11 chei CCTV rămase de la 2.1.0, unde incrementul a lipsit.
  */
-const MAP_SCHEMA_VERSION = 2;
+const MAP_SCHEMA_VERSION = 3;
 
 // Chei ale căror valori implicite s-au schimbat între versiuni. Dacă valoarea
 // salvată e exact vechiul default (snapshot îngheţat de un "Aplică din audit"

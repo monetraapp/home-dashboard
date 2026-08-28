@@ -249,7 +249,7 @@ export const PAGE_DEVICES = {
     'media-mansarda', 'media-bucatarie', 'media-sofia-parter', 'media-dormitor-sofia',
     'media-etaj-hisense', 'media-foisor', 'media-tata-buc', 'media-tata-dormitor'
   ],
-  retea: [], energie: [], mentenanta: []
+  energie: [], mentenanta: []
 };
 
 export const MEDIA_ZONES = ['Toate', 'Parter', 'Etaj', 'Mansardă şi Foişor', 'Casa Tata'];
@@ -281,13 +281,12 @@ export const NAV = [
   { key: 'climat', label: 'Climat', icon: 'airVent' },
   { key: 'piscina', label: 'Piscină', icon: 'waves' },
   { key: 'energie', label: 'Energie', icon: 'bolt' },
-  { key: 'retea', label: 'Reţea', icon: 'wifi' },
   { key: 'media', label: 'Media', icon: 'tv' },
   { key: 'mentenanta', label: 'Mentenanţă', icon: 'wrench' },
   { key: 'zone', label: 'Zone', icon: 'layoutGrid' },
   // (v1.6.0) Al zecelea tab. `heartPulse`: in modul "eticheta doar pe tabul
   // activ" silueta trebuie sa spuna axa paginii, iar axa aici e STAREA, nu
   // obiectul. Un `server` sau un `cpu` ar fi sugerat infrastructura, care e
-  // deja pe Retea si Mentenanta.
+  // deja pe Mentenanta si Dispozitive.
   { key: 'dispozitive', label: 'Dispozitive', icon: 'heartPulse' }
 ];

@@ -1,5 +1,50 @@
 # Changelog
 
+## 2.2.0
+
+**Rețeaua se administrează în Omada Controller.** Pagina *Reţea* iese din
+aplicaţie. Integrarea TP-Link Omada rămâne în Home Assistant, neatinsă — cu tot
+cu cele 19 dispozitive, 119 entităţi şi 35 de device tracker-e pe care se sprijină
+prezenţa.
+
+**Ce a dispărut.** Pagina cu cele cinci carduri — internet şi echipamente,
+puncte de acces, consum PoE, porturi LAN, istoric infrastructură — cu monitoarele,
+cronologia de 7 zile şi cele trei grafice. Plus intrarea din navigaţie, inelul
+„Puncte de acces" din antet, cele **49 de sloturi `net.*`** şi cele 49 de mapări.
+Aplicaţia are acum **8 pagini** în loc de 9.
+
+**Ce a rămas, fiindcă era altceva decât părea.** Cuvântul „reţea" se foloseşte în
+această casă pentru două lucruri diferite. Pe *Energie*, „Reţea" e reţeaua
+electrică: cardul de export/import, direcţia schimbului, diagrama Sankey,
+senzorii Growatt de import şi export. Toate rămân. La fel `laRetea` din
+`HaProvider`, care ascultă evenimentul `online` al browserului şi n-are legătură
+cu Omada.
+
+Au rămas şi lucrurile care doar treceau prin pagină: cele cinci sloturi
+`upd.eap_*` şi `upd.net_sw*` sunt în grupul *Mentenanţă* şi apar acolo — pagina
+Reţea era doar al doilea lor consumator, iar acela a plecat. Iconul `wifi` era
+partajat cu cardul „Conexiune" din *Dispozitive*, deci a rămas.
+
+**Infrastructura nu a rămas fără loc.** Gateway-ul, cele cinci EAP-uri şi cele
+şase switch-uri se văd în *Dispozitive*, unde Device Health le citeşte direct din
+registrele HA. Diferenţa se vede bine: la 17:42, în timpul acestui release, Omada
+a descoperit un switch nou (ES210X-M2) cu trei senzori. Pe pagina veche ar fi
+cerut trei sloturi şi trei mapări scrise de mână ca să apară. În Dispozitive a
+apărut singur.
+
+**Subtitlurile care trimiteau la o pagină inexistentă** au fost corectate:
+*Zone* spunea „infrastructura rămâne pe Reţea şi Mentenanţă" şi spune acum
+„pe Mentenanţă şi Dispozitive". La fel comentariul din `ZonePage` şi cel care
+justifica iconul paginii Dispozitive.
+
+**Mapările salvate se curăţă singure.** `MAP_SCHEMA_VERSION` trece la 3, ceea ce
+declanşează migrarea care şterge din localStorage cheile fără slot: cele 49
+`net.*` de acum şi cele 11 CCTV rămase de la 2.1.0, unde incrementul lipsise.
+
+Bundle: 560,36 → **550,37 kB**. Sloturi: 315 → **266**. 458 teste de logică,
+44 de fidelitate de stil, 104 combinaţii responsive (8 pagini × 13 lăţimi),
+zero probleme, zero erori de consolă.
+
 ## 2.1.0
 
 **Camerele ies din aplicaţie.** Decizie de arhitectură: supravegherea se face

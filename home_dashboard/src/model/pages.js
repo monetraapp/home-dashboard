@@ -209,126 +209,6 @@ export const PAGES = {
     ]
   },
 
-  retea: {
-    eyebrow: 'Monitorizare infrastructură · doar informativ',
-    title: 'Reţea',
-    chips: [
-      { icon: 'wifi', text: '5 puncte de acces' },
-      { icon: 'lock', text: 'Fără comenzi' }
-    ],
-    cards: [
-      {
-        title: 'Internet şi echipamente',
-        blocks: [
-          monitor('Legături', [
-            r('Legătură WAN', 'net.wan_link', { map: { on: 'Pornit', off: 'Oprit' } }),
-            r('Conectivitate', 'net.connectivity', { map: { on: 'Pornit', off: 'Oprit' } })
-          ]),
-          monitor('Gateway Principal', [
-            r('Stare', 'net.gw_state'),
-            r('CPU', 'net.gw_cpu', { unit: PCT, decimals: 0 }),
-            r('Memorie', 'net.gw_mem', { unit: PCT, decimals: 0 }),
-            r('Firmware', 'net.gw_fw', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } })
-          ]),
-          monitor('Switch Principal', [
-            r('Stare', 'net.sw_state'),
-            r('CPU', 'net.sw_cpu', { unit: PCT, decimals: 0 }),
-            r('Memorie', 'net.sw_mem', { unit: PCT, decimals: 0 }),
-            r('Firmware', 'net.sw_fw', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } })
-          ]),
-          // (v1.2.8) Şi switch-urile Easy Managed au entităţi de firmware —
-          // comentariul anterior („nu au") era fals; gaură din auditul HA.
-          monitor('Switch Foişor', [
-            r('Stare', 'net.swf_state'),
-            r('CPU', 'net.swf_cpu', { unit: PCT, decimals: 0 }),
-            r('Memorie', 'net.swf_mem', { unit: PCT, decimals: 0 }),
-            r('Firmware', 'upd.net_swf', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } })
-          ]),
-          monitor('Switch Etaj', [
-            r('Stare', 'net.swe_state'),
-            r('CPU', 'net.swe_cpu', { unit: PCT, decimals: 0 }),
-            r('Memorie', 'net.swe_mem', { unit: PCT, decimals: 0 }),
-            r('Firmware', 'upd.net_swe', { map: { on: 'Actualizare disponibilă', off: 'Up-to-date' } })
-          ])
-        ]
-      },
-      {
-        title: 'Puncte de acces',
-        blocks: [
-          monitor('EAP · CPU / RAM', [
-            ['Parter', { pair: ['net.ap_parter_cpu', 'net.ap_parter_mem'] }],
-            ['Etaj', { pair: ['net.ap_etaj_cpu', 'net.ap_etaj_mem'] }],
-            ['Mansardă', { pair: ['net.ap_mansarda_cpu', 'net.ap_mansarda_mem'] }],
-            ['Foişor', { pair: ['net.ap_foisor_cpu', 'net.ap_foisor_mem'] }],
-            ['Casa Faţă', { pair: ['net.ap_casa_fata_cpu', 'net.ap_casa_fata_mem'] }]
-          ]),
-          // (v1.2.8) Starea de conectare — era mapată doar la gateway/switch-uri.
-          monitor('EAP · Stare', [
-            r('Parter', 'net.ap_parter_state'),
-            r('Etaj', 'net.ap_etaj_state'),
-            r('Mansardă', 'net.ap_mansarda_state'),
-            r('Foişor', 'net.ap_foisor_state'),
-            r('Casa Faţă', 'net.ap_casa_fata_state')
-          ])
-        ]
-      },
-      {
-        title: 'Consum PoE',
-        blocks: [
-          monitor('Switch Principal · porturi 1–8', [
-            r('Port 1', 'net.poe1'), r('Port 2', 'net.poe2'), r('Port 3', 'net.poe3'), r('Port 4', 'net.poe4'),
-            r('Port 5', 'net.poe5'), r('Port 6', 'net.poe6'), r('Port 7', 'net.poe7'), r('Port 8', 'net.poe8')
-          ]),
-          monitor('Switch Foişor · porturi 1–4', [
-            r('Port 1', 'net.swf_poe1'), r('Port 2', 'net.swf_poe2'),
-            r('Port 3', 'net.swf_poe3'), r('Port 4', 'net.swf_poe4')
-          ]),
-          note('Comutarea PoE nu e expusă în această aplicaţie — ar întrerupe alimentarea echipamentelor de pe porturi.')
-        ]
-      },
-      {
-        title: 'Porturi LAN gateway',
-        blocks: [
-          monitor('LAN 2–7', [
-            r('LAN 2', 'net.lan2', { map: { on: 'Pornit', off: 'Oprit' } }),
-            r('LAN 3', 'net.lan3', { map: { on: 'Pornit', off: 'Oprit' } }),
-            r('LAN 4', 'net.lan4', { map: { on: 'Pornit', off: 'Oprit' } }),
-            r('LAN 5', 'net.lan5', { map: { on: 'Pornit', off: 'Oprit' } }),
-            r('LAN 6', 'net.lan6', { map: { on: 'Pornit', off: 'Oprit' } }),
-            r('LAN 7', 'net.lan7', { map: { on: 'Pornit', off: 'Oprit' } })
-          ])
-        ]
-      },
-      {
-        title: 'Istoric infrastructură',
-        wide: true,
-        order: 8,
-        blocks: [
-          timeline('Echipamente reţea', 'ultimele 7 zile', [
-            { label: 'Gateway', slot: 'net.gw_state' },
-            { label: 'Switch principal', slot: 'net.sw_state' },
-            { label: 'EAP Parter', slot: 'net.ap_parter_cpu' },
-            { label: 'EAP Etaj', slot: 'net.ap_etaj_cpu' },
-            { label: 'EAP Mansardă', slot: 'net.ap_mansarda_cpu' },
-            { label: 'EAP Foişor', slot: 'net.ap_foisor_cpu' },
-            { label: 'EAP Casa Faţă', slot: 'net.ap_casa_fata_cpu' }
-          ], [['on', 'Conectat'], ['off', 'Inactiv'], ['unavail', 'Deconectat']]),
-          chart('Încărcare gateway şi switch', 'CPU mediu zilnic', [
-            { name: 'Gateway CPU', color: ORANGE_SERIES, slot: 'net.gw_cpu' },
-            { name: 'Switch CPU', color: SAND_SERIES, slot: 'net.sw_cpu' }
-          ], PCT, 'line', 0, 40),
-          chart('Consum PoE total', 'porturi 1–8', [
-            {
-              name: 'PoE',
-              color: ORANGE_SERIES,
-              sum: ['net.poe1', 'net.poe2', 'net.poe3', 'net.poe4', 'net.poe5', 'net.poe6', 'net.poe7', 'net.poe8']
-            }
-          ], 'W')
-        ]
-      }
-    ]
-  },
-
   // Pagina Energie (v1.1.3): invertorul hibrid Growatt 25 kW (device MQTT
   // KNN2E3S00W prin Grott). Se mapează EXCLUSIV entităţile validate de auditul
   // de coerenţă fizică din 2026-08-22 — registrele scalate greşit de layout
@@ -716,12 +596,11 @@ export const PAGE_HERO = {
   climat: ['Climat', 'Confort termic pe trei niveluri'],
   piscina: ['Piscina', 'Apă, chimie şi filtrare'],
   media: ['Media', 'Opt televizoare, patru zone'],
-  retea: ['Reţea', 'Infrastructură şi conectivitate'],
   energie: ['Energie', 'Producţie, stocare şi consum'],
   mentenanta: ['Mentenanţă', 'Starea sistemului sub control'],
   // (v1.5.0) Subtitlul spune explicit că infrastructura lipseşte din pagină.
-  // Fără propoziţia asta, absenţa gateway-ului şi a switch-urilor arată ca o
+  // Fără propoziţia asta, absenţa gateway-ului şi a switch-urilor ar arăta ca o
   // scăpare; cu ea, e o decizie vizibilă în interfaţă.
-  zone: ['Zone', 'Pe încăperi — infrastructura rămâne pe Reţea şi Mentenanţă'],
+  zone: ['Zone', 'Pe încăperi — infrastructura rămâne pe Mentenanţă şi Dispozitive'],
   dispozitive: ['Dispozitive', 'Stare şi comunicare — doar diagnostic, fără comenzi']
 };

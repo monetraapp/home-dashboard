@@ -1031,11 +1031,6 @@ function pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energy
     const on = media.filter((sl) => E.mapped(sl) && E.isOn(sl)).length;
     return { title: 'Televizoare', sub: 'active acum', value: String(on), unit: 'din 8', ringEl: seg(8, on) };
   }
-  if (page === 'retea') {
-    const aps = ['net.ap_parter_cpu', 'net.ap_etaj_cpu', 'net.ap_mansarda_cpu', 'net.ap_foisor_cpu', 'net.ap_casa_fata_cpu'];
-    const ok = aps.filter((sl) => E.available(sl)).length;
-    return { title: 'Puncte de acces', sub: 'doar informativ', value: String(ok), unit: 'din 5', ringEl: seg(5, ok) };
-  }
   if (page === 'energie') {
     return {
       title: 'Consum luna curentă',

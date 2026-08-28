@@ -7,8 +7,8 @@
 // Infrastructura (gateway, switch-uri, EAP-uri, HA Core/Supervisor, add-on-uri)
 // e ţinută DELIBERAT fără zonă — decizie veche, documentată în 04_. Pagina o
 // ignoră complet: axa ei e „ce e în camera asta", iar infrastructura n-are
-// cameră prin proiect, nu din omisiune. E deja acoperită integral pe Reţea şi
-// Mentenanţă. O secţiune „fără zonă" ar arăta ca o listă de neterminat şi ar
+// cameră prin proiect, nu din omisiune. E deja acoperită pe Mentenanţă şi
+// Dispozitive. O secţiune „fără zonă" ar arăta ca o listă de neterminat şi ar
 // tenta pe cineva s-o „repare" atribuind zone, anulând decizia. Omisiunea e
 // spusă explicit în subtitlul paginii (PAGE_HERO.zone), ca să fie vizibilă.
 import React from 'react';
