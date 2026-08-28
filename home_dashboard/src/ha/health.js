@@ -42,10 +42,10 @@
  * INVENTARUL SURSELOR REALE pe această instanţă (măsurat, nu presupus):
  *   - `sensor.knn2e3s00w_grott_last_data_push` — invertorul Growatt
  *   - `sensor.gpg0a450zs_grott_last_data_push` — contorul GPG0A450ZS
- * Atât. Zero entităţi de tip uptime, last_seen sau heartbeat; singurul alt
- * `device_class: timestamp` relevant e `camera_speed_dome_last_reboot`, care e
- * un moment de repornire, nu o bătaie de inimă. Restul de ~79 de dispozitive
- * rămân, prin regulă, cu freshness necunoscut.
+ * Atât. Zero entităţi de tip uptime, last_seen sau heartbeat. Un `device_class:
+ * timestamp` care marchează un moment de repornire nu e o bătaie de inimă şi nu
+ * se numără aici. Restul dispozitivelor rămân, prin regulă, cu freshness
+ * necunoscut — numărul se citeşte din inventarul live, nu se scrie în cod.
  *
  * Cadenţa reală a celor două surse: 5 minute, citită din istoricul valorilor
  * (17:00:53 → 17:05:53 → … → 17:40:49). NU din diferenţa până la „acum": aceea

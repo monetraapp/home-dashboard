@@ -1031,11 +1031,6 @@ function pageStat(E, page, trackedCards, houseAvg, monthPct, energyValue, energy
     const on = media.filter((sl) => E.mapped(sl) && E.isOn(sl)).length;
     return { title: 'Televizoare', sub: 'active acum', value: String(on), unit: 'din 8', ringEl: seg(8, on) };
   }
-  if (page === 'camere') {
-    const cams = ['camera.poarta', 'camera.curte_fata', 'camera.curte_piscina', 'camera.curte_spate', 'camera.speed_dome'];
-    const ok = cams.filter((sl) => E.available(sl)).length;
-    return { title: 'Camere online', sub: 'ONVIF', value: String(ok), unit: 'din 5', ringEl: seg(5, ok) };
-  }
   if (page === 'retea') {
     const aps = ['net.ap_parter_cpu', 'net.ap_etaj_cpu', 'net.ap_mansarda_cpu', 'net.ap_foisor_cpu', 'net.ap_casa_fata_cpu'];
     const ok = aps.filter((sl) => E.available(sl)).length;
@@ -1419,35 +1414,6 @@ function Block({ b, grow }) {
             <div style={s(it.iconStyle)}>{it.iconEl}</div>
             <div style={s(it.nameStyle)}>{it.name}</div>
             <div style={s(it.hintStyle)}>{it.hint}</div>
-          </div>
-        ))}
-      </div>
-    );
-
-  if (b.isCameraGrid)
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        {b.items.map((cam, i) => (
-          <div key={i} style={s(cam.wrapStyle)}>
-            <div style={s(cam.noSignalStyle)}>
-              <div style={s(cam.noSignalIconStyle)}>{cam.noSignalIconEl}</div>
-              <div style={s(cam.noSignalTextStyle)}>{cam.noSignalText}</div>
-            </div>
-            <div style={s(cam.fadeStyle)} />
-            <div style={s(cam.badgeStyle)}>
-              <span style={s(cam.badgeDotStyle)} />
-              {cam.badge}
-            </div>
-            <div style={s(cam.labelWrapStyle)}>
-              <div style={s(cam.nameStyle)}>{cam.label}</div>
-              <div style={s(cam.statusStyle)}>{cam.status}</div>
-            </div>
-            <div style={s(cam.ctrlRowStyle)}>
-              <div className="hdTap" style={s(cam.irStyle)} onClick={cam.onIr} title={cam.irTitle}>{cam.irIconEl}</div>
-              {cam.hasWiper ? (
-                <div className="hdTap" style={s(cam.wiperStyle)} onClick={cam.onWiper} title={cam.wiperTitle}>{cam.wiperIconEl}</div>
-              ) : null}
-            </div>
           </div>
         ))}
       </div>

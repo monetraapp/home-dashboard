@@ -249,7 +249,7 @@ export const PAGE_DEVICES = {
     'media-mansarda', 'media-bucatarie', 'media-sofia-parter', 'media-dormitor-sofia',
     'media-etaj-hisense', 'media-foisor', 'media-tata-buc', 'media-tata-dormitor'
   ],
-  camere: [], retea: [], energie: [], mentenanta: []
+  retea: [], energie: [], mentenanta: []
 };
 
 export const MEDIA_ZONES = ['Toate', 'Parter', 'Etaj', 'Mansardă şi Foişor', 'Casa Tata'];
@@ -272,7 +272,6 @@ export const PAGE_DEVICE_HEAD = {
 //                                    climatizare citea „ceva e stricat")
 //   Media    tag       -> tv        (glifa desenată manual era un „cast" cu
 //                                    arce, care se certa vizual cu Wifi)
-//   Camere   shieldDot -> cctv      (scut cu bifă = „securitate", nu „camere")
 //   Energie  barChart  -> bolt      (singura abstracţie rămasă; `bolt` înseamnă
 //                                    deja putere în alte 15 locuri din aplicaţie)
 // Piscina (waves) şi Energia (bolt) sunt vecine în bară: verificat la 19px că
@@ -282,7 +281,6 @@ export const NAV = [
   { key: 'climat', label: 'Climat', icon: 'airVent' },
   { key: 'piscina', label: 'Piscină', icon: 'waves' },
   { key: 'energie', label: 'Energie', icon: 'bolt' },
-  { key: 'camere', label: 'Camere', icon: 'cctv' },
   { key: 'retea', label: 'Reţea', icon: 'wifi' },
   { key: 'media', label: 'Media', icon: 'tv' },
   { key: 'mentenanta', label: 'Mentenanţă', icon: 'wrench' },

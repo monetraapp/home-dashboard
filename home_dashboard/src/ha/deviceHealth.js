@@ -13,8 +13,9 @@
 //    deliberat (dlna_dmr pentru televizoare deja adăugate prin samsungtv,
 //    homekit_controller pentru unele LG, adguard). Raportate ca „integrare
 //    căzută" ar produce şase alarme permanente false. Se exclud explicit.
-// 2. `setup_retry` ESTE defect. Cele cinci intrări ONVIF sunt acolo. Le
-//    raportăm — a citi o stare nu înseamnă a atinge camerele.
+// 2. `setup_retry` ESTE defect, indiferent de integrare: înseamnă că HA reîncearcă
+//    o configurare care nu a reuşit. Se raportează — a citi o stare nu înseamnă
+//    a atinge dispozitivul.
 //
 // Freshness respectă regula din `health.js`: doar surse reale de ultimă
 // comunicare. Aici se caută după tipar de nume, nu după ID-uri fixe, ca un

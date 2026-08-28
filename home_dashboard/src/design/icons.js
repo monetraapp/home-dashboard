@@ -9,7 +9,7 @@ import {
   RotateCw, Sun, Wind, Fan, Droplet, Moon, Leaf, Gauge, Clock, PlayCircle,
   SlidersHorizontal, X, Tv, Monitor, Server, Sparkles, RefreshCw, Lock,
   Shield, ShieldCheck, Ban, ArrowUpDown, ArrowLeftRight, Move, Waves,
-  FlaskConical, Zap, Plug, Camera, Bell, ShoppingCart, MessageCircle, Check,
+  FlaskConical, Zap, Plug, Bell, ShoppingCart, MessageCircle, Check,
   ChevronLeft, ChevronRight, ChevronDown, Cloud, CloudSun, Download,
   GripVertical, BatteryMedium, Thermometer, Rocket, Wifi, Wrench, Archive,
   Armchair, CalendarMinus, CalendarPlus, Minus, Plus, DropletOff, HeartPulse,
@@ -17,7 +17,7 @@ import {
   CarFront, CalendarDays,
   // (v1.5.0) navigaţie: în modul „etichetă doar pe tabul activ" silueta e
   // singurul indiciu, deci fiecare tab primeşte un obiect concret.
-  AirVent, Cctv, LayoutGrid,
+  AirVent, LayoutGrid,
   // (v1.9.0) poarta: un gard, nu o usa. `DoorOpen`/`DoorClosed` ar fi sugerat o
   // POZITIE, iar poarta nu are senzor de pozitie — silueta nu are voie sa
   // afirme ceva ce instalatia nu stie.
@@ -35,7 +35,7 @@ const LUCIDE = {
   monitor: Monitor, server: Server, sparkle: Sparkles, refresh: RefreshCw,
   lock: Lock, shield: Shield, shieldDot: ShieldCheck, ban: Ban, gate: Fence,
   updown: ArrowUpDown, leftright: ArrowLeftRight, move: Move, waves: Waves,
-  beaker: FlaskConical, bolt: Zap, plug: Plug, camera: Camera, bell: Bell,
+  beaker: FlaskConical, bolt: Zap, plug: Plug, bell: Bell,
   cart: ShoppingCart, chat: MessageCircle, check: Check,
   chevLeft: ChevronLeft, chevRight: ChevronRight, chevronDown: ChevronDown,
   cloud: Cloud, cloudSun: CloudSun, download: Download, grip: GripVertical,
@@ -50,7 +50,7 @@ const LUCIDE = {
   // navigaţie (v1.5.0). Numele vechi rămân în hartă — `alertTri` e folosit în
   // 12 locuri (starea meteo `exceptional`, modul Auto din acordeoane), deci
   // NU se remapează; s-a schimbat doar ce cere bara de navigaţie.
-  airVent: AirVent, cctv: Cctv, layoutGrid: LayoutGrid
+  airVent: AirVent, layoutGrid: LayoutGrid
 };
 
 export function el(tag, props, children) {
@@ -149,7 +149,6 @@ export function ic(name, opts) {
     case 'tv': kids = [el('rect', { key: 1, x: 3.5, y: 5, width: 17, height: 12, rx: 1.6 }), el('line', { key: 2, x1: 9, y1: 20, x2: 15, y2: 20 })]; break;
     case 'cart': kids = [el('path', { key: 1, d: 'M4 5h2l2 10h9l2-7H7' }), el('circle', { key: 2, cx: 10, cy: 19, r: 1.2, fill: color, stroke: 'none' }), el('circle', { key: 3, cx: 16, cy: 19, r: 1.2, fill: color, stroke: 'none' })]; break;
     case 'phoneBattery': kids = [el('rect', { key: 1, x: 8, y: 2.5, width: 8, height: 19, rx: 2 }), el('rect', { key: 2, x: 10, y: 12.5, width: 4, height: 6, fill: color, stroke: 'none' })]; break;
-    case 'camera': kids = [el('rect', { key: 1, x: 3, y: 7, width: 18, height: 12, rx: 2 }), el('path', { key: 2, d: 'M8 7l1.6-2.5h4.8L16 7' }), el('circle', { key: 3, cx: 12, cy: 13, r: 3.4 })]; break;
     case 'sun': {
       const rays = [];
       for (let r0 = 0; r0 < 8; r0++) rays.push(el('rect', { key: 'r' + r0, x: 11.2, y: 2.6, width: 1.6, height: 3.6, rx: 0.8, fill: color, stroke: 'none', transform: 'rotate(' + (r0 * 45) + ' 12 12)' }));

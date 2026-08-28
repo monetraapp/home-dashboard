@@ -110,18 +110,6 @@ export const SUGGESTED_MAP = {
   'media.tata_bucatarie': 'media_player.casa_tata_televizor_tata_bucatarie_samsung',
   'media.tata_dormitor': 'media_player.casa_tata_televizor_tata_dormitor_lg_2',
 
-  // --------------------------------------------------------------- CAMERE
-  'camera.poarta': 'camera.camera_poarta_fata_profile001',
-  'camera.curte_fata': 'camera.camera_curte_fata_profile001',
-  'camera.curte_piscina': 'camera.camera_curte_piscina_profile001',
-  'camera.curte_spate': 'camera.camera_curte_spate_profile001',
-  'camera.speed_dome': 'camera.camera_speed_dome_mediaprofile_channel1_substream1',
-  'light.ir_poarta': 'switch.camera_poarta_fata_ir_lamp',
-  'light.ir_curte_fata': 'switch.camera_curte_fata_ir_lamp',
-  'light.ir_curte_piscina': 'switch.camera_curte_piscina_ir_lamp',
-  'light.ir_curte_spate': 'switch.camera_curte_spate_ir_lamp',
-  'light.ir_speed_dome': 'switch.camera_speed_dome_ir_lamp',
-  'switch.stergator_speed_dome': 'switch.camera_speed_dome_wiper',
 
   // ---------------------------------------------------------------- REŢEA
   'net.wan_link': 'binary_sensor.gateway_principal_port_1_internet_link',

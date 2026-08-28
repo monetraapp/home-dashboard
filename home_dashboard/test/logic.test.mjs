@@ -313,7 +313,10 @@ eq('sloturile ramase au toate un motiv explicit',
 // portii — nu exista senzor de pozitie de mapat.
 // 324 -> 326: intentia „deschide la sosire" si expirarea ei (v2.0.0). Descriu
 // tot ce vrea UTILIZATORUL, nu unde e poarta.
-eq('total: 326 mapate din 326 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [326, 326]);
+// 326 -> 315: cele 11 sloturi CCTV (5 camere, 5 iluminari IR, stergatorul Speed
+// Dome) au iesit odata cu decizia de arhitectura: supravegherea se face exclusiv
+// din DMSS, iar Home Assistant nu mai are camerele.
+eq('total: 315 mapate din 315 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [315, 315]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------
@@ -879,12 +882,12 @@ console.log('strat de date dispozitive:');
 
 // Formele sunt copiate din instanta reala (ha_get_integration, 26.08), nu inventate.
 const INTR6 = {
-  onvif: { entry_id: 'e_onvif', domain: 'onvif', title: 'Camera Poarta', state: 'setup_retry', source: 'user' },
+  retry: { entry_id: 'e_retry', domain: 'demo_retry', title: 'Integrare cu reincercare', state: 'setup_retry', source: 'user' },
   dlna: { entry_id: 'e_dlna', domain: 'dlna_dmr', title: 'Bedroom TV', state: 'not_loaded', source: 'ignore' },
   mqtt: { entry_id: 'e_mqtt', domain: 'mqtt', title: 'Mosquitto', state: 'loaded', source: 'user' },
   samsung: { entry_id: 'e_sam', domain: 'samsungtv', title: 'Samsung', state: 'loaded', source: 'zeroconf' }
 };
-eq('setup_retry e defect', intrareOk(INTR6.onvif), false);
+eq('setup_retry e defect', intrareOk(INTR6.retry), false);
 eq('not_loaded + source ignore NU e defect', intrareOk(INTR6.dlna), true);
 eq('intrarea ignorata e recunoscuta ca atare', intrareIgnorata(INTR6.dlna), true);
 eq('loaded e ok', intrareOk(INTR6.mqtt), true);
@@ -898,10 +901,10 @@ const tsEnt = (ageMin) => ({ state: iso(T0 - ageMin * MIN), last_updated: iso(T0
 const states6 = {
   'sensor.knn2e3s00w_grott_last_data_push': tsEnt(2),
   'sensor.knn2e3s00w_putere': st6('12748.6', 2),
-  'camera.poarta': st6('unavailable', 300),
+  'sensor.demo_retry': st6('unavailable', 300),
   'media_player.tv_dormitor': st6('unavailable', 120),
   'switch.priza_birou': st6('on', 1440),
-  'sensor.camera_speed_dome_last_reboot': tsEnt(900)
+  'sensor.demo_last_reboot': tsEnt(900)
 };
 
 // sursa de comunicare: doar tiparul real, si doar cu device_class timestamp
@@ -909,7 +912,7 @@ eq('push-ul Grott e sursa reala',
    sursaComunicare(['sensor.knn2e3s00w_putere', 'sensor.knn2e3s00w_grott_last_data_push'], states6).entity_id,
    'sensor.knn2e3s00w_grott_last_data_push');
 eq('last_reboot NU e sursa de comunicare',
-   sursaComunicare(['sensor.camera_speed_dome_last_reboot'], states6), null);
+   sursaComunicare(['sensor.demo_last_reboot'], states6), null);
 eq('un senzor obisnuit nu devine sursa',
    sursaComunicare(['sensor.knn2e3s00w_putere'], states6), null);
 eq('televizorul are voie sa fie oprit', oprireAsteptata(['media_player.tv_dormitor']), true);
@@ -919,7 +922,7 @@ const reg6 = {
   areas: [{ area_id: 'a1', name: 'Birou' }],
   devices: [
     { id: 'd_grott', name: 'Invertor Growatt', area_id: 'a1', config_entries: ['e_mqtt'], manufacturer: 'Growatt' },
-    { id: 'd_cam', name: 'Camera Poarta', area_id: null, config_entries: ['e_onvif'] },
+    { id: 'd_retry', name: 'Integrare cu reincercare', area_id: null, config_entries: ['e_retry'] },
     { id: 'd_tv', name: 'TV Dormitor', area_id: null, config_entries: ['e_sam'] },
     { id: 'd_priza', name: 'Priza Birou', area_id: 'a1', config_entries: ['e_mqtt'] },
     { id: 'd_fantoma', name: 'Bedroom TV (dlna)', area_id: null, config_entries: ['e_dlna'] }
@@ -927,12 +930,12 @@ const reg6 = {
   entities: [
     { entity_id: 'sensor.knn2e3s00w_grott_last_data_push', device_id: 'd_grott' },
     { entity_id: 'sensor.knn2e3s00w_putere', device_id: 'd_grott' },
-    { entity_id: 'camera.poarta', device_id: 'd_cam' },
+    { entity_id: 'sensor.demo_retry', device_id: 'd_retry' },
     { entity_id: 'media_player.tv_dormitor', device_id: 'd_tv' },
     { entity_id: 'switch.priza_birou', device_id: 'd_priza' }
   ]
 };
-const entriesById = { e_onvif: INTR6.onvif, e_dlna: INTR6.dlna, e_mqtt: INTR6.mqtt, e_sam: INTR6.samsung };
+const entriesById = { e_retry: INTR6.retry, e_dlna: INTR6.dlna, e_mqtt: INTR6.mqtt, e_sam: INTR6.samsung };
 // istoric de pachete la 5 minute — cadenta masurata a Grott
 const istoric6 = { d_grott: [5, 4, 3, 2, 1, 0].map((i) => T0 - 5 * MIN * i - 2 * MIN) };
 const dev6 = buildDevices(reg6, states6, entriesById, T0, istoric6);
@@ -941,7 +944,7 @@ for (const d of dev6) byId6[d.id] = d;
 
 eq('dispozitivul ramas de la o descoperire ignorata nu apare', !!byId6.d_fantoma, false);
 eq('restul apar', dev6.length, 4);
-eq('camera cu integrarea in setup_retry -> integrare cazuta', byId6.d_cam.health, HEALTH.INTEGRATION_ERROR);
+eq('dispozitiv cu integrarea in setup_retry -> integrare cazuta', byId6.d_retry.health, HEALTH.INTEGRATION_ERROR);
 eq('televizorul stins -> oprit asteptat, nu offline', byId6.d_tv.health, HEALTH.OFFLINE_EXPECTED);
 eq('priza neatinsa de o zi ramane sanatoasa', byId6.d_priza.health, HEALTH.HEALTHY);
 eq('priza: freshness necunoscut', byId6.d_priza.freshness, FRESHNESS.UNKNOWN);

@@ -320,8 +320,9 @@ function clamp2(ui) {
 }
 
 // Etichetele de tile/chip se rup pe maxim 2 linii in loc sa se taie cu
-// '...' (audit v1.2.x: 'Regim boost' pierdea 41px, 'Stergator Speed Dome'
-// 51px). APPEND peste labelFor() — suprascrie nowrap/ellipsis la punctul de
+// '...' (audit v1.2.x: 'Regim boost' pierdea 41px, iar etichetele lungi de
+// doua cuvinte pana la 51px).
+// APPEND peste labelFor() — suprascrie nowrap/ellipsis la punctul de
 // folosire, tokens.js ramane identic cu designul original (testul de stil).
 // hyphens:auto desparte cu cratima cuvintele unice lungi ('Dezumidificare');
 // <html lang="ro"> exista deja.
@@ -358,7 +359,7 @@ function toggleItemLabelStyle(active, ui) {
   if (!ultraNarrow(ui)) return base + labelWrap(ui);
   // O SINGURA linie taia „Regim redus" in „Re..." (44px pierduti, masurat la
   // 320 si 360px). Trei linii — la fel ca labelWrap() la aceeasi latime — acopera
-  // si cea mai lunga eticheta din aplicatie, „Ştergător Speed Dome" (20 caractere).
+  // si cea mai lunga eticheta din aplicatie, „Pornire trimisă (min)” (21 caractere).
   // Dala creste in inaltime; fontul si tinta tactila raman neatinse.
   return base + ' white-space:normal; text-overflow:clip; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; line-height:1.2;';
 }
@@ -521,47 +522,6 @@ export function buildBlock(E, ui, hist, b) {
         nameStyle: 'font-family:' + SANS + '; font-size:12px; font-weight:500; color:#a99c8d;',
         hintStyle: 'font-family:' + SANS + '; font-size:10px; font-weight:300; color:#6b6053; margin-top:3px;'
       }))
-    };
-  }
-
-  if (b.type === 'cameraGrid') {
-    return {
-      isCameraGrid: true,
-      items: b.items.map((c) => {
-        const mapped = E.mapped(c.slot);
-        const online = mapped && E.available(c.slot);
-        const irMapped = E.mapped(c.ir);
-        const irOn = irMapped && E.isOn(c.ir);
-        const wiperMapped = c.wiper ? E.mapped(c.wiper) : false;
-        const stateTxt = mapped ? (online ? E.rawState(c.slot) : 'indisponibil') : 'VERIFY · nemapat';
-        return {
-          label: c.label,
-          status: stateTxt === 'idle' ? 'Inactiv' : stateTxt === 'recording' ? 'Înregistrează' : stateTxt === 'streaming' ? 'Transmite' : stateTxt,
-          hasWiper: !!c.wiper,
-          wrapStyle: 'position:relative; height:168px; border-radius:16px; overflow:hidden; background:linear-gradient(170deg,#161310 0%,#0f0d0b 100%); border:1px solid rgba(255,255,255,0.07);',
-          noSignalStyle: 'position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;',
-          noSignalIconStyle: 'display:flex; color:' + (online ? '#6f6558' : '#5a4f45') + ';',
-          noSignalIconEl: ic(online ? 'camera' : 'ban', { size: 26 }),
-          noSignalTextStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:#6f6558;',
-          noSignalText: online ? 'Fără preview live' : mapped ? 'Feed indisponibil' : 'Cameră nemapată',
-          fadeStyle: 'position:absolute; inset:0; background:linear-gradient(180deg, rgba(14,9,5,0.35) 0%, transparent 40%, rgba(14,9,5,0.92) 100%); pointer-events:none;',
-          badgeStyle: 'position:absolute; left:11px; top:10px; display:flex; align-items:center; gap:6px; padding:4px 9px; border-radius:100px; font-family:' + SANS + '; font-size:9.5px; font-weight:500; color:' + (online ? '#dcd0c1' : mapped ? '#e8a08a' : ORANGE) + '; background:rgba(12,9,7,0.7); border:1px solid ' + (online ? 'rgba(255,255,255,0.12)' : 'rgba(226,120,90,0.35)') + ';',
-          badgeDotStyle: 'width:6px; height:6px; border-radius:50%; background:' + (online ? '#6fbf73' : mapped ? '#e2785a' : ORANGE) + ';',
-          badge: online ? 'Online' : mapped ? 'Offline' : 'VERIFY',
-          labelWrapStyle: 'position:absolute; left:13px; bottom:11px; pointer-events:none;',
-          nameStyle: 'font-family:' + SANS + '; font-size:12.5px; font-weight:500; color:' + TXT + ';',
-          statusStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:#a89a89;',
-          ctrlRowStyle: 'position:absolute; right:11px; bottom:11px; display:flex; gap:7px;',
-          irStyle: 'width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (irMapped ? 'pointer' : 'default') + '; opacity:' + (irMapped ? 1 : 0.45) + '; background:' + (irOn ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(20,15,11,0.7)') + '; border:1px solid ' + (irOn ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)') + ';',
-          irIconEl: ic('sun', { size: 15, color: irOn ? '#2a1608' : '#b3a89c' }),
-          irTitle: irMapped ? 'Iluminare IR' : 'VERIFY · slot IR nemapat',
-          onIr: irMapped ? () => E.toggle(c.ir) : noop,
-          wiperStyle: 'width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:' + (wiperMapped ? 'pointer' : 'default') + '; opacity:' + (wiperMapped ? 1 : 0.45) + '; background:rgba(20,15,11,0.7); border:1px solid rgba(255,255,255,0.12);',
-          wiperIconEl: ic('refresh', { size: 15, color: '#b3a89c' }),
-          wiperTitle: wiperMapped ? 'Ştergător' : 'VERIFY · slot ştergător nemapat',
-          onWiper: wiperMapped ? () => E.toggle(c.wiper) : noop
-        };
-      })
     };
   }
 

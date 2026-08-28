@@ -1,19 +1,19 @@
 // Definiţia paginilor — aceleaşi carduri şi blocuri ca în design, dar cu
 // referinţe la sloturi HA în locul valorilor mock.
 //
-// Faţă de mockup a fost scos intenţionat doar blocul „Controale cu risc"
-// (PoE on/off, repornire cameră, restart HA, Aux1/Aux2 clorinator) —
+// Faţă de mockup a fost scos intenţionat blocul „Controale cu risc"
+// (PoE on/off, restart HA, Aux1/Aux2 clorinator) —
 // înlocuit cu o notă informativă.
 
 
 import {
-  ro, txt, sw, grid, monitor, note, slots, nowPlaying, cameraGrid, chart, timeline,
+  ro, txt, sw, grid, monitor, note, slots, nowPlaying, chart, timeline,
   accordion, sec, act, spClimate, spNumber, stats, instrument, bars, expand
 } from './blocks.js';
 import { CLIMAT_ACCORDION, PISCINA_ACCORDION } from './accordions.js';
 
 export {
-  ro, txt, sw, grid, monitor, note, slots, nowPlaying, cameraGrid, chart, timeline,
+  ro, txt, sw, grid, monitor, note, slots, nowPlaying, chart, timeline,
   accordion, sec, act, spClimate, spNumber, stats, instrument, bars, expand
 };
 
@@ -209,71 +209,6 @@ export const PAGES = {
     ]
   },
 
-  camere: {
-    eyebrow: '5 camere Dahua · ONVIF',
-    title: 'Camere',
-    chips: [
-      { icon: 'camera', text: '5 camere' },
-      { icon: 'sun', text: 'IR manual' }
-    ],
-    cards: [
-      {
-        title: 'Supraveghere',
-        wide: true,
-        blocks: [
-          cameraGrid([
-            { slot: 'camera.poarta', ir: 'light.ir_poarta', label: 'Poartă Faţă' },
-            { slot: 'camera.curte_fata', ir: 'light.ir_curte_fata', label: 'Curte Faţă' },
-            { slot: 'camera.curte_piscina', ir: 'light.ir_curte_piscina', label: 'Curte Piscină' },
-            { slot: 'camera.curte_spate', ir: 'light.ir_curte_spate', label: 'Curte Spate' },
-            { slot: 'camera.speed_dome', ir: 'light.ir_speed_dome', wiper: 'switch.stergator_speed_dome', label: 'Speed Dome' }
-          ]),
-          note('Butoanele de pe fiecare cadru: iluminare IR şi, la Speed Dome, ştergător. Repornirea camerelor şi comutarea PoE nu sunt expuse.')
-        ]
-      },
-      {
-        title: 'Stare feed-uri',
-        blocks: [
-          monitor('ONVIF', [
-            r('Poartă Faţă', 'camera.poarta'),
-            r('Curte Faţă', 'camera.curte_fata'),
-            r('Curte Piscină', 'camera.curte_piscina'),
-            r('Curte Spate', 'camera.curte_spate'),
-            r('Speed Dome', 'camera.speed_dome')
-          ])
-        ]
-      },
-      {
-        title: 'Iluminare IR',
-        blocks: [
-          grid(2, [
-            sw('sun', 'IR Poartă', 'light.ir_poarta'),
-            sw('sun', 'IR Curte Faţă', 'light.ir_curte_fata'),
-            sw('sun', 'IR Piscină', 'light.ir_curte_piscina'),
-            sw('sun', 'IR Curte Spate', 'light.ir_curte_spate'),
-            sw('sun', 'IR Speed Dome', 'light.ir_speed_dome'),
-            sw('refresh', 'Ştergător Speed Dome', 'switch.stergator_speed_dome')
-          ]),
-          note('Dacă integrarea nu raportează starea IR, comanda pleacă dar valoarea rămâne „—".')
-        ]
-      },
-      {
-        title: 'Istoric sistem video',
-        wide: true,
-        order: 8,
-        blocks: [
-          timeline('Disponibilitate camere', 'ultimele 7 zile', [
-            { label: 'Poartă Faţă', slot: 'camera.poarta' },
-            { label: 'Curte Faţă', slot: 'camera.curte_fata' },
-            { label: 'Curte Piscină', slot: 'camera.curte_piscina' },
-            { label: 'Curte Spate', slot: 'camera.curte_spate' },
-            { label: 'Speed Dome', slot: 'camera.speed_dome' }
-          ], [['off', 'Inactiv'], ['on', 'Activ'], ['unavail', 'Indisponibil']])
-        ]
-      }
-    ]
-  },
-
   retea: {
     eyebrow: 'Monitorizare infrastructură · doar informativ',
     title: 'Reţea',
@@ -348,7 +283,7 @@ export const PAGES = {
             r('Port 1', 'net.swf_poe1'), r('Port 2', 'net.swf_poe2'),
             r('Port 3', 'net.swf_poe3'), r('Port 4', 'net.swf_poe4')
           ]),
-          note('Comutarea PoE nu e expusă în această aplicaţie — ar opri camere şi puncte de acces.')
+          note('Comutarea PoE nu e expusă în această aplicaţie — ar întrerupe alimentarea echipamentelor de pe porturi.')
         ]
       },
       {
@@ -688,8 +623,7 @@ export const PAGES = {
         blocks: [
           monitor('Stare integrări', [
             r('AC Vivax · Midea', 'diag.integrare_vivax'),
-            r('Fairland · Tuya Local', 'diag.integrare_fairland'),
-            r('Cameră Speed Dome', 'camera.speed_dome')
+            r('Fairland · Tuya Local', 'diag.integrare_fairland')
           ])
         ]
       },
@@ -769,7 +703,7 @@ export const PAGES = {
         wide: true,
         blocks: [
           note(
-            'Comutarea PoE, repornirea camerelor, repornirea Home Assistant şi ieşirile Aux1 / Aux2 ale clorinatorului nu sunt disponibile din această aplicaţie. Sunt operaţii care întrerup servicii sau au efect necunoscut — le execuţi din interfaţa Home Assistant, unde vezi contextul complet.'
+            'Comutarea PoE, repornirea Home Assistant şi ieşirile Aux1 / Aux2 ale clorinatorului nu sunt disponibile din această aplicaţie. Sunt operaţii care întrerup servicii sau au efect necunoscut — le execuţi din interfaţa Home Assistant, unde vezi contextul complet.'
           )
         ]
       }
@@ -782,7 +716,6 @@ export const PAGE_HERO = {
   climat: ['Climat', 'Confort termic pe trei niveluri'],
   piscina: ['Piscina', 'Apă, chimie şi filtrare'],
   media: ['Media', 'Opt televizoare, patru zone'],
-  camere: ['Supraveghere', 'Cinci camere, perimetru complet'],
   retea: ['Reţea', 'Infrastructură şi conectivitate'],
   energie: ['Energie', 'Producţie, stocare şi consum'],
   mentenanta: ['Mentenanţă', 'Starea sistemului sub control'],

@@ -27,7 +27,6 @@ const GRUP = {
   fan: ['fan', 'Comutatoare', 4],
   cover: ['updown', 'Comutatoare', 4],
   lock: ['lock', 'Comutatoare', 4],
-  camera: ['cctv', 'Camere', 5],
   binary_sensor: ['activity', 'Senzori', 6],
   sensor: ['gauge', 'Senzori', 6],
   number: ['sliders', 'Senzori', 6],

@@ -13,7 +13,7 @@
 // intră în clasificare.
 //
 // Totul e READ-ONLY. Pagina nu expune nicio comandă: nu reporneşte integrări,
-// nu reîncarcă intrări, nu atinge camerele. Diagnostic, nu telecomandă.
+// nu reîncarcă intrări, nu atinge dispozitivele. Diagnostic, nu telecomandă.
 import React, { useMemo, useState } from 'react';
 import { s, SANS, ORANGE, TXT, TXT2, TXT3, glassCard, CARD_BORDER } from '../design/tokens.js';
 import { ic } from '../design/icons.js';

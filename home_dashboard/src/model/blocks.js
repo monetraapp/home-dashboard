@@ -14,7 +14,6 @@ export const monitor = (title, rows) => ({ type: 'monitor', title, rows });
 export const note = (text) => ({ type: 'note', text });
 export const slots = (items) => ({ type: 'slots', items });
 export const nowPlaying = () => ({ type: 'nowPlaying' });
-export const cameraGrid = (items) => ({ type: 'cameraGrid', items });
 export const chart = (title, hint, series, unit, kind, yMin, yMax) => ({
   type: 'chart', title, hint, series, unit, kind: kind || 'line', yMin, yMax
 });

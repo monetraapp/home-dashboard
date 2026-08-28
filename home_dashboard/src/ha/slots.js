@@ -9,7 +9,6 @@ export const GROUPS = [
   { key: 'climat', label: 'Climat' },
   { key: 'piscina', label: 'Piscină' },
   { key: 'media', label: 'Media' },
-  { key: 'camere', label: 'Camere' },
   { key: 'retea', label: 'Reţea (Omada)' },
   { key: 'energie', label: 'Energie' },
   { key: 'mentenanta', label: 'Mentenanţă' },
@@ -154,18 +153,6 @@ export const SLOTS = [
   slot('media.tata_bucatarie', 'TV Bucătărie Tata', 'media', ['media_player']),
   slot('media.tata_dormitor', 'TV Dormitor Tata LG', 'media', ['media_player']),
 
-  // --------------------------------------------------------------- CAMERE
-  slot('camera.poarta', 'Cameră Poartă Faţă', 'camere', ['camera', 'binary_sensor']),
-  slot('camera.curte_fata', 'Cameră Curte Faţă', 'camere', ['camera', 'binary_sensor']),
-  slot('camera.curte_piscina', 'Cameră Curte Piscină', 'camere', ['camera', 'binary_sensor']),
-  slot('camera.curte_spate', 'Cameră Curte Spate', 'camere', ['camera', 'binary_sensor']),
-  slot('camera.speed_dome', 'Cameră Speed Dome', 'camere', ['camera', 'binary_sensor']),
-  slot('light.ir_poarta', 'IR Poartă Faţă', 'camere', ['light', 'switch']),
-  slot('light.ir_curte_fata', 'IR Curte Faţă', 'camere', ['light', 'switch']),
-  slot('light.ir_curte_piscina', 'IR Curte Piscină', 'camere', ['light', 'switch']),
-  slot('light.ir_curte_spate', 'IR Curte Spate', 'camere', ['light', 'switch']),
-  slot('light.ir_speed_dome', 'IR Speed Dome', 'camere', ['light', 'switch']),
-  slot('switch.stergator_speed_dome', 'Ştergător Speed Dome', 'camere', ['switch', 'button']),
 
   // ---------------------------------------------------------------- REŢEA
   // Toate sloturile de reţea sunt DOAR INFORMATIVE (read-only) prin design.

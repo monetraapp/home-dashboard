@@ -1,5 +1,46 @@
 # Changelog
 
+## 2.1.0
+
+**Camerele ies din aplicaţie.** Decizie de arhitectură: supravegherea se face
+exclusiv din DMSS — live view, playback, PTZ, preseturi, evenimente, configurare.
+Home Assistant şi Home Dashboard nu mai au camerele deloc. Nu e o amânare şi nu e
+un „deferred": e o graniţă trasată.
+
+**Ce a dispărut din aplicaţie.** Pagina *Camere* cu tot ce ţinea de ea: grila de
+supraveghere, starea feed-urilor ONVIF, comenzile de iluminare IR, ştergătorul
+Speed Dome, istoricul de disponibilitate. Plus intrarea din bara de navigaţie,
+cele 11 sloturi şi cele 11 mapări, constructorul de bloc `cameraGrid`, randarea
+lui, icoanele `cctv` şi `camera`, maparea domeniului `camera` din pagina Zone.
+Aplicaţia are acum **9 pagini** în loc de 10.
+
+**Şi din Home Assistant**, unde nu mai era decât un sistem care se plângea: cele
+cinci intrări ONVIF (patru în `setup_error`, una în `setup_retry`), cinci
+dispozitive şi **61 de entităţi**. Zero intrări orfane rămase în registre, zero
+entităţi cu `device_id` mort.
+
+**Ce a rămas, deliberat.** Trei senzori numiţi `camera_tehnica_piscina_*` — sunt
+ai clorinatorului din *camera tehnică* a piscinei, nu ai vreunei camere video.
+În română cuvântul e acelaşi; apartenenţa s-a citit din registre, nu din nume.
+La fel, descrierile de climatizare care vorbesc despre „aerul din cameră" şi
+pagina Zone, a cărei axă sunt încăperile.
+
+**Referinţe curăţate, nu doar obiecte şterse.** Rândul „Cameră Speed Dome" din
+*Integrări cu probleme* pe Mentenanţă arăta către un slot care nu mai există.
+Nota despre PoE de pe Reţea şi cea de pe Mentenanţă nu mai vorbesc despre camere.
+Comentariile care justificau decizii de layout cu „Ştergător Speed Dome" folosesc
+acum eticheta cea mai lungă reală din aplicaţie, *„Pornire trimisă (min)"*
+(21 de caractere). Fixturile din teste au fost redenumite: testau logica de
+sănătate, nu camerele, aşa că au rămas — cu nume neutre.
+
+**Nimic fizic nu a fost atins.** NVR-ul, camerele, IP-urile, parolele, ONVIF-ul
+configurat în ele, înregistrările, Omada, VLAN-urile, PoE-ul şi DMSS rămân exact
+cum erau. Eliminarea a fost strict din Home Assistant şi din această aplicaţie.
+
+Bundle: 569,18 → **560,36 kB**. Sloturi: 326 → **315**. 458 teste de logică,
+44 de fidelitate de stil, 117 combinaţii responsive (9 pagini × 13 lăţimi),
+zero probleme, zero erori de consolă.
+
 ## 2.0.1
 
 **Butonul Power spune acum, singur, că lucrează.** Cât timp comanda e pe drum,
