@@ -1,5 +1,45 @@
 # Changelog
 
+## 2.3.0
+
+**AC Casa Tata intră în aplicaţie** — al patrulea aparat de climatizare, şi
+primul comandat prin **infraroşu**. Un ESPHome pe placă d1_mini emite cadre
+ballu/ELECTRA_AC către aparatul din bucătăria lui tata. Emiţătorul trimite;
+aparatul nu răspunde niciodată înapoi.
+
+**Consecinţa e vizibilă în interfaţă, nu ascunsă într-un tooltip.** Acolo unde
+celelalte trei unităţi arată „Ambient 26,5 °C", aceasta scrie
+**„Control IR · stare presupusă"** — pe card, în rândul din pagina Climat şi ca
+rând propriu în panoul de setări avansate, care e locul de unde pleacă
+comenzile. Ce vezi ca stare e ultima comandă trimisă, nu o observaţie.
+
+**Nu am inventat nimic ca să umplem golurile.** Aparatul nu are senzor de
+temperatură, deci cardul nu are ambient şi nu am împrumutat valoarea altei
+camere. Nu apare în *Temperaturi pe zone* — iar acolo scrie de ce, ca absenţa
+să nu arate a scăpare. În *Stare unităţi* apare etichetat „Casa Tata · IR
+(comenzi)", fiindcă exact asta e: istoricul comenzilor, nu al aparatului.
+
+**Controalele sunt cele validate fizic**, niciunul în plus: şase moduri (Oprit,
+Răcire, Încălzire, Auto, Dezumidificare, Ventilare), patru viteze de ventilator,
+patru moduri de baleiaj, ţintă 16–32 °C cu pasul de 1. Secţiunea de mod e
+dedicată, nu cea comună: aparatul expune `heat_cool`, nu `auto`, iar secţiunea
+comună ar fi adus un buton permanent inert. Nu are „Funcţii" (nu expune
+presetări) şi nu are „Diagnostic" — nu există nimic de citit de la el.
+
+**Pending-ul rămâne mecanismul existent, neatins.** Se închide când ESPHome
+acceptă comanda — măsurat sub 300 ms — fiindcă nu există confirmare de la aparat
+pe care să o aştepte. Ar aştepta la nesfârşit.
+
+În *Dispozitive* apare placa ESPHome reală, cu disponibilitatea ei. Dacă placa
+pică, aparatul devine necomandabil şi se vede — dar asta rămâne starea plăcii,
+niciodată a aparatului.
+
+Aparatul e disponibil şi în selectorul paginii *Acasă*, ca oricare alt card.
+Nu l-am pus în lista implicită: nici celelalte două AC-uri nu sunt acolo.
+
+Sloturi: 266 → **267**. 458 teste de logică, 44 de fidelitate de stil,
+104 combinaţii responsive, zero probleme, zero erori de consolă.
+
 ## 2.2.0
 
 **Rețeaua se administrează în Omada Controller.** Pagina *Reţea* iese din

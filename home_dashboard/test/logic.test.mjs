@@ -318,7 +318,9 @@ eq('sloturile ramase au toate un motiv explicit',
 // Administrarea retelei se face in Omada Controller; integrarea TP-Link
 // Omada ramane in HA, iar Device Health continua sa vada gateway, switch-uri
 // si AP-uri din registrele live.
-eq('total: 266 mapate din 266 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [266, 266]);
+// 266 -> 267: slotul AC Casa Tata (v2.3.0), aparat pe infrarosu prin ESPHome.
+// Are mapare implicita, deci invariantul zero-nemapate ramane intact.
+eq('total: 267 mapate din 267 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [267, 267]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------

@@ -178,6 +178,40 @@ export const DEVICE_CARDS = [
     ]
   },
   {
+    // (v2.3.0) AC Casa Tata. Singurul aparat de climatizare din casa comandat
+    // prin INFRAROSU (ESPHome pe d1_mini, protocol ballu/ELECTRA_AC). Emitatorul
+    // trimite; aparatul nu raspunde niciodata inapoi. Consecinta pentru card:
+    //   - `ambient` e un text fix, nu o citire: nu exista senzor de temperatura
+    //     in aparat si nu inventam unul dintr-o alta camera;
+    //   - starea afisata e ultima comanda trimisa, nu o confirmare fizica, si
+    //     asta e spus explicit pe card, nu ascuns intr-un tooltip.
+    // Restul cardului e identic cu celelalte AC-uri: acelasi mecanism de
+    // comanda, acelasi pending, acelasi stil.
+    id: 'ac-casa-tata',
+    slot: 'climate.casa_tata',
+    icon: 'snow',
+    label: 'AC Casa Tata',
+    model: 'Bucătărie Tata · IR',
+    group: 'Climat',
+    kind: 'climate',
+    ambient: { kind: 'note', text: 'Control IR · stare presupusă' },
+    dial: { kind: 'climate', unit: '°' },
+    minis: [
+      { id: 'ct-swing', icon: 'wind', label: 'Baleiaj', action: A.swingToggle() },
+      { id: 'ct-fan-auto', icon: 'fan2', label: 'Ventilator auto', action: A.fan('auto') }
+    ],
+    circles: [
+      { id: 'ct-c-cool', icon: 'snow', label: 'Răcire', action: A.hvac('cool') },
+      { id: 'ct-c-heat', icon: 'sun', label: 'Încălzire', action: A.hvac('heat') },
+      // `auto` (sageata circulara), nu `alertTri`: triunghiul de avertizare pe o
+      // pagina de climatizare citeste „ceva e stricat" — motivul pentru care
+      // exact acelasi icon a fost scos din bara de navigatie in v1.5.0.
+      { id: 'ct-c-hc', icon: 'auto', label: 'Auto', action: A.hvac('heat_cool') },
+      { id: 'ct-c-dry', icon: 'droplet', label: 'Dezumidificare', action: A.hvac('dry') },
+      { id: 'ct-c-vent', icon: 'wind', label: 'Ventilare', action: A.hvac('fan_only') }
+    ]
+  },
+  {
     id: 'clorinator-main',
     slot: 'switch.clorinator',
     icon: 'droplet',
@@ -243,7 +277,7 @@ export const CARD_BY_ID = DEVICE_CARDS.reduce((acc, c) => {
 export const DEFAULT_TRACKED = ['ac-vortex', 'heatpump', 'clorinator-redus', 'pool-pump', 'media-mansarda'];
 
 export const PAGE_DEVICES = {
-  climat: ['ac-vortex', 'ac-etaj', 'ac-vivax'],
+  climat: ['ac-vortex', 'ac-etaj', 'ac-vivax', 'ac-casa-tata'],
   piscina: ['pool-pump', 'heatpump', 'clorinator-redus', 'clorinator-main'],
   media: [
     'media-mansarda', 'media-bucatarie', 'media-sofia-parter', 'media-dormitor-sofia',

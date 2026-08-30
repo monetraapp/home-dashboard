@@ -1718,6 +1718,12 @@ function Modal({ m, onClose }) {
                 <InZbor b={m} faraCerc />
                 {m.inZbor ? null : m.model + ' • ' + m.status}
               </div>
+              {m.nota ? (
+                <div style={s(m.notaStyle)}>
+                  {m.notaIconEl}
+                  <span>{m.nota}</span>
+                </div>
+              ) : null}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>

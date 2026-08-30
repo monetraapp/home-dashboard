@@ -972,6 +972,9 @@ export function dialInfo(E, def) {
 
 function ambientText(E, def) {
   const a = def.ambient || {};
+  // (v2.3.0) Text fix, pentru aparatele fara feedback: nu exista nimic de citit
+  // de la ele, iar randul de ambient ar ramane gol. Spune de ce.
+  if (a.kind === 'note') return a.text || '';
   if (a.kind === 'climateCurrent') {
     return (a.prefix || '') + E.fmt(def.slot, { attr: 'current_temperature', unit: '°C' });
   }
@@ -1238,8 +1241,14 @@ export function buildModal(E, ui) {
     title: E.friendlyName(def.slot, def.label),
     model: def.model,
     status,
+    // (v2.3.0) Rand suplimentar pentru aparatele fara feedback: modalul e locul
+    // de unde se trimit comenzile, deci avertismentul trebuie sa fie si aici, nu
+    // doar pe card. Generic: orice card cu ambient de tip `note` il primeste.
+    nota: def.ambient && def.ambient.kind === 'note' ? def.ambient.text : null,
     titleStyle: 'font-family:' + SANS + '; font-size:17px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + clamp2(ui),
     subStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT3 + '; margin-top:2px;',
+    notaStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + ORANGE + '; opacity:0.82; margin-top:4px; display:flex; align-items:center; gap:5px;',
+    notaIconEl: ic('alertCircle', { size: 12 }),
     iconWrapStyle: 'width:44px; height:44px; flex-shrink:0; border-radius:14px; display:flex; align-items:center; justify-content:center; color:' + (a ? ORANGE : TXT2) + '; background:' + (a ? 'rgba(240,138,44,0.13)' : 'rgba(255,255,255,0.05)') + '; border:1px solid ' + (a ? 'rgba(240,138,44,0.28)' : 'rgba(255,255,255,0.07)') + ';',
     iconEl: ic(def.icon, { size: 20 }),
     togglePillStyle: togglePill(a),

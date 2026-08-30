@@ -184,6 +184,36 @@ export const PISCINA_ACCORDION = [
     ]
   },
   {
+    // (v2.3.0) AC Casa Tata — comanda prin infrarosu, fara niciun readback.
+    // Sectiune de mod DEDICATA, nu MODE_SECTION: aparatul expune `heat_cool`,
+    // nu `auto`, iar MODE_SECTION ar fi adus un chip „Auto" permanent inert.
+    // Nu are „Functii" (nu expune preset_modes) si nu are „Diagnostic": nu
+    // exista nimic de citit de la el — nici ambient, nici erori, nici consum.
+    card: 'ac-casa-tata',
+    setpoints: [spClimate('Temperatură ţintă')],
+    sections: [
+      sec('Mod', 5, [
+        act('snow', 'Răcire', A.hvac('cool')),
+        act('sun', 'Încălzire', A.hvac('heat')),
+        act('auto', 'Auto', A.hvac('heat_cool')),
+        act('droplet', 'Dezumidificare', A.hvac('dry')),
+        act('wind', 'Ventilare', A.hvac('fan_only'))
+      ]),
+      sec('Ventilator', 4, [
+        act('alertTri', 'Auto', A.fan(...FAN.auto)),
+        act('bars1', 'Scăzut', A.fan(...FAN.low)),
+        act('bars2', 'Mediu', A.fan(...FAN.mid)),
+        act('bars3', 'Ridicat', A.fan(...FAN.high))
+      ]),
+      sec('Baleiaj', 4, [
+        act('ban', 'Oprit', A.swing(...SWING.off)),
+        act('updown', 'Vertical', A.swing(...SWING.vertical)),
+        act('leftright', 'Orizontal', A.swing(...SWING.horizontal)),
+        act('move', 'Ambele', A.swing(...SWING.both))
+      ])
+    ]
+  },
+  {
     card: 'heatpump',
     setpoints: [spClimate('Temperatură ţintă apă')],
     sections: [

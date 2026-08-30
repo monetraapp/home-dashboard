@@ -19,6 +19,7 @@ const D = {
   'Ventilator|Turbo': 'Viteza maximă, pentru atingerea rapidă a temperaturii. Cel mai zgomotos.',
   'Ventilator|Maxim': 'Treapta cea mai mare de ventilator raportată de unitate.',
   'Ventilator|Auto': 'Unitatea ajustează singură viteza ventilatorului după cât e de departe de ţintă.',
+  'Ventilator auto': 'Unitatea ajustează singură viteza ventilatorului după cât e de departe de ţintă.',
   'Ventilator mediu': 'Setează ventilatorul pe viteza medie.',
   'Turbo': 'Treapta maximă — unitatea răceşte/încălzeşte cât de repede poate. Mai zgomotoasă, consum mai mare.',
 
