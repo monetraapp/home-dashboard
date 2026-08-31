@@ -19,7 +19,7 @@ import { EnergyInstrument } from './Energy.jsx';
 import { useDailyForecast, formatForecast, COND_RO, COND_ICON } from '../ha/weather.js';
 import { loadPrefs, savePrefs } from '../ha/store.js';
 import {
-  NAV, DEVICE_CARDS, CARD_BY_ID, DEFAULT_TRACKED, PAGE_DEVICES, PAGE_DEVICE_HEAD,
+  NAV, DEVICE_CARDS, CARD_BY_ID, DEFAULT_TRACKED, PAGE_DEVICES, PAGE_DEVICE_HEAD, MAX_SIDEBAR_DEVICES,
   MEDIA_ZONES, MEDIA_ZONE_OF
 } from '../model/devices.js';
 import { PAGES, PAGE_HERO } from '../model/pages.js';
@@ -281,8 +281,8 @@ export default function Dashboard({ onOpenMapping }) {
   }));
 
   const pageDeviceIds = isAcasa || isZone || isDisp ? (isAcasa ? tracked : []) : PAGE_DEVICES[page] || [];
-  const hasSidebarDevices = !isAcasa && !isZone && !isDisp && pageDeviceIds.length > 0 && pageDeviceIds.length <= 4;
-  const hasDeviceCards = isAcasa || (!isZone && !isDisp && pageDeviceIds.length > 4);
+  const hasSidebarDevices = !isAcasa && !isZone && !isDisp && pageDeviceIds.length > 0 && pageDeviceIds.length <= MAX_SIDEBAR_DEVICES;
+  const hasDeviceCards = isAcasa || (!isZone && !isDisp && pageDeviceIds.length > MAX_SIDEBAR_DEVICES);
 
   const sidebarDevices = hasSidebarDevices
     ? pageDeviceIds.map((id) => CARD_BY_ID[id]).filter(Boolean).map((d) => buildSidebarDevice(E, ui, d))

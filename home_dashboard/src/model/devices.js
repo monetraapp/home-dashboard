@@ -312,6 +312,14 @@ export const CARD_BY_ID = DEVICE_CARDS.reduce((acc, c) => {
 
 export const DEFAULT_TRACKED = ['ac-vortex', 'heatpump', 'clorinator-redus', 'pool-pump', 'media-mansarda'];
 
+// (v2.4.1) Pragul care decide CUM sunt desenate dispozitivele unei pagini:
+// pana la atatea, o lista compacta in bara din stanga; peste, o grila de carduri
+// mari in zona principala (Media, cu opt televizoare). Pana in v2.4.0 era 4
+// nescris, iar a cincea unitate de climatizare a mutat TOATA pagina Climat in
+// modul cu carduri mari - fara ca nimeni sa fi cerut asta. Acum e o constanta
+// cu nume, si un test o leaga de inventarul fiecarei pagini.
+export const MAX_SIDEBAR_DEVICES = 5;
+
 export const PAGE_DEVICES = {
   climat: ['ac-vortex', 'ac-etaj', 'ac-vivax', 'ac-casa-tata', 'ac-magazie'],
   piscina: ['pool-pump', 'heatpump', 'clorinator-redus', 'clorinator-main'],

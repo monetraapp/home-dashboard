@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.4.1
+
+**Pagina Climat revine la forma ei.** În 2.4.0, a cincea unitate de climatizare
+a mutat toată pagina din „listă compactă în bara din stânga" în „grilă de carduri
+mari", iar cele cinci unităţi au apărut ca panouri late deasupra conţinutului.
+Nimeni nu a cerut asta.
+
+**Cauza era un număr fără nume.** Pagina alege singură cum îşi desenează
+dispozitivele, după câte are: până la un prag, listă compactă; peste, carduri
+mari — aşa arată Media, cu opt televizoare. Pragul era scris `4` direct în două
+condiţii, fără comentariu şi fără test. Adăugarea lui AC Magazie a făcut cinci,
+iar pagina a basculat tăcut.
+
+Acum pragul e **`MAX_SIDEBAR_DEVICES`**, stă lângă inventarul paginilor, îşi
+explică rolul şi e legat de trei aserţiuni: Climat şi Piscina trebuie să încapă
+în bara laterală, Media trebuie să rămână pe carduri mari. Numărul nu mai decide
+singur ce se vede.
+
+Bara laterală are din nou **cinci carduri mici** — Mansardă, Etaj LG, Vivax,
+Casa Tata, Magazie — trei cu ambient real şi două cu *„Control IR · stare
+presupusă"*. Secţiunea *setări complete* are aceleaşi cinci unităţi, cu
+dropdown-urile neatinse.
+
+Nimic altceva nu s-a schimbat: controalele, modelul IR, Device Health, pagina
+Acasă şi selecţia ei implicită sunt exact ca înainte.
+
+466 teste de logică (+3), 44 de fidelitate de stil, 104 combinaţii responsive,
+plus o verificare de layout la 320 / 360 / 390 / 430 / 768 / 1180 / 1440:
+**35 de aserţiuni, zero picate**, zero overflow, zero erori de consolă.
+
 ## 2.4.0
 
 **AC Magazie intră în aplicaţie**, a doua unitate pe infraroşu, şi **se repară o

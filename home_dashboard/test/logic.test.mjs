@@ -27,7 +27,7 @@ import {
   HEALTH, HEALTH_LABEL, FRESHNESS, median, expectedInterval, gapsFromStamps, classifyDevice,
   healthTotals, fmtAge, sortDevices, SLOW_FACTOR, STALE_FACTOR
 } from '../src/ha/health.js';
-import { NAV, CARD_BY_ID, PAGE_DEVICES } from '../src/model/devices.js';
+import { NAV, CARD_BY_ID, PAGE_DEVICES, MAX_SIDEBAR_DEVICES } from '../src/model/devices.js';
 import { CLIMAT_ACCORDION, PISCINA_ACCORDION } from '../src/model/accordions.js';
 import { PAGE_HERO } from '../src/model/pages.js';
 import { UNSET, isLgTimerUnset, isLgTimerSlot } from '../src/ha/unset.js';
@@ -343,6 +343,13 @@ eq('acordeonul Piscina contine doar carduri din grupul Piscina',
 // complete — altfel un AC nou apare pe pagina, dar fara panoul lui.
 eq('fiecare unitate de pe pagina Climat are intrare in acordeon',
    PAGE_DEVICES.climat.filter((id) => !CLIMAT_ACCORDION.some((u) => u.card === id)), []);
+
+// Pagina Climat trebuie sa ramana in modul „lista compacta in bara laterala".
+// In v2.4.0 a cincea unitate a impins-o peste prag si toate cele cinci au
+// devenit carduri mari deasupra paginii. Numarul nu mai are voie sa decida tacut.
+eq('Climat incape in bara laterala', PAGE_DEVICES.climat.length <= MAX_SIDEBAR_DEVICES, true);
+eq('Piscina incape in bara laterala', PAGE_DEVICES.piscina.length <= MAX_SIDEBAR_DEVICES, true);
+eq('Media ramane pe carduri mari', PAGE_DEVICES.media.length > MAX_SIDEBAR_DEVICES, true);
 
 eq('acordeonul Climat nu are intrari in plus fata de pagina',
    CLIMAT_ACCORDION.filter((u) => PAGE_DEVICES.climat.indexOf(u.card) < 0).map((u) => u.card), []);
