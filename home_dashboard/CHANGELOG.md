@@ -1,5 +1,36 @@
 # Changelog
 
+## 2.5.0
+
+**AC Foişor intră în aplicaţie** — a treia unitate pe infraroşu, dar prima cu alt
+protocol: **tcl112** (aparat Yashido), nu ballu. Şi se vede, fiindcă interfaţa e
+construită din ce raportează entitatea, nu dintr-un şablon:
+
+- **baleiajul are două opţiuni, nu patru.** `swing_modes` este `["off",
+  "vertical"]`. „Orizontal" şi „Ambele" nu apar deloc — nu ca butoane moarte;
+- **intervalul de temperatură e 16–31 °C**, nu 16–32.
+
+Modurile şi vitezele coincid cu ale celorlalte două, tot pentru că asta citim.
+
+**Bara laterală are acum şase unităţi**, în acelaşi format: trei cu ambient real,
+trei cu *„Control IR · stare presupusă"*. Secţiunea *setări complete* are aceleaşi
+şase, fiecare cu dropdown-ul ei. Niciun card mare deasupra paginii.
+
+**Pragul de layout a fost ridicat deliberat, nu descoperit din interfaţă.** În
+2.4.1 am legat `MAX_SIDEBAR_DEVICES` de inventarul fiecărei pagini exact pentru
+situaţia asta; a şasea unitate ar fi basculat pagina pe carduri mari, iar testul
+pică înainte. Verificat acum, nu presupus: cu pragul lăsat la 5, *„Climat încape
+în bara laterală"* cade.
+
+**Nota din *Temperaturi pe zone* nu mai enumeră unităţile.** Spunea „AC Casa Tata
+şi AC Magazie"; ar fi trebuit rescrisă la fiecare aparat nou. Acum spune regula —
+unităţile pe infraroşu nu au senzor de temperatură, deci nu au ce căuta acolo —
+şi rămâne adevărată oricâte vor fi.
+
+Sloturi: 268 → **269**. Bundle: 555,38 → **556,90 kB**. 466 teste de logică,
+44 de fidelitate de stil, 104 combinaţii responsive, plus verificarea de layout
+la şapte lăţimi: **35 de aserţiuni, zero picate**, zero overflow, zero erori.
+
 ## 2.4.1
 
 **Pagina Climat revine la forma ei.** În 2.4.0, a cincea unitate de climatizare

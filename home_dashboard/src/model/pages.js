@@ -30,7 +30,7 @@ const PCT = '%';
 
 export const PAGES = {
   climat: {
-    eyebrow: '5 unităţi interne',
+    eyebrow: '6 unităţi interne',
     title: 'Climat',
     chips: [
       { icon: 'home', slot: 'climate.vortex', opts: { attr: 'current_temperature', unit: C }, prefix: 'Mansardă ' },
@@ -52,7 +52,7 @@ export const PAGES = {
             r('Vivax Ambient', 'climate.vivax', { attr: 'current_temperature', unit: C }),
             r('Exterior', 'weather.main', { attr: 'temperature', unit: C })
           ]),
-          note('AC Casa Tata şi AC Magazie nu apar aici: sunt comandate prin infraroşu şi nu au senzor de temperatură — nu există nicio valoare de citit de la ele. Un rând cu temperatura altei camere ar fi o invenţie.')
+          note('Unităţile comandate prin infraroşu nu apar aici: nu au senzor de temperatură, deci nu există nicio valoare de citit de la ele. Nu împrumutăm temperatura altei camere ca să umplem rândul.')
         ]
       },
       {
@@ -89,7 +89,8 @@ export const PAGES = {
             // IR, nu observatii ale aparatului. Eticheta o spune, ca sa nu fie citit la fel
             // ca celelalte trei randuri de deasupra.
             { label: 'Casa Tata · IR (comenzi)', slot: 'climate.casa_tata' },
-            { label: 'Magazie · IR (comenzi)', slot: 'climate.magazie' }
+            { label: 'Magazie · IR (comenzi)', slot: 'climate.magazie' },
+            { label: 'Foişor · IR (comenzi)', slot: 'climate.foisor' }
           ], [['on', 'În funcţiune'], ['off', 'Oprit'], ['unavail', 'Indisponibil']])
         ]
       }

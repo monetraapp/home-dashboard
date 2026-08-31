@@ -322,7 +322,9 @@ eq('sloturile ramase au toate un motiv explicit',
 // 266 -> 267: slotul AC Casa Tata (v2.3.0), aparat pe infrarosu prin ESPHome.
 // Are mapare implicita, deci invariantul zero-nemapate ramane intact.
 // 267 -> 268: slotul AC Magazie (v2.4.0), a doua unitate pe infrarosu.
-eq('total: 268 mapate din 268 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [268, 268]);
+// 268 -> 269: slotul AC Foisor (v2.5.0), a treia unitate pe infrarosu, dar
+// prima cu alt protocol (tcl112): baleiaj cu doua optiuni, 16-31 cu pas 0,5.
+eq('total: 269 mapate din 269 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [269, 269]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- acordeoanele „setari complete" ------------------------------------------

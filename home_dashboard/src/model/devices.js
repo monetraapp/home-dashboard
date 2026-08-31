@@ -248,6 +248,39 @@ export const DEVICE_CARDS = [
     ]
   },
   {
+    // (v2.5.0) AC Foisor. A treia placa pe infrarosu, dar prima cu ALT protocol:
+    // tcl112 (aparat Yashido), nu ballu. Capabilitatile citite din entitate chiar
+    // difera de ale celorlalte doua, si cardul le respecta:
+    //   - baleiaj cu DOUA optiuni (off, vertical), nu patru;
+    //   - temperatura 16-31 cu pasul 0,5, nu 16-32 cu pasul 1.
+    // Pragul si intervalul vin din entitate prin spClimate, deci nu sunt scrise
+    // nicaieri de mana. Modurile si vitezele sunt aceleasi - tot din entitate.
+    id: 'ac-foisor',
+    slot: 'climate.foisor',
+    icon: 'snow',
+    label: 'AC Foişor',
+    model: 'Foişor · IR',
+    group: 'Climat',
+    kind: 'climate',
+    ambient: {
+      kind: 'note',
+      text: 'Control IR · stare presupusă',
+      detail: 'Aparatul nu transmite feedback către Home Assistant.'
+    },
+    dial: { kind: 'climate', unit: '°' },
+    minis: [
+      { id: 'fo-swing', icon: 'wind', label: 'Baleiaj', action: A.swingToggle() },
+      { id: 'fo-fan-auto', icon: 'fan2', label: 'Ventilator auto', action: A.fan('auto') }
+    ],
+    circles: [
+      { id: 'fo-c-cool', icon: 'snow', label: 'Răcire', action: A.hvac('cool') },
+      { id: 'fo-c-heat', icon: 'sun', label: 'Încălzire', action: A.hvac('heat') },
+      { id: 'fo-c-hc', icon: 'auto', label: 'Auto', action: A.hvac('heat_cool') },
+      { id: 'fo-c-dry', icon: 'droplet', label: 'Dezumidificare', action: A.hvac('dry') },
+      { id: 'fo-c-vent', icon: 'wind', label: 'Ventilare', action: A.hvac('fan_only') }
+    ]
+  },
+  {
     id: 'clorinator-main',
     slot: 'switch.clorinator',
     icon: 'droplet',
@@ -318,10 +351,10 @@ export const DEFAULT_TRACKED = ['ac-vortex', 'heatpump', 'clorinator-redus', 'po
 // nescris, iar a cincea unitate de climatizare a mutat TOATA pagina Climat in
 // modul cu carduri mari - fara ca nimeni sa fi cerut asta. Acum e o constanta
 // cu nume, si un test o leaga de inventarul fiecarei pagini.
-export const MAX_SIDEBAR_DEVICES = 5;
+export const MAX_SIDEBAR_DEVICES = 6;
 
 export const PAGE_DEVICES = {
-  climat: ['ac-vortex', 'ac-etaj', 'ac-vivax', 'ac-casa-tata', 'ac-magazie'],
+  climat: ['ac-vortex', 'ac-etaj', 'ac-vivax', 'ac-casa-tata', 'ac-magazie', 'ac-foisor'],
   piscina: ['pool-pump', 'heatpump', 'clorinator-redus', 'clorinator-main'],
   media: [
     'media-mansarda', 'media-bucatarie', 'media-sofia-parter', 'media-dormitor-sofia',

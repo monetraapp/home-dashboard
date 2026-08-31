@@ -223,6 +223,36 @@ export const CLIMAT_ACCORDION = [
         act('move', 'Ambele', A.swing(...SWING.both))
       ])
     ]
+  },
+  {
+    // (v2.5.0) AC Foisor — protocol tcl112 (aparat Yashido), nu ballu. Singurele
+    // sectiuni scrise altfel decat la celelalte doua unitati IR sunt cele care
+    // CHIAR difera in entitate:
+    //   Baleiaj are DOUA optiuni, nu patru: swing_modes = ["off","vertical"].
+    //   Orizontal si Ambele nu exista, deci nu apar - nu ca butoane moarte.
+    // Intervalul de temperatura (16-31, pas 0,5, si el diferit) nu e scris aici:
+    // spClimate il citeste din entitate, ca la toate celelalte.
+    card: 'ac-foisor',
+    setpoints: [spClimate('Temperatură ţintă')],
+    sections: [
+      sec('Mod', 5, [
+        act('snow', 'Răcire', A.hvac('cool')),
+        act('sun', 'Încălzire', A.hvac('heat')),
+        act('auto', 'Auto', A.hvac('heat_cool')),
+        act('droplet', 'Dezumidificare', A.hvac('dry')),
+        act('wind', 'Ventilare', A.hvac('fan_only'))
+      ]),
+      sec('Ventilator', 4, [
+        act('alertTri', 'Auto', A.fan(...FAN.auto)),
+        act('bars1', 'Scăzut', A.fan(...FAN.low)),
+        act('bars2', 'Mediu', A.fan(...FAN.mid)),
+        act('bars3', 'Ridicat', A.fan(...FAN.high))
+      ]),
+      sec('Baleiaj', 2, [
+        act('ban', 'Oprit', A.swing(...SWING.off)),
+        act('updown', 'Vertical', A.swing(...SWING.vertical))
+      ])
+    ]
   }
 ];
 
