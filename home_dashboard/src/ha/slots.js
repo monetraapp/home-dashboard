@@ -31,6 +31,7 @@ export const SLOTS = [
   // (protocol ballu/ELECTRA_AC). Aparatul NU raspunde inapoi: starea entitatii e
   // ultima comanda trimisa, nu o citire. De aceea cardul nu are ambient.
   slot('climate.casa_tata', 'AC Casa Tata (IR)', 'climat', ['climate']),
+  slot('climate.magazie', 'AC Magazie (IR)', 'climat', ['climate']),
   // Slotul "Temperatură exterior" a fost ELIMINAT (v1.0.6): nu există senzor
   // fizic exterior; afişajul "Exterior" citeşte direct weather.main (atributul
   // temperature), fără slot intermediar.

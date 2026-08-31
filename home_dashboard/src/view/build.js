@@ -755,6 +755,15 @@ export function buildAccordionItem(E, ui, u) {
     chevIconStyle: 'display:flex; transform:rotate(' + (open ? '180deg' : '0deg') + '); transition:transform .18s ease;',
     chevEl: ic('chevronDown', { size: 15, sw: 1.9 }),
     bodyStyle: 'padding:2px 14px 14px; border-top:1px solid rgba(255,255,255,0.055);',
+    // (v2.4.0) Aceeasi nota si in panoul extins: acolo se aleg modul, viteza
+    // si baleiajul, deci acolo trebuie sa scrie ca nimic nu se confirma inapoi.
+    nota: def && def.ambient && def.ambient.kind === 'note' ? def.ambient.text : null,
+    notaDetaliu: def && def.ambient && def.ambient.kind === 'note' ? def.ambient.detail || null : null,
+    notaStyle: 'display:flex; align-items:flex-start; gap:7px; margin:13px 0 2px; padding:9px 11px; border-radius:12px; background:rgba(240,138,44,0.055); border:1px solid rgba(240,138,44,0.16);',
+    notaIconStyle: 'display:flex; flex-shrink:0; color:' + ORANGE + '; margin-top:1px;',
+    notaIconEl: ic('alertCircle', { size: 13 }),
+    notaTextStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:400; color:#e0b183; line-height:1.45;',
+    notaDetaliuStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT3 + '; margin-top:2px; line-height:1.45;',
     hasSchedule: !!u.schedule,
     hasSetpoints: (u.setpoints || []).length > 0,
     setpointHeaderStyle: 'font-family:' + SANS + '; font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.09em; color:' + TXT3 + '; margin:15px 0 8px; padding-top:13px; border-top:1px solid rgba(255,255,255,0.05);',

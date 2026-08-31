@@ -27,7 +27,8 @@ import {
   HEALTH, HEALTH_LABEL, FRESHNESS, median, expectedInterval, gapsFromStamps, classifyDevice,
   healthTotals, fmtAge, sortDevices, SLOW_FACTOR, STALE_FACTOR
 } from '../src/ha/health.js';
-import { NAV } from '../src/model/devices.js';
+import { NAV, CARD_BY_ID, PAGE_DEVICES } from '../src/model/devices.js';
+import { CLIMAT_ACCORDION, PISCINA_ACCORDION } from '../src/model/accordions.js';
 import { PAGE_HERO } from '../src/model/pages.js';
 import { UNSET, isLgTimerUnset, isLgTimerSlot } from '../src/ha/unset.js';
 import { bumpNumber, firstNumberFromUnset, snapNumber } from '../src/ha/numberStep.js';
@@ -320,8 +321,32 @@ eq('sloturile ramase au toate un motiv explicit',
 // si AP-uri din registrele live.
 // 266 -> 267: slotul AC Casa Tata (v2.3.0), aparat pe infrarosu prin ESPHome.
 // Are mapare implicita, deci invariantul zero-nemapate ramane intact.
-eq('total: 267 mapate din 267 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [267, 267]);
+// 267 -> 268: slotul AC Magazie (v2.4.0), a doua unitate pe infrarosu.
+eq('total: 268 mapate din 268 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [268, 268]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
+
+// ---- acordeoanele „setari complete" ------------------------------------------
+// Invariantul care lipsea. In v2.3.0 intrarea de acordeon a lui AC Casa Tata a
+// ajuns in PISCINA_ACCORDION in loc de CLIMAT_ACCORDION si a fost livrata asa:
+// unitatea aparea in setarile complete ale PISCINEI. Testele nu atingeau deloc
+// acordeoanele, iar auditul responsive verifica layout, nu apartenenta.
+eq('fiecare intrare de acordeon trimite la un card real',
+   [...CLIMAT_ACCORDION, ...PISCINA_ACCORDION].filter((u) => !CARD_BY_ID[u.card]).map((u) => u.card), []);
+
+eq('acordeonul Climat contine doar carduri din grupul Climat',
+   CLIMAT_ACCORDION.filter((u) => CARD_BY_ID[u.card].group !== 'Climat').map((u) => u.card), []);
+
+eq('acordeonul Piscina contine doar carduri din grupul Piscina',
+   PISCINA_ACCORDION.filter((u) => CARD_BY_ID[u.card].group !== 'Piscin' + 'ă').map((u) => u.card), []);
+
+// Fiecare unitate de climatizare de pe pagina Climat trebuie sa aiba si setari
+// complete — altfel un AC nou apare pe pagina, dar fara panoul lui.
+eq('fiecare unitate de pe pagina Climat are intrare in acordeon',
+   PAGE_DEVICES.climat.filter((id) => !CLIMAT_ACCORDION.some((u) => u.card === id)), []);
+
+eq('acordeonul Climat nu are intrari in plus fata de pagina',
+   CLIMAT_ACCORDION.filter((u) => PAGE_DEVICES.climat.indexOf(u.card) < 0).map((u) => u.card), []);
+
 
 // ---- energie Growatt (v1.1.3) ----------------------------------------------
 console.log('energie Growatt:');

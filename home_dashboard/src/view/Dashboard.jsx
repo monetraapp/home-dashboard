@@ -1503,6 +1503,15 @@ function Block({ b, grow }) {
             </div>
             {acc.open ? (
               <div style={s(acc.bodyStyle)}>
+                {acc.nota ? (
+                  <div style={s(acc.notaStyle)}>
+                    <div style={s(acc.notaIconStyle)}>{acc.notaIconEl}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={s(acc.notaTextStyle)}>{acc.nota}</div>
+                      {acc.notaDetaliu ? <div style={s(acc.notaDetaliuStyle)}>{acc.notaDetaliu}</div> : null}
+                    </div>
+                  </div>
+                ) : null}
                 {acc.hasSetpoints ? (
                   <>
                     <div style={s(acc.setpointHeaderStyle)}>Valori ţintă</div>

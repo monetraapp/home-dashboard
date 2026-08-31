@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.4.0
+
+**AC Magazie intră în aplicaţie**, a doua unitate pe infraroşu, şi **se repară o
+greşeală din 2.3.0**: rândul de „setări complete" al lui AC Casa Tata ajunsese în
+acordeonul paginii **Piscină**, nu Climat. A fost livrat aşa. Unitatea apărea în
+setările complete ale piscinei, iar pe Climat avea doar cardul.
+
+Cauza e banală şi de aceea merită scrisă: cele două acordeoane trăiesc în
+acelaşi fişier, iar inserţia a nimerit după ultima intrare a array-ului greşit.
+Nimic n-a semnalat-o — nu exista niciun test pe acordeoane, iar auditul
+responsive verifică aşezarea în pagină, nu apartenenţa. **Acum există cinci
+invariante** care leagă fiecare intrare de acordeon de grupul cardului ei şi de
+inventarul paginii; verificate că pică la reintroducerea greşelii, nu doar că
+trec acum.
+
+**AC Magazie** raportează exact aceleaşi capabilităţi ca AC Casa Tata — şase
+moduri, patru viteze, patru baleiaje, 16–32 °C cu pasul 1 — deci primeşte exact
+aceleaşi controale. Nu din copiere, ci fiindcă asta citim din entitate. A treia
+placă din casă, **AC Foişor**, chiar diferă (baleiaj doar oprit/vertical, 16–31
+cu pasul 0,5) şi tocmai de aceea nu a primit acelaşi card.
+
+**Pagina Climat are acum cinci unităţi**, fiecare cu rândul şi dropdown-ul ei.
+Cele două pe infraroşu poartă acelaşi marcaj discret ca înainte — *„Control IR ·
+stare presupusă"* — iar în panoul extins, acolo unde se aleg modul, viteza şi
+baleiajul, apare şi propoziţia care lipsea: **„Aparatul nu transmite feedback
+către Home Assistant."** Acolo se trimit comenzile, deci acolo trebuie scris.
+
+Niciuna nu apare în *Temperaturi pe zone* — nota de acolo le numeşte acum pe
+amândouă. În *Stare unităţi* apar ca „Casa Tata · IR (comenzi)" şi „Magazie · IR
+(comenzi)": istoricul comenzilor, nu al aparatelor.
+
+Sloturi: 267 → **268**. Bundle: 552,69 → **555,38 kB**. 463 teste de logică
+(+5 pe acordeoane), 44 de fidelitate de stil, 104 combinaţii responsive,
+zero probleme, zero erori de consolă.
+
 ## 2.3.0
 
 **AC Casa Tata intră în aplicaţie** — al patrulea aparat de climatizare, şi

@@ -194,7 +194,11 @@ export const DEVICE_CARDS = [
     model: 'Bucătărie Tata · IR',
     group: 'Climat',
     kind: 'climate',
-    ambient: { kind: 'note', text: 'Control IR · stare presupusă' },
+    ambient: {
+      kind: 'note',
+      text: 'Control IR · stare presupusă',
+      detail: 'Aparatul nu transmite feedback către Home Assistant.'
+    },
     dial: { kind: 'climate', unit: '°' },
     minis: [
       { id: 'ct-swing', icon: 'wind', label: 'Baleiaj', action: A.swingToggle() },
@@ -209,6 +213,38 @@ export const DEVICE_CARDS = [
       { id: 'ct-c-hc', icon: 'auto', label: 'Auto', action: A.hvac('heat_cool') },
       { id: 'ct-c-dry', icon: 'droplet', label: 'Dezumidificare', action: A.hvac('dry') },
       { id: 'ct-c-vent', icon: 'wind', label: 'Ventilare', action: A.hvac('fan_only') }
+    ]
+  },
+  {
+    // (v2.4.0) AC Magazie. Al doilea aparat pe infrarosu, aceeasi placa d1_mini
+    // si acelasi protocol ballu. Capabilitatile citite din entitate sunt
+    // IDENTICE cu ale lui Casa Tata (6 moduri, 4 viteze, 4 baleiaje, 16-32/1),
+    // deci controalele sunt aceleasi - nu din copiere, ci fiindca asa raporteaza
+    // aparatul. AC Foisor, a treia placa, are alt set (baleiaj doar off/vertical,
+    // 16-31 cu pas 0.5) si de aceea NU primeste acelasi card.
+    id: 'ac-magazie',
+    slot: 'climate.magazie',
+    icon: 'snow',
+    label: 'AC Magazie',
+    model: 'Magazie · IR',
+    group: 'Climat',
+    kind: 'climate',
+    ambient: {
+      kind: 'note',
+      text: 'Control IR · stare presupusă',
+      detail: 'Aparatul nu transmite feedback către Home Assistant.'
+    },
+    dial: { kind: 'climate', unit: '°' },
+    minis: [
+      { id: 'mg-swing', icon: 'wind', label: 'Baleiaj', action: A.swingToggle() },
+      { id: 'mg-fan-auto', icon: 'fan2', label: 'Ventilator auto', action: A.fan('auto') }
+    ],
+    circles: [
+      { id: 'mg-c-cool', icon: 'snow', label: 'Răcire', action: A.hvac('cool') },
+      { id: 'mg-c-heat', icon: 'sun', label: 'Încălzire', action: A.hvac('heat') },
+      { id: 'mg-c-hc', icon: 'auto', label: 'Auto', action: A.hvac('heat_cool') },
+      { id: 'mg-c-dry', icon: 'droplet', label: 'Dezumidificare', action: A.hvac('dry') },
+      { id: 'mg-c-vent', icon: 'wind', label: 'Ventilare', action: A.hvac('fan_only') }
     ]
   },
   {
@@ -277,7 +313,7 @@ export const CARD_BY_ID = DEVICE_CARDS.reduce((acc, c) => {
 export const DEFAULT_TRACKED = ['ac-vortex', 'heatpump', 'clorinator-redus', 'pool-pump', 'media-mansarda'];
 
 export const PAGE_DEVICES = {
-  climat: ['ac-vortex', 'ac-etaj', 'ac-vivax', 'ac-casa-tata'],
+  climat: ['ac-vortex', 'ac-etaj', 'ac-vivax', 'ac-casa-tata', 'ac-magazie'],
   piscina: ['pool-pump', 'heatpump', 'clorinator-redus', 'clorinator-main'],
   media: [
     'media-mansarda', 'media-bucatarie', 'media-sofia-parter', 'media-dormitor-sofia',
