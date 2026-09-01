@@ -30,7 +30,7 @@ const PCT = '%';
 
 export const PAGES = {
   climat: {
-    eyebrow: '6 unităţi interne',
+    eyebrow: '5 unităţi interne',
     title: 'Climat',
     chips: [
       { icon: 'home', slot: 'climate.vortex', opts: { attr: 'current_temperature', unit: C }, prefix: 'Mansardă ' },
@@ -89,7 +89,6 @@ export const PAGES = {
             // IR, nu observatii ale aparatului. Eticheta o spune, ca sa nu fie citit la fel
             // ca celelalte trei randuri de deasupra.
             { label: 'Casa Tata · IR (comenzi)', slot: 'climate.casa_tata' },
-            { label: 'Magazie · IR (comenzi)', slot: 'climate.magazie' },
             { label: 'Foişor · IR (comenzi)', slot: 'climate.foisor' }
           ], [['on', 'În funcţiune'], ['off', 'Oprit'], ['unavail', 'Indisponibil']])
         ]

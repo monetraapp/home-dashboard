@@ -195,36 +195,6 @@ export const CLIMAT_ACCORDION = [
     ]
   },
   {
-    // (v2.4.0) AC Magazie. Aceleasi sectiuni ca la Casa Tata fiindca entitatea
-    // raporteaza EXACT aceleasi capabilitati: hvac_modes, fan_modes, swing_modes
-    // si 16-32 cu pas 1 sunt identice, verificate live. Daca ar fi diferit macar
-    // una, ar fi avut sectiuni proprii - vezi AC Foisor, care chiar difera
-    // (baleiaj doar off/vertical, 16-31 cu pas 0.5) si de aceea nu e aici.
-    card: 'ac-magazie',
-    setpoints: [spClimate('Temperatură ţintă')],
-    sections: [
-      sec('Mod', 5, [
-        act('snow', 'Răcire', A.hvac('cool')),
-        act('sun', 'Încălzire', A.hvac('heat')),
-        act('auto', 'Auto', A.hvac('heat_cool')),
-        act('droplet', 'Dezumidificare', A.hvac('dry')),
-        act('wind', 'Ventilare', A.hvac('fan_only'))
-      ]),
-      sec('Ventilator', 4, [
-        act('alertTri', 'Auto', A.fan(...FAN.auto)),
-        act('bars1', 'Scăzut', A.fan(...FAN.low)),
-        act('bars2', 'Mediu', A.fan(...FAN.mid)),
-        act('bars3', 'Ridicat', A.fan(...FAN.high))
-      ]),
-      sec('Baleiaj', 4, [
-        act('ban', 'Oprit', A.swing(...SWING.off)),
-        act('updown', 'Vertical', A.swing(...SWING.vertical)),
-        act('leftright', 'Orizontal', A.swing(...SWING.horizontal)),
-        act('move', 'Ambele', A.swing(...SWING.both))
-      ])
-    ]
-  },
-  {
     // (v2.5.0) AC Foisor — protocol tcl112 (aparat Yashido), nu ballu. Singurele
     // sectiuni scrise altfel decat la celelalte doua unitati IR sunt cele care
     // CHIAR difera in entitate:

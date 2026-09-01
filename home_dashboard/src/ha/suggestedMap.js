@@ -16,7 +16,6 @@ export const SUGGESTED_MAP = {
   'climate.etaj': 'climate.etaj_aer_conditionat_lg_etaj',
   'climate.vivax': 'climate.mansarda_aer_conditionat_vivax_mansarda',
   'climate.casa_tata': 'climate.ac_casa_tata_ac_casa_tata',
-  'climate.magazie': 'climate.ac_magazie_ac_magazie',
   'climate.foisor': 'climate.ac_foisor_ac_foisor',
   // Timer-ele LG (v1.5.4): controlul merge prin bridge-ul lg_thinq_timers,
   // NU prin number.set_value (no-op în ThinQ — fără alt_setter). Maparea pe

@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.6.0
+
+**AC Magazie iese din aplicaţie şi din Home Assistant.** Decizie de arhitectură:
+aparatul nu mai face parte din sistem.
+
+Din Dashboard au ieşit cardul din bara laterală, rândul din *setări complete* cu
+tot dropdown-ul lui, slotul `climate.magazie`, maparea şi rândul din *Stare
+unităţi*. Pagina Climat are din nou **cinci unităţi**: Mansardă Vortex, Etaj LG,
+Mansardă Vivax, Casa Tata şi Foişor — două dintre ele pe infraroşu, cu marcajul
+neschimbat.
+
+Din Home Assistant a ieşit intrarea ESPHome cu tot ce ţinea de ea: **un
+dispozitiv şi două entităţi**, fără restart şi fără nicio intrare orfană în
+registre. Integrarea ESPHome rămâne, cu AC Casa Tata şi AC Foişor neatinse.
+
+**Nu exista nicio dependenţă de eliminat** — verificat, nu presupus: zero
+referinţe în automatizări, scripturi, scene, `configuration.yaml` şi
+`ui-lovelace.yaml`.
+
+**Ce poartă numele „Magazie" şi a rămas**, fiindcă e alt subsistem: switch-ul
+Omada *Switch Magazie* cu porturile lui PoE, actualizarea lui de firmware şi
+`device_tracker.ac_magazie` — trackerul de reţea al plăcii, care aparţine
+integrării Omada, nu ESPHome. Apartenenţa s-a citit din registre, nu din nume.
+
+Sloturi: 269 → **268**. Bundle: 556,90 → **555,27 kB**. 466 teste de logică,
+44 de fidelitate de stil, 104 combinaţii responsive, plus verificarea de layout
+la şapte lăţimi: 35 de aserţiuni, zero picate, zero erori de consolă.
+
 ## 2.5.0
 
 **AC Foişor intră în aplicaţie** — a treia unitate pe infraroşu, dar prima cu alt
