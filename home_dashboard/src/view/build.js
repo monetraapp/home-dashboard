@@ -1273,6 +1273,8 @@ export function buildModal(E, ui) {
     // de unde se trimit comenzile, deci avertismentul trebuie sa fie si aici, nu
     // doar pe card. Generic: orice card cu ambient de tip `note` il primeste.
     nota: def.ambient && def.ambient.kind === 'note' ? def.ambient.text : null,
+    // (v2.8.0) Sloturile sectiunii de istoric, cand cardul are asa ceva.
+    istoric: def.istoric || null,
     titleStyle: 'font-family:' + SANS + '; font-size:17px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + clamp2(ui),
     subStyle: 'font-family:' + SANS + '; font-size:11.5px; font-weight:300; color:' + TXT3 + '; margin-top:2px;',
     notaStyle: 'font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + ORANGE + '; opacity:0.82; margin-top:4px; display:flex; align-items:center; gap:5px;',

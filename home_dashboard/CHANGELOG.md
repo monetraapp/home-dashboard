@@ -1,5 +1,46 @@
 # Changelog
 
+## 2.8.0
+
+**„Setări avansate" al fiecărei benzi LED capătă o secţiune de istoric.** Sub
+controale, după un separator: *Istoric şi consum*, cu trei file — Putere, Consum,
+Tensiune — şi trei intervale: 24h, 7 zile, 30 zile. Fiecare modal arată exclusiv
+istoricul benzii lui.
+
+**Deasupra graficului stă rezumatul electric live** — Putere, Curent, Tensiune,
+una lângă alta. Curentul apare doar aici: nu are grafic propriu, fiindcă la un
+LED de 12 V curentul e puterea împărţită la o tensiune practic constantă, iar un
+al doilea grafic ar spune acelaşi lucru cu altă unitate.
+
+**Datele vin din statisticile HA, nu din stările brute.** Recorder-ul agregă deja
+pe 5 minute, oră şi zi, cu media, minimul şi maximul fiecărui interval. Un
+grafic de 30 de zile costă astfel **30 de puncte, nu zeci de mii**, iar
+statisticile supravieţuiesc epurării recorder-ului. Cererea pleacă doar când
+modalul e deschis — componenta se montează şi se demontează cu el.
+
+**Statisticile sunt cele care au sens**, nu cele care umplu spaţiul: Putere şi
+Tensiune arată Medie / Maxim / Minim; Consumul arată **Total pe interval**, şi
+atât. Nu există „media energiei", fiindcă nu înseamnă nimic.
+
+Consumul pe interval se calculează ca diferenţă între citirile succesive ale
+contorului cumulativ. Diferenţele negative — contorul a fost resetat — devin
+zero, altfel o resetare ar apărea drept consum uriaş cu semn greşit. Unitatea se
+alege pe total: sub 1 kWh tot blocul trece în Wh.
+
+Axa puterii porneşte de la zero. Fără asta, marja automată a graficului cobora
+sub zero şi apărea o axă cu **−0,6 W** — o valoare care nu poate exista.
+
+Când nu există date pentru intervalul cerut, secţiunea spune asta. **Nu se
+desenează o linie de zero inventată.**
+
+Cardurile de pe Acasă rămân neschimbate: nume, model, o singură valoare de
+putere, cadran, două acţiuni rapide. Graficele stau doar în modal.
+
+Bundle: 559,68 → **566,47 kB**. 466 teste de logică, 44 de fidelitate de stil,
+104 combinaţii responsive, zero probleme. Verificat live pe ambele benzi, la
+1280 şi 390 px: **60 de aserţiuni, toate trecute**, zero overflow, zero erori de
+consolă, banda readusă la starea iniţială.
+
 ## 2.7.0
 
 **Cele două benzi RGB de birou intră în aplicaţie**, fiecare pe propriul Shelly

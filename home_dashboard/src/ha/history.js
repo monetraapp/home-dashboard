@@ -69,10 +69,14 @@ export function useHistory(entityIds, days) {
  * iar UI-ul afişează "—".
  * Întoarce { stats, loading, error } — stats = { statistic_id: [rânduri] }.
  */
-export function useStatistics(statisticIds, startMs, endMs, period) {
+export function useStatistics(statisticIds, startMs, endMs, period, types) {
+  // (v2.8.0) `types` e optional si pastreaza vechiul comportament cand lipseste.
+  // Graficele de putere si tensiune au nevoie si de min/max, pe care HA le
+  // agrega deja pe fiecare interval - nu le recalculam noi din puncte brute.
+  const tipuri = types && types.length ? types : ['sum', 'mean'];
   const { sendMessagePromise, connected } = useHa();
   const [state, setState] = useState({ stats: null, loading: false, error: null });
-  const key = (statisticIds || []).filter(Boolean).sort().join(',') + '|' + startMs + '|' + period;
+  const key = (statisticIds || []).filter(Boolean).sort().join(',') + '|' + startMs + '|' + endMs + '|' + period + '|' + tipuri.join(',');
   const reqRef = useRef(0);
 
   useEffect(() => {
@@ -90,7 +94,7 @@ export function useStatistics(statisticIds, startMs, endMs, period) {
       end_time: new Date(endMs).toISOString(),
       statistic_ids: statisticIds.filter(Boolean),
       period: period,
-      types: ['sum', 'mean']
+      types: tipuri
     })
       .then((res) => {
         if (cancelled || myReq !== reqRef.current) return;

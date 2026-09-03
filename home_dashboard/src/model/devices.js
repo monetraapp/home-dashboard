@@ -266,6 +266,14 @@ export const DEVICE_CARDS = [
     kind: 'light',
     ambient: { kind: 'compose', parts: [['power.birou_up', '', ' W']] },
     dial: { kind: 'brightness', unit: '%', step: 5 },
+    // Sloturile din care isi ia sectiunea „Istoric si consum" datele. Stau
+    // in modal, nu pe card: cardul ramane compact, cu o singura valoare.
+    istoric: {
+      power: 'power.birou_up',
+      energy: 'energy.birou_up',
+      voltage: 'volt.birou_up',
+      current: 'curent.birou_up'
+    },
     minis: [
       { id: 'lbu-cald', icon: 'flame', label: 'Cald', action: A.rgb(255, 140, 20) },
       { id: 'lbu-alb', icon: 'cloud', label: 'Alb', action: A.rgb(255, 255, 255) }
@@ -295,6 +303,14 @@ export const DEVICE_CARDS = [
     kind: 'light',
     ambient: { kind: 'compose', parts: [['power.birou_down', '', ' W']] },
     dial: { kind: 'brightness', unit: '%', step: 5 },
+    // Sloturile din care isi ia sectiunea „Istoric si consum" datele. Stau
+    // in modal, nu pe card: cardul ramane compact, cu o singura valoare.
+    istoric: {
+      power: 'power.birou_down',
+      energy: 'energy.birou_down',
+      voltage: 'volt.birou_down',
+      current: 'curent.birou_down'
+    },
     minis: [
       { id: 'lbd-cald', icon: 'flame', label: 'Cald', action: A.rgb(255, 140, 20) },
       { id: 'lbd-alb', icon: 'cloud', label: 'Alb', action: A.rgb(255, 255, 255) }

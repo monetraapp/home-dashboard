@@ -31,6 +31,7 @@ import { useDeviceHealth } from '../ha/deviceHealth.js';
 import { useSystemHealth } from '../ha/systemHealth.js';
 import { healthTotals } from '../ha/health.js';
 import { buildPageCard, buildDeviceCard, buildSidebarDevice, buildModal, marcajComanda, marcajImpuls } from './build.js';
+import LedHistory from './LedHistory.jsx';
 
 const AC_UNIT_IDS = ['ac-vortex', 'ac-etaj', 'ac-vivax'];
 
@@ -988,7 +989,7 @@ export default function Dashboard({ onOpenMapping }) {
         />
       ) : null}
 
-      {modal ? <Modal m={modal} onClose={() => setModalId(null)} /> : null}
+      {modal ? <Modal m={modal} E={E} ui={ui} onClose={() => setModalId(null)} /> : null}
     </div>
   );
 }
@@ -1707,7 +1708,9 @@ function Picker({ tracked, setTracked, dragId, setDragId, onClose }) {
 }
 
 // -------------------------------------------------------------------- modal
-function Modal({ m, onClose }) {
+// `E` si `ui` ajung aici doar pentru sectiunea de istoric, care isi cere singura
+// datele din HA. Restul modalului lucreaza in continuare exclusiv cu `m`.
+function Modal({ m, E, ui, onClose }) {
   const { mob } = useBreakpoint();
   return (
     <div style={s(overlayStyle(mob))} onClick={onClose} role="presentation">
@@ -1787,6 +1790,17 @@ function Modal({ m, onClose }) {
               </div>
             </div>
           ))}
+          {m.istoric ? (
+            <LedHistory
+              E={E}
+              ui={ui}
+              cheie={m.id}
+              slotPower={m.istoric.power}
+              slotEnergy={m.istoric.energy}
+              slotVoltage={m.istoric.voltage}
+              slotCurrent={m.istoric.current}
+            />
+          ) : null}
         </div>
       </div>
     </div>
