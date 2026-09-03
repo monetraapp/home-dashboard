@@ -26,6 +26,8 @@ import { PAGES, PAGE_HERO } from '../model/pages.js';
 import { useRegistries } from '../ha/registries.js';
 import { ZonePage } from './ZonePage.jsx';
 import { DevicesPage } from './DevicesPage.jsx';
+import { LightingPage } from './LightingPage.jsx';
+import { LIGHTS } from '../model/lights.js';
 import { ProgramareAC } from './AcSchedule.jsx';
 import { useDeviceHealth } from '../ha/deviceHealth.js';
 import { useSystemHealth } from '../ha/systemHealth.js';
@@ -87,6 +89,12 @@ export default function Dashboard({ onOpenMapping }) {
   // Oprit -> diagrama de flux rămâne statică (fără particule, fără rAF) şi
   // cifrele din rândul-erou sar direct la valoarea nouă.
   const [anim, setAnim] = useState(() => prefs.anim !== false);
+  const [luminaSel, setLuminaSel] = useState(LIGHTS[0] ? LIGHTS[0].id : 'ambele');
+  // Culorile favorite stau in aceleasi preferinte ca restul (hd.ui.prefs):
+  // sunt doar nume + rgb, nu merita nicio infrastructura noua.
+  const [culoriLed, setCuloriLed] = useState(function () {
+    return Array.isArray(prefs.culoriLed) ? prefs.culoriLed : [];
+  });
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -95,8 +103,8 @@ export default function Dashboard({ onOpenMapping }) {
   }, []);
 
   useEffect(() => {
-    savePrefs(Object.assign({}, loadPrefs(), { tracked, anim }));
-  }, [tracked, anim]);
+    savePrefs(Object.assign({}, loadPrefs(), { tracked, anim, culoriLed }));
+  }, [tracked, anim, culoriLed]);
 
   const isAcasa = page === 'acasa';
   // (v1.5.0) „Zone" nu are definiţie în PAGES: se construieşte din registrele
@@ -105,7 +113,10 @@ export default function Dashboard({ onOpenMapping }) {
   // (v1.6.0) „Dispozitive" urmeaza acelasi tipar ca „Zone": fara definitie in
   // PAGES, construita din registre + intrarile de configurare la executie.
   const isDisp = page === 'dispozitive';
-  const pageDef = isAcasa || isZone || isDisp ? null : PAGES[page];
+  // (v3.0.0) „Iluminat" merge pe acelasi tipar: fara definitie in PAGES,
+  // construita la executie dintr-un inventar de lumini.
+  const isIlum = page === 'iluminat';
+  const pageDef = isAcasa || isZone || isDisp || isIlum ? null : PAGES[page];
   const [zoneSel, setZoneSel] = useState(null);
   const [dispSel, setDispSel] = useState(null);
   const [dispFiltru, setDispFiltru] = useState(null);
@@ -141,6 +152,7 @@ export default function Dashboard({ onOpenMapping }) {
   const ui = {
     page, hoverKey, setHoverKey, hoverChart, setHoverChart, modalId, setModalId,
     openAcc, setOpenAcc, mediaZone, setMediaZone, tracked, bp, anim,
+    naviga: (t) => { setPage(t.page); if (t.lumina) setLuminaSel(t.lumina); },
     catalog: { DEVICE_CARDS, CARD_BY_ID }
   };
 
@@ -267,13 +279,20 @@ export default function Dashboard({ onOpenMapping }) {
         [ha.connected ? 'shield' : 'alertTri', ha.connected ? 'Conectat' : 'Deconectat']
       ]
     : null;
+  const ilumChips = isIlum
+    ? [
+        ['sun', LIGHTS.length + (LIGHTS.length === 1 ? ' bandă' : ' benzi')],
+        ['power', LIGHTS.filter((l) => E.mapped(l.slot) && E.isOn(l.slot)).length + ' aprinse'],
+        [ha.connected ? 'shield' : 'alertTri', ha.connected ? 'Conectat' : 'Deconectat']
+      ]
+    : null;
   const heroChips = (isAcasa
     ? [
         ['power', onCount + ' active'],
         ['bolt', energyValue === VERIFY ? 'Energie VERIFY' : energyValue + ' ' + energyUnit],
         [ha.connected ? 'shield' : 'alertTri', ha.connected ? 'Conectat' : 'Deconectat']
       ]
-    : zoneChips || dispChips || pageDef.chips.map((c) => [c.icon, c.text !== undefined ? c.text : (c.prefix || '') + E.fmt(c.slot, c.opts)])
+    : zoneChips || dispChips || ilumChips || pageDef.chips.map((c) => [c.icon, c.text !== undefined ? c.text : (c.prefix || '') + E.fmt(c.slot, c.opts)])
   ).map((c) => ({
     iconEl: ic(c[0], { size: 13 }),
     label: c[1],
@@ -281,9 +300,9 @@ export default function Dashboard({ onOpenMapping }) {
     iconStyle: 'display:flex; color:' + TXT2 + ';'
   }));
 
-  const pageDeviceIds = isAcasa || isZone || isDisp ? (isAcasa ? tracked : []) : PAGE_DEVICES[page] || [];
-  const hasSidebarDevices = !isAcasa && !isZone && !isDisp && pageDeviceIds.length > 0 && pageDeviceIds.length <= MAX_SIDEBAR_DEVICES;
-  const hasDeviceCards = isAcasa || (!isZone && !isDisp && pageDeviceIds.length > MAX_SIDEBAR_DEVICES);
+  const pageDeviceIds = isAcasa || isZone || isDisp || isIlum ? (isAcasa ? tracked : []) : PAGE_DEVICES[page] || [];
+  const hasSidebarDevices = !isAcasa && !isZone && !isDisp && !isIlum && pageDeviceIds.length > 0 && pageDeviceIds.length <= MAX_SIDEBAR_DEVICES;
+  const hasDeviceCards = isAcasa || (!isZone && !isDisp && !isIlum && pageDeviceIds.length > MAX_SIDEBAR_DEVICES);
 
   const sidebarDevices = hasSidebarDevices
     ? pageDeviceIds.map((id) => CARD_BY_ID[id]).filter(Boolean).map((d) => buildSidebarDevice(E, ui, d))
@@ -294,6 +313,28 @@ export default function Dashboard({ onOpenMapping }) {
     .map((id) => CARD_BY_ID[id])
     .filter(Boolean)
     .map((d) => buildDeviceCard(E, ui, d));
+
+  // (v3.0.0) Luminile primesc comenzile ca inchideri peste `E`, ca pagina sa nu
+  // stie nimic despre stratul de entitati. Modul „Ambele" foloseste turnOn/turnOff
+  // explicite, nu comutare: altfel o banda aprinsa si una stinsa s-ar inversa.
+  const lumini = useMemo(() => LIGHTS.map((l) => Object.assign({}, l, {
+    toggle: () => E.toggle(l.slot),
+    turnOn: () => E.setLightOn(l.slot, true),
+    turnOff: () => E.setLightOn(l.slot, false),
+    setBrightness: (v) => E.setBrightness(l.slot, v),
+    setRgb: (c) => E.setRgb(l.slot, c)
+  })), [E]);
+
+  const salveazaCuloare = (nume, rgb) => setCuloriLed((prev) => {
+    const fara = prev.filter((x) => x.nume !== nume);
+    return fara.concat([{ nume, rgb }]).slice(-24);
+  });
+  const stergeCuloare = (nume) => setCuloriLed((prev) => prev.filter((x) => x.nume !== nume));
+  const redenumesteCuloare = (nume) => {
+    const nou = window.prompt('Nume nou pentru culoare:', nume);
+    if (!nou || !nou.trim() || nou.trim() === nume) return;
+    setCuloriLed((prev) => prev.map((x) => (x.nume === nume ? { nume: nou.trim(), rgb: x.rgb } : x)));
+  };
 
   const modal = buildModal(E, ui);
 
@@ -793,7 +834,7 @@ export default function Dashboard({ onOpenMapping }) {
                 </div>
 
               </>
-            ) : isZone || isDisp ? (
+            ) : isZone || isDisp || isIlum ? (
               // (v1.5.0) Acelaşi card de context ca pe celelalte pagini: fără
               // el coloana stângă rămânea goală pe toată înălţimea, exact
               // spaţiul mort pe care detectorul cardGap îl vânează în carduri.
@@ -959,7 +1000,23 @@ export default function Dashboard({ onOpenMapping }) {
               </div>
             ) : null}
 
-            {!isAcasa && !isZone && !isDisp ? (
+            {isIlum ? (
+              <div style={s(tableSectionStyle)}>
+                <LightingPage
+                  E={E}
+                  ui={ui}
+                  lumini={lumini}
+                  selectat={luminaSel}
+                  setSelectat={setLuminaSel}
+                  culoriSalvate={culoriLed}
+                  onSalveaza={salveazaCuloare}
+                  onSterge={stergeCuloare}
+                  onRedenumeste={redenumesteCuloare}
+                />
+              </div>
+            ) : null}
+
+            {!isAcasa && !isZone && !isDisp && !isIlum ? (
               <div style={s(tableSectionStyle)}>
                 {/* stretch (v1.3.5): cardurile din acelaşi rând sunt egale;
                     surplusul se distribuie în interiorul fiecărui card. */}
@@ -1220,12 +1277,12 @@ function DeviceCard({ c }) {
         role="button"
         tabIndex={0}
         data-action="open-device-modal"
-        aria-label={'Setări avansate ' + c.label}
+        aria-label={(c.advLabel || 'Setări avansate') + ' ' + c.label}
         style={s(c.advBtnStyle)}
         onClick={c.onOpen}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.onOpen(e); } }}
       >
-        <span style={s(c.advIconStyle)}>{c.advIconEl}</span>Setări avansate
+        <span style={s(c.advIconStyle)}>{c.advIconEl}</span>{c.advLabel || 'Setări avansate'}
       </div>
     </div>
   );

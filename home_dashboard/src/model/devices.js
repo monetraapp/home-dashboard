@@ -250,13 +250,11 @@ export const DEVICE_CARDS = [
     ]
   },
   {
-    // (v2.7.0) Banda RGB de birou pe Shelly Plus RGBW PM. Cadranul e
-    // LUMINOZITATEA (atributul lampii, nu o entitate separata), iar randul de
-    // sub nume arata puterea masurata de Shelly — masuratoare reala, nu estimare.
-    // Preseturile trimit EXCLUSIV rgb_color; canalul alb al controlerului nu e
-    // expus nicaieri, fiindca benzile sunt folosite ca RGB.
-    // Cele doua benzi sunt carduri complet separate: nici luminozitatea, nici
-    // culoarea nu sunt partajate intre ele.
+    // (v3.0.0) Card RAPID, nu panou de control. Culoarea si preseturile au plecat
+    // pe pagina „Iluminat", unde exista loc pentru ele; aici raman doar lucrurile
+    // pe care le vrei dintr-o privire: stare, luminozitate, putere, si culoarea
+    // curenta ca fundal al iconitei. Apasarea duce direct pe pagina, cu banda
+    // respectiva deja selectata — nu deschide un modal.
     id: 'led-birou-up',
     slot: 'light.birou_up',
     icon: 'sun',
@@ -264,36 +262,19 @@ export const DEVICE_CARDS = [
     model: 'Birou sus · RGB',
     group: 'Lumini',
     kind: 'light',
+    culoareIcon: true,
+    naviga: { page: 'iluminat', lumina: 'led-birou-up' },
     ambient: { kind: 'compose', parts: [['power.birou_up', '', ' W']] },
     dial: { kind: 'brightness', unit: '%', step: 5 },
-    // Sloturile din care isi ia sectiunea „Istoric si consum" datele. Stau
-    // in modal, nu pe card: cardul ramane compact, cu o singura valoare.
-    istoric: {
-      power: 'power.birou_up',
-      energy: 'energy.birou_up',
-      voltage: 'volt.birou_up',
-      current: 'curent.birou_up'
-    },
-    minis: [
-      { id: 'lbu-cald', icon: 'flame', label: 'Cald', action: A.rgb(255, 140, 20) },
-      { id: 'lbu-alb', icon: 'cloud', label: 'Alb', action: A.rgb(255, 255, 255) }
-    ],
-    circles: [
-      { id: 'lbu-c-rosu', icon: 'flame', label: 'Roşu', action: A.rgb(255, 0, 0) },
-      { id: 'lbu-c-verde', icon: 'leaf', label: 'Verde', action: A.rgb(0, 255, 0) },
-      { id: 'lbu-c-albastru', icon: 'droplet', label: 'Albastru', action: A.rgb(0, 0, 255) },
-      { id: 'lbu-c-violet', icon: 'sparkle', label: 'Violet', action: A.rgb(160, 0, 255) },
-      { id: 'lbu-c-cyan', icon: 'snow', label: 'Cyan', action: A.rgb(0, 255, 255) }
-    ]
+    minis: [],
+    circles: []
   },
   {
-    // (v2.7.0) Banda RGB de birou pe Shelly Plus RGBW PM. Cadranul e
-    // LUMINOZITATEA (atributul lampii, nu o entitate separata), iar randul de
-    // sub nume arata puterea masurata de Shelly — masuratoare reala, nu estimare.
-    // Preseturile trimit EXCLUSIV rgb_color; canalul alb al controlerului nu e
-    // expus nicaieri, fiindca benzile sunt folosite ca RGB.
-    // Cele doua benzi sunt carduri complet separate: nici luminozitatea, nici
-    // culoarea nu sunt partajate intre ele.
+    // (v3.0.0) Card RAPID, nu panou de control. Culoarea si preseturile au plecat
+    // pe pagina „Iluminat", unde exista loc pentru ele; aici raman doar lucrurile
+    // pe care le vrei dintr-o privire: stare, luminozitate, putere, si culoarea
+    // curenta ca fundal al iconitei. Apasarea duce direct pe pagina, cu banda
+    // respectiva deja selectata — nu deschide un modal.
     id: 'led-birou-down',
     slot: 'light.birou_down',
     icon: 'sun',
@@ -301,27 +282,12 @@ export const DEVICE_CARDS = [
     model: 'Birou jos · RGB',
     group: 'Lumini',
     kind: 'light',
+    culoareIcon: true,
+    naviga: { page: 'iluminat', lumina: 'led-birou-down' },
     ambient: { kind: 'compose', parts: [['power.birou_down', '', ' W']] },
     dial: { kind: 'brightness', unit: '%', step: 5 },
-    // Sloturile din care isi ia sectiunea „Istoric si consum" datele. Stau
-    // in modal, nu pe card: cardul ramane compact, cu o singura valoare.
-    istoric: {
-      power: 'power.birou_down',
-      energy: 'energy.birou_down',
-      voltage: 'volt.birou_down',
-      current: 'curent.birou_down'
-    },
-    minis: [
-      { id: 'lbd-cald', icon: 'flame', label: 'Cald', action: A.rgb(255, 140, 20) },
-      { id: 'lbd-alb', icon: 'cloud', label: 'Alb', action: A.rgb(255, 255, 255) }
-    ],
-    circles: [
-      { id: 'lbd-c-rosu', icon: 'flame', label: 'Roşu', action: A.rgb(255, 0, 0) },
-      { id: 'lbd-c-verde', icon: 'leaf', label: 'Verde', action: A.rgb(0, 255, 0) },
-      { id: 'lbd-c-albastru', icon: 'droplet', label: 'Albastru', action: A.rgb(0, 0, 255) },
-      { id: 'lbd-c-violet', icon: 'sparkle', label: 'Violet', action: A.rgb(160, 0, 255) },
-      { id: 'lbd-c-cyan', icon: 'snow', label: 'Cyan', action: A.rgb(0, 255, 255) }
-    ]
+    minis: [],
+    circles: []
   },
   {
     id: 'clorinator-main',
@@ -435,6 +401,10 @@ export const NAV = [
   { key: 'climat', label: 'Climat', icon: 'airVent' },
   { key: 'piscina', label: 'Piscină', icon: 'waves' },
   { key: 'energie', label: 'Energie', icon: 'bolt' },
+  // (v3.0.0) Iluminatul isi capata pagina proprie: o banda RGB are trei axe
+  // simultane — pornit, luminozitate, culoare — care nu incap intr-un card de
+  // dispozitiv gandit pentru o singura valoare tinta.
+  { key: 'iluminat', label: 'Iluminat', icon: 'sun' },
   { key: 'media', label: 'Media', icon: 'tv' },
   { key: 'mentenanta', label: 'Mentenanţă', icon: 'wrench' },
   { key: 'zone', label: 'Zone', icon: 'layoutGrid' },

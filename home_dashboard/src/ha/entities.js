@@ -598,6 +598,15 @@ export function useEntities() {
       return callService('light', 'turn_on', { rgb_color: v }, { entity_id: id });
     }
 
+    // Pornire/oprire EXPLICITA, nu comutare. Modul „Ambele" trebuie sa poata
+    // spune „amandoua pornite" fara sa depinda de starea fiecareia: cu `toggle`,
+    // o banda aprinsa si una stinsa s-ar inversa intre ele.
+    async function setLightOn(slotKey, on) {
+      const id = idOf(slotKey);
+      if (!id) return false;
+      return callService('light', on ? 'turn_on' : 'turn_off', {}, { entity_id: id });
+    }
+
     function isMuted(slotKey) {
       return !!attr(slotKey, 'is_volume_muted');
     }
@@ -644,7 +653,7 @@ export function useEntities() {
       setClimateTarget, bumpClimate, setHvacMode, setFanMode, setSwingMode, setPresetMode,
       numberValue, lgTimerReceipt, lgTimerReceiptStale, numberBounds, numberWritable, numberControllable, setNumber, setLgTimer,
       volume, setVolume, isMuted, setMute, selectSource, mediaCommand, sourceList, currentSource,
-      brightnessPct, setBrightness, rgbColor, setRgb,
+      brightnessPct, setBrightness, rgbColor, setRgb, setLightOn,
       friendlyName, matchOption
     };
   }, [ha, states, entityMap, callService, callServiceDebounced, callServiceWithResponse, markPending, pending, lastTargets, lastSentTimers, rememberSentTimer, setLastCallError]);

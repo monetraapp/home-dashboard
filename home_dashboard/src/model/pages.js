@@ -602,6 +602,7 @@ export const PAGE_HERO = {
   climat: ['Climat', 'Confort termic pe trei niveluri'],
   piscina: ['Piscina', 'Apă, chimie şi filtrare'],
   media: ['Media', 'Opt televizoare, patru zone'],
+  iluminat: ['Iluminat', 'Benzi RGB — culoare, intensitate şi consum'],
   energie: ['Energie', 'Producţie, stocare şi consum'],
   mentenanta: ['Mentenanţă', 'Starea sistemului sub control'],
   // (v1.5.0) Subtitlul spune explicit că infrastructura lipseşte din pagină.

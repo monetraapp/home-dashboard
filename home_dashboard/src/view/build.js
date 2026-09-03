@@ -1114,7 +1114,17 @@ export function buildDeviceCard(E, ui, def) {
     // inaltimea randului, iar surplusul se distribuie INAUNTRU (zona
     // cadranului creste si isi centreaza continutul), nu se aduna la baza.
     cardStyle: 'padding:16px 16px 14px; border-radius:22px; display:flex; flex-direction:column; background:' + CARD_BG + '; border:1px solid ' + CARD_BORDER + ';',
-    headIconStyle: 'width:34px; height:34px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:' + (a ? '#2a1608' : TXT2) + '; background:' + (a ? 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)' : 'rgba(255,255,255,0.06)') + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)') + ';',
+    // (v3.0.0) La lumini, pastila iconitei poarta CULOAREA curenta a benzii: e
+    // cel mai scurt drum de la privire la „ce culoare are acum". Doar aprinsa;
+    // stinsa ramane neutra, ca sa nu pretinda ca lumineaza.
+    headIconStyle: 'width:34px; height:34px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:'
+      + (a ? '#2a1608' : TXT2) + '; background:'
+      + (a
+          ? (def.culoareIcon && E.rgbColor(def.slot)
+              ? 'rgb(' + E.rgbColor(def.slot).join(',') + ')'
+              : 'linear-gradient(140deg,' + ORANGE_HI + ',#DE7420)')
+          : 'rgba(255,255,255,0.06)')
+      + '; border:1px solid ' + (a ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)') + ';',
     headIconEl: ic(def.icon, { size: 18 }),
     nameStyle: 'font-family:' + SANS + '; font-size:14px; font-weight:500; color:' + TXT + '; line-height:1.25; ' + clamp2(ui),
     modelStyle: 'font-family:' + SANS + '; font-size:10.5px; font-weight:300; color:' + TXT3 + '; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;',
@@ -1182,7 +1192,10 @@ export function buildDeviceCard(E, ui, def) {
     advBtnStyle: 'flex-shrink:0; min-height:44px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:10px; border-radius:13px; cursor:pointer; font-family:' + SANS + '; font-size:12px; font-weight:400; color:#c8bcae; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.075);',
     advIconStyle: 'display:flex; color:' + ORANGE + ';',
     advIconEl: ic('sliders', { size: 16 }),
-    onOpen: () => ui.setModalId(def.id),
+    // Cardurile cu `naviga` nu deschid modal: duc pe pagina lor dedicata, cu
+    // dispozitivul deja selectat.
+    advLabel: def.naviga ? 'Detalii' : 'Setări avansate',
+    onOpen: () => { if (def.naviga && ui.naviga) ui.naviga(def.naviga); else ui.setModalId(def.id); },
     onToggle: (e) => { stop(e); if (canToggle) E.toggle(def.slot); }
   };
 }

@@ -1,5 +1,57 @@
 # Changelog
 
+## 3.0.0
+
+**Iluminatul îşi capătă pagina lui.** A zecea pagină din navigaţie, construită de
+la zero pentru benzi RGB — nu cardul de climatizare refolosit.
+
+**De ce nu mergea modelul vechi.** Un aparat de aer condiţionat se reglează pe o
+singură axă: temperatura. O bandă RGB are trei lucruri simultane — pornit,
+luminozitate, culoare — iar cardul de dispozitiv le împingea în două ecrane
+diferite, cu cadranul rotund în rolul unei bare de intensitate şi cu culorile
+ascunse într-un modal. Acum e un singur panou: nu există „controale principale"
+şi „secundare".
+
+**Luminozitatea e o bară orizontală** cu tragere de mouse, de deget şi tastatură,
+cu buton rotund şi procentul la dreapta. Când banda e stinsă, ultima valoare
+rămâne cunoscută şi bara spune de ce nu se poate regla — nu raportează 0%, care
+ar însemna altceva.
+
+**Culoarea se alege dintr-o roată mare**, cu swatch şi câmpuri R / G / B lângă
+ea. Opt presetări şi **culori proprii, salvate cu nume** — persistate în aceleaşi
+preferinţe ca restul aplicaţiei, fiindcă sunt doar un nume şi trei numere; se
+aplică, se redenumesc (dublu-clic) şi se şterg.
+
+Totul trimite **exclusiv `rgb_color`**. Canalul alb al controlerului RGBW nu e
+atins de nicăieri; şi „Alb" e sinteză RGB.
+
+**Modul „Ambele"** comandă cele două benzi împreună — pornire, oprire,
+luminozitate comună, culoare comună — trimiţând separat către fiecare entitate.
+Niciun grup în Home Assistant. Dacă una e indisponibilă, o spune şi trimite doar
+către cealaltă, în loc să pretindă că a reuşit pe amândouă.
+
+**Istoricul urcă din modal în pagină**, ca trei carduri alăturate: Putere,
+Consum, Tensiune — fiecare cu selectorul lui 24h / 7 zile / 30 zile şi cu
+statisticile care au sens (medie/maxim/minim la putere şi tensiune, total la
+consum). Le vezi deodată, nu pe rând. Curentul rămâne valoare live în antet: la
+12 V, un grafic de curent ar desena aceeaşi formă ca puterea, cu altă unitate.
+
+**Cardurile de pe Acasă s-au simplificat**: nume, stare, comutator,
+luminozitate, putere şi culoarea curentă ca fundal al iconiţei. Fără roată, fără
+grafice. Apăsarea duce direct pe pagina Iluminat, cu banda deja selectată.
+
+**Cromatica rămâne a Dashboard-ului.** Aceleaşi carduri de sticlă, aceiaşi
+tokeni, acelaşi amber pe tot ce e structural: bară, comutatoare, file, butoane,
+valori, chips de interval. Culoarea benzii apare doar unde chiar înseamnă
+culoare: roata, swatch-ul, bulinele preseturilor şi ale culorilor salvate. Dacă
+banda e albastră, interfaţa nu devine albastră.
+
+466 teste de logică, 44 de fidelitate de stil, 104 combinaţii responsive.
+**37 de verificări fizice pe aparate reale** (pornire, oprire, 10/25/50/75/100%,
+rafală rapidă, patru presetări, culoare din roată, salvare-aplicare-ştergere,
+modul Ambele) şi **90 de verificări responsive** la nouă lăţimi, de la 320 la
+1920 — toate trecute, zero erori de consolă, benzi readuse la starea iniţială.
+
 ## 2.8.1
 
 **Graficul de consum pierdea prima bucată din fiecare interval.** Delta se

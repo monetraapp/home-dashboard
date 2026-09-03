@@ -98,7 +98,12 @@ function unitateEnergie(totalKwh) {
 export default function LedHistory(props) {
   const E = props.E;
   const ui = props.ui;
-  const [fila, setFila] = useState('power');
+  // (v3.0.0) Cu `metric` setat, cardul afiseaza O SINGURA marime si isi pierde
+  // bara de file: pagina „Iluminat" randeaza trei astfel de carduri alaturate,
+  // ca sa vezi puterea, consumul si tensiunea deodata, nu pe rand.
+  const fix = props.metric || null;
+  const [filaLocal, setFila] = useState('power');
+  const fila = fix || filaLocal;
   const [interval2, setInterval2] = useState('24h');
   const mob = !!(ui && ui.bp && ui.bp.mob);
 
@@ -203,12 +208,13 @@ export default function LedHistory(props) {
 
   return (
     <div data-card={'led-istoric:' + (props.cheie || '')}>
-      <div style={s(sep)} />
-      <div style={s(capStyle)}>
-        <div style={s(titluStyle)}>Istoric şi consum</div>
+      {fix ? null : <div style={s(sep)} />}
+      <div style={s(capStyle + (fix ? ' margin-top:0;' : ''))}>
+        <div style={s(titluStyle)}>{props.titlu || 'Istoric şi consum'}</div>
         <div style={s(valStyle)}>{cap}</div>
       </div>
 
+      {fix || props.faraRezumat ? null : (
       <div style={s(grilaElectric)}>
         {electric.map(function (e) {
           return (
@@ -219,7 +225,9 @@ export default function LedHistory(props) {
           );
         })}
       </div>
+      )}
 
+      {fix ? null : (
       <div style={s(bara)}>
         {FILE_TAB.map(function (f) {
           return (
@@ -235,6 +243,7 @@ export default function LedHistory(props) {
           );
         })}
       </div>
+      )}
 
       <div style={s(bara)}>
         {Object.keys(INTERVALE).map(function (k) {
