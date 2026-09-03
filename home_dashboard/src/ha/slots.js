@@ -11,6 +11,7 @@ export const GROUPS = [
   { key: 'media', label: 'Media' },
   { key: 'energie', label: 'Energie' },
   { key: 'mentenanta', label: 'Mentenanţă' },
+  { key: 'lumini', label: 'Lumini' },
   { key: 'poarta', label: 'Poartă' },
   { key: 'general', label: 'General' }
 ];
@@ -157,6 +158,22 @@ export const SLOTS = [
   slot('media.tata_bucatarie', 'TV Bucătărie Tata', 'media', ['media_player']),
   slot('media.tata_dormitor', 'TV Dormitor Tata LG', 'media', ['media_player']),
 
+
+  // --------------------------------------------------------------- LUMINI
+  // (v2.7.0) Doua benzi RGB de birou, fiecare pe un Shelly Plus RGBW PM.
+  // Sunt folosite ca RGB: canalul alb al controlerului NU e expus si nu e
+  // comandat de nicaieri din aplicatie. Fiecare banda are propriile masuratori
+  // electrice — sunt doua aparate independente, nu un grup.
+  slot('light.birou_up', 'LED Birou Up', 'lumini', ['light']),
+  slot('light.birou_down', 'LED Birou Down', 'lumini', ['light']),
+  slot('power.birou_up', 'LED Birou Up · putere', 'lumini', ['sensor']),
+  slot('power.birou_down', 'LED Birou Down · putere', 'lumini', ['sensor']),
+  slot('energy.birou_up', 'LED Birou Up · energie', 'lumini', ['sensor']),
+  slot('energy.birou_down', 'LED Birou Down · energie', 'lumini', ['sensor']),
+  slot('volt.birou_up', 'LED Birou Up · tensiune', 'lumini', ['sensor']),
+  slot('volt.birou_down', 'LED Birou Down · tensiune', 'lumini', ['sensor']),
+  slot('curent.birou_up', 'LED Birou Up · curent', 'lumini', ['sensor']),
+  slot('curent.birou_down', 'LED Birou Down · curent', 'lumini', ['sensor']),
 
   // -------------------------------------------------------------- ENERGIE
   slot('energy.ac_etaj_azi', 'AC Etaj · consum azi', 'energie', ['sensor']),

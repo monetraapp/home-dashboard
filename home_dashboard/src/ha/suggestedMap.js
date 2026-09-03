@@ -113,6 +113,21 @@ export const SUGGESTED_MAP = {
   'media.tata_dormitor': 'media_player.casa_tata_televizor_tata_dormitor_lg_2',
 
 
+  // --------------------------------------------------------------- LUMINI
+  'light.birou_up': 'light.mansarda_led_birou_up',
+  'light.birou_down': 'light.mansarda_led_birou_down',
+  'power.birou_up': 'sensor.mansarda_led_birou_up_power',
+  'power.birou_down': 'sensor.mansarda_led_birou_down_power',
+  'energy.birou_up': 'sensor.mansarda_led_birou_up_energy',
+  'energy.birou_down': 'sensor.mansarda_led_birou_down_energy',
+  // Tensiunea si curentul pastreaza numele brut al dispozitivului: sunt
+  // entitatile pe care integrarea Shelly le creeaza dezactivate si care au fost
+  // activate manual, iar ele nu primesc prefixul de zona.
+  'volt.birou_up': 'sensor.shellyplusrgbwpm_3076f53a16b4_voltage',
+  'volt.birou_down': 'sensor.shellyplusrgbwpm_3076f53a156c_voltage',
+  'curent.birou_up': 'sensor.shellyplusrgbwpm_3076f53a16b4_current',
+  'curent.birou_down': 'sensor.shellyplusrgbwpm_3076f53a156c_current',
+
   // -------------------------------------------------------------- ENERGIE
   'energy.ac_etaj_azi': 'sensor.etaj_aer_conditionat_lg_etaj_energy_today',
   'energy.ac_etaj_ieri': 'sensor.etaj_aer_conditionat_lg_etaj_energy_yesterday',

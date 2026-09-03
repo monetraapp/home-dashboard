@@ -925,6 +925,25 @@ export function dialInfo(E, def) {
       set: (v) => E.setClimateTarget(def.slot, v)
     };
   }
+  // (v2.7.0) Cadranul de luminozitate. Valoarea vine din atributul `brightness`
+  // al lampii, nu dintr-o entitate separata. Minimul e 1, nu 0: `brightness_pct: 0`
+  // ar fi o comanda de STINGERE deghizata in reglaj, iar stingerea se face din
+  // comutator. Cand lampa e stinsa, `val` e null si cadranul arata „—".
+  if (d.kind === 'brightness') {
+    const val = E.brightnessPct(def.slot);
+    const aprins = E.mapped(def.slot) && E.isOn(def.slot);
+    return {
+      val,
+      unit: d.unit || '%',
+      min: 1,
+      max: 100,
+      step: d.step || 5,
+      decimals: 0,
+      writable: E.mapped(def.slot) && E.available(def.slot) && aprins,
+      mapped: E.mapped(def.slot),
+      set: (v) => E.setBrightness(def.slot, v)
+    };
+  }
   if (d.kind === 'number') {
     const lgKind = lgTimerKindOf(d.slot);
     if (lgKind) {
@@ -1268,7 +1287,11 @@ export function buildModal(E, ui) {
     onToggle: () => { if (E.mapped(def.slot)) E.toggle(def.slot); },
     hasTarget: !!def.dial,
     targetStatic: staticVol,
-    targetLabel: staticVol ? 'Sursă curentă' : def.dial && def.dial.kind === 'volume' ? 'Volum' : def.dial && def.dial.kind === 'climate' ? 'Temperatură ţintă' : 'Valoare ţintă',
+    targetLabel: staticVol ? 'Sursă curentă'
+      : def.dial && def.dial.kind === 'volume' ? 'Volum'
+        : def.dial && def.dial.kind === 'climate' ? 'Temperatură ţintă'
+          : def.dial && def.dial.kind === 'brightness' ? 'Luminozitate'
+            : 'Valoare ţintă',
     targetUnit: staticVol ? '' : di.unit === '°' ? '°C' : di.unit,
     targetHint: staticVol
       ? 'Televizorul nu expune controlul volumului prin integrarea lui (HomeKit) — mute şi schimbarea sursei funcţionează din butoanele de mai jos.'

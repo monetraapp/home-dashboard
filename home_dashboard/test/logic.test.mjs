@@ -326,7 +326,11 @@ eq('sloturile ramase au toate un motiv explicit',
 // prima cu alt protocol (tcl112): baleiaj cu doua optiuni, 16-31 cu pas 0,5.
 // 269 -> 268: slotul AC Magazie a iesit odata cu placa (decizie de arhitectura,
 // 2026-09-01): aparatul nu mai exista nici in Home Assistant.
-eq('total: 268 mapate din 268 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [268, 268]);
+// 268 -> 278: cele doua benzi RGB de birou (v2.7.0), cu cate cinci sloturi:
+// lampa, putere, energie, tensiune si curent. Tensiunea si curentul sunt
+// entitati pe care integrarea Shelly le creeaza dezactivate; au fost activate
+// manual in HA, deci exista si se mapeaza.
+eq('total: 278 mapate din 278 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [278, 278]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- acordeoanele „setari complete" ------------------------------------------

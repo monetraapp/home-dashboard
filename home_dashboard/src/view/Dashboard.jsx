@@ -1150,7 +1150,7 @@ function DeviceCard({ c }) {
            butoane: ţinta dubla valoarea din centrul cadranului, iar pasul e
            comunicat prin tooltip-ul butoanelor (title). */
         <div style={s(c.dialRowStyle)}>
-          <div className="hdTap" style={s(c.roundBtnStyle)} onClick={c.onMinus} title={c.stepTitle}>{ic('minus', { size: 16, sw: 2 })}</div>
+          <div className="hdTap" style={s(c.roundBtnStyle)} data-sp="minus" onClick={c.onMinus} title={c.stepTitle}>{ic('minus', { size: 16, sw: 2 })}</div>
           <div style={s(c.dialWrapStyle)}>
             {c.dialTicksEl}
             <div style={s(c.knobStyle)}>
@@ -1158,7 +1158,7 @@ function DeviceCard({ c }) {
               <span style={s(c.knobUnitStyle)}>{c.dialUnit}</span>
             </div>
           </div>
-          <div className="hdTap" style={s(c.roundBtnStyle)} onClick={c.onPlus} title={c.stepTitle}>{ic('plus', { size: 16, sw: 2 })}</div>
+          <div className="hdTap" style={s(c.roundBtnStyle)} data-sp="plus" onClick={c.onPlus} title={c.stepTitle}>{ic('plus', { size: 16, sw: 2 })}</div>
         </div>
       ) : c.staticDial ? (
         /* v1.2.6: silueta cadranului se pastreaza si cand volumul nu e
@@ -1759,12 +1759,12 @@ function Modal({ m, onClose }) {
             <div style={s(m.targetCapStyle)}>{m.targetLabel}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 8 }}>
               {/* v1.3.2: fără −/+ când valoarea nu e controlabilă (Hisense) */}
-              {m.targetStatic ? null : <div style={s(m.stepBtnStyle)} onClick={m.onMinus}>{ic('minus', { size: 18, sw: 2 })}</div>}
+              {m.targetStatic ? null : <div style={s(m.stepBtnStyle)} data-sp="minus" onClick={m.onMinus}>{ic('minus', { size: 18, sw: 2 })}</div>}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 <span style={s(m.targetValStyle)}>{m.targetVal}</span>
                 {m.targetUnit ? <span style={s(m.targetUnitStyle)}>{m.targetUnit}</span> : null}
               </div>
-              {m.targetStatic ? null : <div style={s(m.stepBtnStyle)} onClick={m.onPlus}>{ic('plus', { size: 18, sw: 2 })}</div>}
+              {m.targetStatic ? null : <div style={s(m.stepBtnStyle)} data-sp="plus" onClick={m.onPlus}>{ic('plus', { size: 18, sw: 2 })}</div>}
             </div>
             <div style={s(m.targetHintStyle)}>{m.targetHint}</div>
           </div>

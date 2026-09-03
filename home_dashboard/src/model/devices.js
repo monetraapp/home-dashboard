@@ -11,6 +11,7 @@ export const A = {
   fan: (...kw) => ({ k: 'fan', kw }),
   swing: (...kw) => ({ k: 'swing', kw }),
   swingToggle: () => ({ k: 'swingToggle' }),
+  rgb: (r, g, b) => ({ k: 'rgb', rgb: [r, g, b] }),
   preset: (...kw) => ({ k: 'preset', kw }),
   slot: (slot) => ({ k: 'slot', slot }),
   source: (...kw) => ({ k: 'source', kw }),
@@ -246,6 +247,64 @@ export const DEVICE_CARDS = [
       { id: 'fo-c-hc', icon: 'auto', label: 'Auto', action: A.hvac('heat_cool') },
       { id: 'fo-c-dry', icon: 'droplet', label: 'Dezumidificare', action: A.hvac('dry') },
       { id: 'fo-c-vent', icon: 'wind', label: 'Ventilare', action: A.hvac('fan_only') }
+    ]
+  },
+  {
+    // (v2.7.0) Banda RGB de birou pe Shelly Plus RGBW PM. Cadranul e
+    // LUMINOZITATEA (atributul lampii, nu o entitate separata), iar randul de
+    // sub nume arata puterea masurata de Shelly — masuratoare reala, nu estimare.
+    // Preseturile trimit EXCLUSIV rgb_color; canalul alb al controlerului nu e
+    // expus nicaieri, fiindca benzile sunt folosite ca RGB.
+    // Cele doua benzi sunt carduri complet separate: nici luminozitatea, nici
+    // culoarea nu sunt partajate intre ele.
+    id: 'led-birou-up',
+    slot: 'light.birou_up',
+    icon: 'sun',
+    label: 'LED Birou Up',
+    model: 'Birou sus · RGB',
+    group: 'Lumini',
+    kind: 'light',
+    ambient: { kind: 'compose', parts: [['power.birou_up', '', ' W']] },
+    dial: { kind: 'brightness', unit: '%', step: 5 },
+    minis: [
+      { id: 'lbu-cald', icon: 'flame', label: 'Cald', action: A.rgb(255, 140, 20) },
+      { id: 'lbu-alb', icon: 'cloud', label: 'Alb', action: A.rgb(255, 255, 255) }
+    ],
+    circles: [
+      { id: 'lbu-c-rosu', icon: 'flame', label: 'Roşu', action: A.rgb(255, 0, 0) },
+      { id: 'lbu-c-verde', icon: 'leaf', label: 'Verde', action: A.rgb(0, 255, 0) },
+      { id: 'lbu-c-albastru', icon: 'droplet', label: 'Albastru', action: A.rgb(0, 0, 255) },
+      { id: 'lbu-c-violet', icon: 'sparkle', label: 'Violet', action: A.rgb(160, 0, 255) },
+      { id: 'lbu-c-cyan', icon: 'snow', label: 'Cyan', action: A.rgb(0, 255, 255) }
+    ]
+  },
+  {
+    // (v2.7.0) Banda RGB de birou pe Shelly Plus RGBW PM. Cadranul e
+    // LUMINOZITATEA (atributul lampii, nu o entitate separata), iar randul de
+    // sub nume arata puterea masurata de Shelly — masuratoare reala, nu estimare.
+    // Preseturile trimit EXCLUSIV rgb_color; canalul alb al controlerului nu e
+    // expus nicaieri, fiindca benzile sunt folosite ca RGB.
+    // Cele doua benzi sunt carduri complet separate: nici luminozitatea, nici
+    // culoarea nu sunt partajate intre ele.
+    id: 'led-birou-down',
+    slot: 'light.birou_down',
+    icon: 'sun',
+    label: 'LED Birou Down',
+    model: 'Birou jos · RGB',
+    group: 'Lumini',
+    kind: 'light',
+    ambient: { kind: 'compose', parts: [['power.birou_down', '', ' W']] },
+    dial: { kind: 'brightness', unit: '%', step: 5 },
+    minis: [
+      { id: 'lbd-cald', icon: 'flame', label: 'Cald', action: A.rgb(255, 140, 20) },
+      { id: 'lbd-alb', icon: 'cloud', label: 'Alb', action: A.rgb(255, 255, 255) }
+    ],
+    circles: [
+      { id: 'lbd-c-rosu', icon: 'flame', label: 'Roşu', action: A.rgb(255, 0, 0) },
+      { id: 'lbd-c-verde', icon: 'leaf', label: 'Verde', action: A.rgb(0, 255, 0) },
+      { id: 'lbd-c-albastru', icon: 'droplet', label: 'Albastru', action: A.rgb(0, 0, 255) },
+      { id: 'lbd-c-violet', icon: 'sparkle', label: 'Violet', action: A.rgb(160, 0, 255) },
+      { id: 'lbd-c-cyan', icon: 'snow', label: 'Cyan', action: A.rgb(0, 255, 255) }
     ]
   },
   {

@@ -34,6 +34,28 @@ export function resolveAction(E, cardSlot, action) {
     };
   }
 
+  // (v2.7.0) Preset de culoare. Trimite rgb_color si atat — niciodata canalul
+  // alb al lui RGBW. `active` compara cu culoarea raportata de lampa, cu o mica
+  // toleranta: controlerul intoarce uneori valori vecine (ex. 0,1,255 pentru
+  // albastru pur), iar o comparatie exacta ar lasa presetul mereu neaprins.
+  if (action.k === 'rgb') {
+    if (!E.mapped(cardSlot)) {
+      return Object.assign({}, noop, { reason: 'VERIFY · slot nemapat: ' + cardSlot });
+    }
+    if (!E.available(cardSlot)) {
+      return Object.assign({}, noop, { reason: 'Lampa e indisponibila.' });
+    }
+    const cur = E.rgbColor(cardSlot);
+    const aproape = Array.isArray(cur) && cur.every((x, i) => Math.abs(x - action.rgb[i]) <= 8);
+    return {
+      supported: true,
+      active: !!aproape && E.isOn(cardSlot),
+      reason: '',
+      hint: 'rgb_color: ' + action.rgb.join(', '),
+      run: () => E.setRgb(cardSlot, action.rgb)
+    };
+  }
+
   if (action.k === 'numberFrac') {
     if (!E.mapped(action.slot)) {
       return Object.assign({}, noop, { reason: 'VERIFY · slot nemapat: ' + action.slot });

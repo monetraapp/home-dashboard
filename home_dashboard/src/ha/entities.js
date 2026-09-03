@@ -554,6 +554,50 @@ export function useEntities() {
       return callServiceDebounced('vol:' + id, COALESCARE_MS, 'media_player', 'volume_set', { volume_level: v / 100 }, { entity_id: id });
     }
 
+    // ---------------------------------------------------------------- lumini
+    // HA tine luminozitatea in 0-255, dar interfata lucreaza in procente si
+    // trimite `brightness_pct`, ca sa nu rotunjim de doua ori. Cand becul e
+    // stins, atributul lipseste cu totul — intoarcem null, nu 0, fiindca
+    // „stins" si „aprins la 0%" nu sunt acelasi lucru.
+    function brightnessPct(slotKey) {
+      const st = ent(slotKey);
+      if (!st) return null;
+      // Valoarea in asteptare are prioritate, exact ca la temperatura tinta si la
+      // volum. Fara ea, o rafala de apasari ar calcula toata din aceeasi valoare
+      // veche a entitatii — comanda debounce-uita inca n-a aterizat — si zece
+      // clicuri ar produce un singur pas.
+      const pKey = 'bri:' + st.entity_id;
+      if (pending[pKey] !== undefined) return pending[pKey];
+      const b = st.attributes && st.attributes.brightness;
+      if (b === undefined || b === null) return null;
+      const nb = parseFloat(b);
+      return Number.isFinite(nb) ? Math.round((nb / 255) * 100) : null;
+    }
+
+    async function setBrightness(slotKey, pct) {
+      const id = idOf(slotKey);
+      if (!id) return false;
+      const v = Math.max(1, Math.min(100, Math.round(pct)));
+      markPending('bri:' + id, v);
+      // Acelasi debounce ca la volum: o rafala de apasari devine o comanda.
+      return callServiceDebounced('bri:' + id, COALESCARE_MS, 'light', 'turn_on', { brightness_pct: v }, { entity_id: id });
+    }
+
+    /** [r,g,b] al lampii, sau null daca e stinsa / nu raporteaza culoare. */
+    function rgbColor(slotKey) {
+      const c = attr(slotKey, 'rgb_color');
+      return Array.isArray(c) && c.length === 3 ? c.map((x) => Math.round(x)) : null;
+    }
+
+    // Trimite EXCLUSIV rgb_color. Benzile sunt folosite ca RGB; canalul alb al
+    // lui Shelly RGBW nu e expus in interfata si nu e atins de aici.
+    async function setRgb(slotKey, rgb) {
+      const id = idOf(slotKey);
+      if (!id || !Array.isArray(rgb) || rgb.length !== 3) return false;
+      const v = rgb.map((x) => Math.max(0, Math.min(255, Math.round(x))));
+      return callService('light', 'turn_on', { rgb_color: v }, { entity_id: id });
+    }
+
     function isMuted(slotKey) {
       return !!attr(slotKey, 'is_volume_muted');
     }
@@ -600,6 +644,7 @@ export function useEntities() {
       setClimateTarget, bumpClimate, setHvacMode, setFanMode, setSwingMode, setPresetMode,
       numberValue, lgTimerReceipt, lgTimerReceiptStale, numberBounds, numberWritable, numberControllable, setNumber, setLgTimer,
       volume, setVolume, isMuted, setMute, selectSource, mediaCommand, sourceList, currentSource,
+      brightnessPct, setBrightness, rgbColor, setRgb,
       friendlyName, matchOption
     };
   }, [ha, states, entityMap, callService, callServiceDebounced, callServiceWithResponse, markPending, pending, lastTargets, lastSentTimers, rememberSentTimer, setLastCallError]);

@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.7.0
+
+**Cele două benzi RGB de birou intră în aplicaţie**, fiecare pe propriul Shelly
+Plus RGBW PM. Sunt primele lumini din Dashboard, aşa că a apărut şi maşinăria
+pentru ele: un grup de sloturi *Lumini*, un cadran de **luminozitate** şi o
+acţiune de **culoare**.
+
+**Cadranul reglează luminozitatea**, citită din atributul lămpii, nu dintr-o
+entitate separată. Minimul e 1%, nu 0: `brightness_pct: 0` ar fi o stingere
+deghizată în reglaj, iar stingerea se face din comutator. Când banda e stinsă,
+cadranul arată **„—"**, nu 0 — nu inventăm o valoare pentru ceva ce nu există.
+
+**Preseturile trimit exclusiv `rgb_color`.** Canalul alb al controlerului RGBW
+nu e expus nicăieri şi nu e atins, fiindcă benzile sunt folosite ca RGB. Chiar
+şi „Alb" e sinteză RGB, nu canalul W. Şapte culori: Roşu, Verde, Albastru,
+Violet şi Cyan în panoul de setări, Cald şi Alb ca acţiuni rapide pe card.
+
+**Sub nume stă puterea măsurată de Shelly** — valoare reală, nu estimare.
+
+**Cele două benzi sunt complet independente**: carduri separate, luminozitate
+separată, culoare separată. Nu există grup, nici în aplicaţie, nici în Home
+Assistant.
+
+**O capcană de sincronizare, rezolvată.** Prima versiune a cadranului citea doar
+atributul entităţii, iar o rafală de zece apăsări producea **un singur pas**:
+toate calculau din aceeaşi valoare veche, fiindcă comanda coalescentă încă nu
+aterizase. Acum luminozitatea citeşte întâi valoarea în aşteptare, exact ca
+temperatura ţintă şi ca volumul. Zece apăsări înseamnă zece paşi.
+
+Butoanele de reglaj au primit `data-sp`, aceeaşi convenţie folosită deja de
+acordeon — testele pot ţinti exact butonul dorit, nu unul vecin.
+
+Sloturi: 268 → **278**. Bundle: 555,27 → **559,68 kB**. 466 teste de logică,
+44 de fidelitate de stil, 104 combinaţii responsive, zero probleme. Testat pe
+aparate reale: pornire, oprire, 25%, 75%, roşu, albastru, putere live — 14
+verificări, toate trecute, ambele benzi readuse la starea iniţială.
+
 ## 2.6.0
 
 **AC Magazie iese din aplicaţie şi din Home Assistant.** Decizie de arhitectură:
