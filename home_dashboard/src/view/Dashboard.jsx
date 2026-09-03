@@ -196,9 +196,6 @@ export default function Dashboard({ onOpenMapping }) {
   const poartaCd = poartaMapata ? E.poartaCooldown(now.getTime()) : { activ: false, ramas: 0 };
   const poartaOnline = poartaMapata && E.available('poarta.releu');
   const poartaUltima = poartaMapata ? E.poartaUltimaComanda() : null;
-  const poartaService = poartaMapata && E.isOn('poarta.service');
-  const poartaIntent = poartaMapata ? E.poartaIntentie(now.getTime()) : null;
-  const smMarcaj = poartaMapata ? marcajComanda(E, 'poarta.service') : null;
   const poartaInZbor = !!(poartaB && poartaB.inZbor);
   // Blocăm butonul cât timp cooldown-ul rulează: intrarea START a Linomatik e
   // secvenţială, iar al doilea impuls ar însemna STOP, nu „deschide mai tare".
@@ -800,36 +797,6 @@ export default function Dashboard({ onOpenMapping }) {
                           + (poartaUltima.toDateString() === now.toDateString() ? '' : ' · ' + poartaUltima.getDate() + ' ' + MONTHS[poartaUltima.getMonth()])
                         : 'Nicio comandă înregistrată'}
                     </span>
-                  </div>
-
-                  {poartaIntent ? (
-                    <div style={s('display:flex; align-items:center; gap:8px; margin-top:10px; padding:8px 10px; border-radius:11px;'
-                      + ' background:rgba(240,138,44,0.10); border:1px solid rgba(240,138,44,0.28);')}>
-                      <span style={s('display:flex; color:' + ORANGE + ';')}>{ic('gate', { size: 14, sw: 2 })}</span>
-                      <span style={s('font-family:' + SANS + '; font-size:11.5px; font-weight:500; color:' + ORANGE_HI + ';')}>
-                        Deschidere la sosire: ARMATĂ
-                      </span>
-                      {poartaIntent.minute !== null ? (
-                        <span style={s('font-family:' + SANS + '; font-size:11px; font-weight:300; color:' + TXT3 + '; margin-left:auto;')}>
-                          {poartaIntent.minute === 0 ? 'confirmată acum' : 'confirmată acum ' + poartaIntent.minute + ' min'}
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12 }}>
-                    <span style={s('font-family:' + SANS + '; font-size:12px; color:#c4b7a7;')}>Service Mode</span>
-                    <div
-                      className="hdTapY"
-                      role="switch"
-                      aria-checked={poartaService ? 'true' : 'false'}
-                      aria-label="Service Mode poartă"
-                      style={s(togglePill(poartaService))}
-                      onClick={() => poartaMapata && E.toggle('poarta.service')}
-                    >
-                      <div className={smMarcaj && smMarcaj.inZbor ? 'hdPow' : undefined} style={s(toggleKnob(poartaService))}>{ic('power', { size: 12.5, color: poartaService ? '#C4600F' : '#cfc4b8', sw: 2.2 })}</div>
-                      <span style={s(toggleText(poartaService))}>{poartaService ? 'on' : 'off'}</span>
-                    </div>
                   </div>
                 </div>
 

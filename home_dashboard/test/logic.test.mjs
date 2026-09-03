@@ -330,7 +330,10 @@ eq('sloturile ramase au toate un motiv explicit',
 // lampa, putere, energie, tensiune si curent. Tensiunea si curentul sunt
 // entitati pe care integrarea Shelly le creeaza dezactivate; au fost activate
 // manual in HA, deci exista si se mapeaza.
-eq('total: 278 mapate din 278 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [278, 278]);
+// 278 -> 275: poarta ramane MANUALA (v3.2.0). Au plecat sloturile Service Mode,
+// intentia de sosire si cronometrul ei, odata cu automatizarile de geofence din
+// Home Assistant. Comanda, releul, cooldown-ul si ultima comanda raman.
+eq('total: 275 mapate din 275 (zero sloturi nemapate)', [propuse.length, SLOTS.length], [275, 275]);
 eq('total nemapate cu motiv', Object.keys(UNMAPPED_REASONS).length, 0);
 
 // ---- acordeoanele „setari complete" ------------------------------------------

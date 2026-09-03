@@ -1,5 +1,42 @@
 # Changelog
 
+## 3.2.0
+
+**Poarta se deschide doar când o deschizi tu.** Toată deschiderea automată pe
+bază de geolocaţie a fost eliminată — din Home Assistant, nu doar din interfaţă.
+
+**Ce era înainte.** Un inel de 700 m în jurul casei, un steag care se arma când
+telefonul ieşea din el, o notificare la reintrare cu trei butoane, o intenţie
+„deschide când ajung" valabilă 30 de minute, High Accuracy pornit temporar pe
+telefon ca urmărirea să fie destul de deasă, şi o automatizare care calcula
+viteza de apropiere din două raportări consecutive ca să deschidă la un ETA sub
+20 de secunde. Şapte automatizări, un script auxiliar, cinci helpere şi o zonă.
+
+**De ce a plecat tot.** O poartă care se deschide singură depinde de GPS, de
+setările de baterie ale telefonului şi de un lanţ de şase automatizări care
+trebuie să fie toate corecte simultan. Deschiderea manuală n-are niciuna dintre
+dependenţele astea.
+
+**Service Mode a plecat cu el.** Auditul a arătat că singura lui funcţie reală
+era să oprească automatizările de sosire: apărea în şase automatizări, toate din
+blocul geofence, şi în niciun alt loc. `script.deschide_poarta` nu l-a verificat
+niciodată, deci Service Mode nu a blocat vreodată butonul manual. Fără geofence
+rămânea un comutator care nu comută nimic, aşa că a fost eliminat în loc să
+primească o funcţie inventată.
+
+**Ce a rămas neatins:** butonul DESCHIDE POARTA, impulsul de 1 s prin releul
+Shelly, cooldown-ul de 45 s care protejează şi comanda manuală (intrarea START a
+Linomatik e secvenţială — al doilea impuls ar însemna STOP), marcajul ultimei
+comenzi şi urma din logbook cu sursa comenzii.
+
+**Cardul Poartă Intrare rămâne în aceeaşi poziţie, cu acelaşi design.** I-au
+dispărut doar rândul Service Mode şi banda „Deschidere la sosire: ARMATĂ".
+Butonul, starea şi „Ultima comandă" sunt neschimbate.
+
+`person.bogdan`, `device_tracker.s26_ultra` şi zona Home nu au fost atinse: sunt
+folosite şi în alte scopuri. A fost ştearsă doar zona `Apropiere Casă`, creată
+exclusiv pentru inelul porţii şi rămasă fără niciun consumator.
+
 ## 3.1.0
 
 **Un singur card „LED Birou" pe Acasă.** Cele două benzi nu mai ocupă două
