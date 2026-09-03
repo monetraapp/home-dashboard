@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.8.1
+
+**Graficul de consum pierdea prima bucată din fiecare interval.** Delta se
+calcula scăzând manual citirile succesive ale contorului cumulativ, iar scăderea
+începe de la a doua bucată — prima nu are predecesor, deci dispărea din grafic
+şi din total.
+
+Pe 24h efectul era mic. Pe **7 zile şi 30 de zile**, unde acum există o singură
+bucată de statistică, era total: graficul rămânea gol şi totalul afişa **zero**,
+deşi banda chiar consumase.
+
+Consumul se ia acum din **`change`**, câmpul pe care Home Assistant îl calculează
+el însuşi pentru fiecare bucată. E delta corectă, tratează resetările de contor
+şi există şi pentru prima bucată. Scăderea manuală rămâne ca rezervă, pentru
+instalări unde `change` lipseşte.
+
+Verificat numeric pe datele live, nu doar în interfaţă: numărul de bare este egal
+cu numărul de bucăţi, iar totalul coincide **la a douăsprezecea zecimală** cu
+suma pe care o raportează HA. Suma valorilor cumulate — greşeala clasică — dă
+0,0109 kWh acolo unde consumul real e 0,00084; cele două nu se confundă niciodată.
+
+**Şi o rotunjire care spunea o minciună.** Sub 1 kWh valorile trec în Wh, dar cu
+zero zecimale un consum real de 0,46 Wh se afişa **„0 Wh"**. Zecimalele se aleg
+acum după mărime: sub 10 Wh se arată două.
+
+466 teste de logică, 44 de fidelitate de stil, 104 combinaţii responsive, zero
+probleme. 30 de aserţiuni matematice pe datele live şi 12 în interfaţă, toate
+trecute.
+
 ## 2.8.0
 
 **„Setări avansate" al fiecărei benzi LED capătă o secţiune de istoric.** Sub

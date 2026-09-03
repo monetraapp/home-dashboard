@@ -40,10 +40,24 @@ function eticheteTimp(randuri, interval) {
   });
 }
 
-// Consumul PE INTERVAL dintr-un contor cumulativ: diferenţa faţă de bucata
-// anterioară. Diferenţele negative (contorul a fost resetat) devin 0 — altfel o
-// resetare ar apărea drept consum uriaş, cu semn greşit.
+// Consumul PE INTERVAL al unui contor cumulativ.
+//
+// Sursa preferată e `change`, câmpul pe care HA îl calculează el însuşi pentru
+// fiecare bucată: e delta corectă, tratează resetările de contor şi — esenţial —
+// EXISTĂ ŞI PENTRU PRIMA BUCATĂ.
+//
+// Prima versiune scădea manual `sum[i] - sum[i-1]`. Rezultatele coincideau
+// exact cu `change` pentru bucăţile 2..n, dar PRIMA se pierdea. Cu o singură
+// bucată în interval — cazul lui 7 zile şi 30 de zile acum, cât timp istoricul e
+// scurt — graficul rămânea gol şi totalul afişa 0, deşi consumul exista.
+//
+// Scăderea manuală rămâne ca rezervă, pentru instalări unde `change` lipseşte;
+// acolo pierdem tot prima bucată, dar e mai bine decât nimic.
 function consumPeInterval(randuri) {
+  const areChange = randuri.length > 0 && randuri.every(function (r) { return Number.isFinite(r.change); });
+  if (areChange) {
+    return randuri.map(function (r) { return r.change > 0 ? r.change : 0; });
+  }
   const out = [];
   for (let i = 1; i < randuri.length; i++) {
     const a = randuri[i - 1].sum;
@@ -52,6 +66,11 @@ function consumPeInterval(randuri) {
     out.push(d > 0 ? d : 0);
   }
   return out;
+}
+
+/** true când avem `change` pentru fiecare bucată, deci nicio bucată nu se pierde. */
+function areChangeComplet(randuri) {
+  return randuri.length > 0 && randuri.every(function (r) { return Number.isFinite(r.change); });
 }
 
 function medieMaxMin(valori) {
@@ -66,10 +85,14 @@ function medieMaxMin(valori) {
 
 // kWh sub 1 se citesc mai bine în Wh. Alegerea se face pe TOTAL, ca tot blocul
 // să rămână în aceeaşi unitate.
+//
+// Zecimalele se aleg după mărime, nu fix. Cu zero zecimale, un consum real de
+// 0,46 Wh se afişa „0 Wh" — adică exact minciuna pe care încercăm s-o evităm în
+// tot restul aplicaţiei: o valoare care spune „nimic" când există ceva.
 function unitateEnergie(totalKwh) {
-  return totalKwh < 1
-    ? { factor: 1000, unit: 'Wh', zecimale: 0 }
-    : { factor: 1, unit: 'kWh', zecimale: 3 };
+  if (totalKwh >= 1) return { factor: 1, unit: 'kWh', zecimale: 3 };
+  const wh = totalKwh * 1000;
+  return { factor: 1000, unit: 'Wh', zecimale: wh >= 10 ? 0 : 2 };
 }
 
 export default function LedHistory(props) {
@@ -93,7 +116,7 @@ export default function LedHistory(props) {
   const inceput = sfarsit - durata;
 
   const idCerut = fila === 'power' ? idPower : fila === 'consum' ? idEnergy : idVolt;
-  const tipuri = fila === 'consum' ? ['sum'] : ['mean', 'min', 'max'];
+  const tipuri = fila === 'consum' ? ['sum', 'change'] : ['mean', 'min', 'max'];
   const rez = useStatistics(idCerut ? [idCerut] : [], inceput, sfarsit, perioada, tipuri);
   const randuri = (rez.stats && idCerut && rez.stats[idCerut]) || [];
   const meta = FILE_TAB.filter(function (f) { return f.key === fila; })[0];
@@ -109,7 +132,7 @@ export default function LedHistory(props) {
       const totalKwh = brut.reduce(function (a, b) { return a + b; }, 0);
       const u = unitateEnergie(totalKwh);
       valori = brut.map(function (v) { return Math.round(v * u.factor * 1000) / 1000; });
-      etichete = eticheteTimp(randuri.slice(1), interval2);
+      etichete = eticheteTimp(areChangeComplet(randuri) ? randuri : randuri.slice(1), interval2);
       unit = u.unit;
       total = { valoare: totalKwh * u.factor, unit: u.unit, zecimale: u.zecimale };
     } else {
