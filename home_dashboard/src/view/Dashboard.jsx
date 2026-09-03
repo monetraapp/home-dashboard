@@ -27,6 +27,7 @@ import { useRegistries } from '../ha/registries.js';
 import { ZonePage } from './ZonePage.jsx';
 import { DevicesPage } from './DevicesPage.jsx';
 import { LightingPage } from './LightingPage.jsx';
+import { LedQuickCard } from './LedQuickCard.jsx';
 import { LIGHTS } from '../model/lights.js';
 import { ProgramareAC } from './AcSchedule.jsx';
 import { useDeviceHealth } from '../ha/deviceHealth.js';
@@ -152,7 +153,6 @@ export default function Dashboard({ onOpenMapping }) {
   const ui = {
     page, hoverKey, setHoverKey, hoverChart, setHoverChart, modalId, setModalId,
     openAcc, setOpenAcc, mediaZone, setMediaZone, tracked, bp, anim,
-    naviga: (t) => { setPage(t.page); if (t.lumina) setLuminaSel(t.lumina); },
     catalog: { DEVICE_CARDS, CARD_BY_ID }
   };
 
@@ -833,6 +833,17 @@ export default function Dashboard({ onOpenMapping }) {
                   </div>
                 </div>
 
+                {/* (v3.1.0) LED Birou, imediat sub Poartă Intrare: un singur card
+                    compact cu cele două benzi. Controlul complet — culoare,
+                    presetări, grafice — stă exclusiv pe pagina „Iluminat". */}
+                <LedQuickCard
+                  E={E}
+                  lumini={lumini}
+                  cardTitleStyle={cardTitleStyle}
+                  cardSubStyle={cardSubStyle}
+                  onNaviga={(id) => { setPage('iluminat'); if (id) setLuminaSel(id); }}
+                />
+
               </>
             ) : isZone || isDisp || isIlum ? (
               // (v1.5.0) Acelaşi card de context ca pe celelalte pagini: fără
@@ -1277,12 +1288,12 @@ function DeviceCard({ c }) {
         role="button"
         tabIndex={0}
         data-action="open-device-modal"
-        aria-label={(c.advLabel || 'Setări avansate') + ' ' + c.label}
+        aria-label={'Setări avansate ' + c.label}
         style={s(c.advBtnStyle)}
         onClick={c.onOpen}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.onOpen(e); } }}
       >
-        <span style={s(c.advIconStyle)}>{c.advIconEl}</span>{c.advLabel || 'Setări avansate'}
+        <span style={s(c.advIconStyle)}>{c.advIconEl}</span>Setări avansate
       </div>
     </div>
   );

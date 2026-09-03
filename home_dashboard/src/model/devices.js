@@ -250,46 +250,6 @@ export const DEVICE_CARDS = [
     ]
   },
   {
-    // (v3.0.0) Card RAPID, nu panou de control. Culoarea si preseturile au plecat
-    // pe pagina „Iluminat", unde exista loc pentru ele; aici raman doar lucrurile
-    // pe care le vrei dintr-o privire: stare, luminozitate, putere, si culoarea
-    // curenta ca fundal al iconitei. Apasarea duce direct pe pagina, cu banda
-    // respectiva deja selectata — nu deschide un modal.
-    id: 'led-birou-up',
-    slot: 'light.birou_up',
-    icon: 'sun',
-    label: 'LED Birou Up',
-    model: 'Birou sus · RGB',
-    group: 'Lumini',
-    kind: 'light',
-    culoareIcon: true,
-    naviga: { page: 'iluminat', lumina: 'led-birou-up' },
-    ambient: { kind: 'compose', parts: [['power.birou_up', '', ' W']] },
-    dial: { kind: 'brightness', unit: '%', step: 5 },
-    minis: [],
-    circles: []
-  },
-  {
-    // (v3.0.0) Card RAPID, nu panou de control. Culoarea si preseturile au plecat
-    // pe pagina „Iluminat", unde exista loc pentru ele; aici raman doar lucrurile
-    // pe care le vrei dintr-o privire: stare, luminozitate, putere, si culoarea
-    // curenta ca fundal al iconitei. Apasarea duce direct pe pagina, cu banda
-    // respectiva deja selectata — nu deschide un modal.
-    id: 'led-birou-down',
-    slot: 'light.birou_down',
-    icon: 'sun',
-    label: 'LED Birou Down',
-    model: 'Birou jos · RGB',
-    group: 'Lumini',
-    kind: 'light',
-    culoareIcon: true,
-    naviga: { page: 'iluminat', lumina: 'led-birou-down' },
-    ambient: { kind: 'compose', parts: [['power.birou_down', '', ' W']] },
-    dial: { kind: 'brightness', unit: '%', step: 5 },
-    minis: [],
-    circles: []
-  },
-  {
     id: 'clorinator-main',
     slot: 'switch.clorinator',
     icon: 'droplet',

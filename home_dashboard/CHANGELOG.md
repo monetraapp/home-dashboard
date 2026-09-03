@@ -1,5 +1,46 @@
 # Changelog
 
+## 3.1.0
+
+**Un singur card „LED Birou" pe Acasă.** Cele două benzi nu mai ocupă două
+carduri de dispozitiv în grila din dreapta: stau împreună într-un card compact
+din coloana stângă, imediat sub „Poartă Intrare".
+
+**De ce s-au mutat.** Cardul de dispozitiv e construit pentru un aparat cu un
+cadran: un lucru mare de reglat, restul în modal. O bandă RGB nu are nevoie de
+cadran pe Acasă — de la 3.0.0, reglajul serios stă pe pagina „Iluminat". Ce
+rămânea în grilă erau două carduri de dimensiune întreagă care spuneau puţin şi
+împingeau restul dispozitivelor mai jos. Un card cu două rânduri spune acelaşi
+lucru şi lasă grila pentru ce chiar are ce controla acolo.
+
+**Fiecare bandă are rândul ei** — Up şi Down, separate, fiecare cu numele,
+starea, comutatorul şi bara ei. Nu există „ambele" aici: comanda comună e pe
+pagina „Iluminat", unde are sens să existe.
+
+**Comutator ON/OFF** pe fiecare rând, aceeaşi pastilă ca peste tot în coloană.
+
+**Luminozitatea se reglează din card**, cu o bară subţire sub fiecare rând, la
+deget şi la mouse. Cât să ajustezi din drum, nu cât să înlocuiască pagina; când
+banda e stinsă, bara e inertă şi o arată.
+
+**Puterea live**, în watt, lângă stare — aceeaşi valoare care înainte era textul
+ambiental al cardului de dispozitiv.
+
+**Culoarea curentă apare într-o bulină** lângă numele benzii, singurul loc din
+card unde intră culoarea reală. Restul rămâne în cromatica Dashboard-ului,
+indiferent ce culoare are banda — un card întreg colorat aleatoriu de o bandă
+RGB nu e informaţie, e zgomot.
+
+**O apăsare pe rând duce pe pagina „Iluminat"**, cu banda respectivă deja
+selectată; butonul de jos deschide pagina fără preselecţie. Apăsarea pe
+comutator sau pe bară nu navighează — controlul e control, nu link.
+
+**Cele două carduri de dispozitiv au fost eliminate** din grilă, împreună cu
+infrastructura care exista doar pentru ele: `naviga`, eticheta „Detalii" în
+locul „Setări avansate" şi culoarea benzii pe pastila iconiţei. Cardul de
+dispozitiv redevine ce era înainte de 3.0.0, cu un comportament mai puţin.
+
+
 ## 3.0.0
 
 **Iluminatul îşi capătă pagina lui.** A zecea pagină din navigaţie, construită de
